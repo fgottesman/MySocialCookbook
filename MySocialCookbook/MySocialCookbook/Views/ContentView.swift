@@ -1,4 +1,6 @@
 import SwiftUI
+import Supabase
+import Auth
 
 struct ContentView: View {
     @State private var session: Bool = false // Simple boolean for now, checking auth status
@@ -12,18 +14,28 @@ struct ContentView: View {
     var body: some View {
         Group {
             if isAuthenticated {
-                FeedView()
+                MainTabView()
             } else {
                 AuthView()
             }
         }
         .task {
-            // Check initial session
+            // Check initial session and listen for changes
             for await _ in SupabaseManager.shared.client.auth.authStateChanges {
-                if let _ = try? await SupabaseManager.shared.client.auth.session {
+                if let session = try? await SupabaseManager.shared.client.auth.session {
                     isAuthenticated = true
+                    
+                    // SAVE USER ID to Shared Defaults for Share Extension
+                    if let sharedDefaults = UserDefaults(suiteName: "group.com.mysocialcookbook") {
+                        sharedDefaults.set(session.user.id.uuidString, forKey: "shared_user_id")
+                    }
                 } else {
                     isAuthenticated = false
+                    
+                    // Clear User ID on logout
+                    if let sharedDefaults = UserDefaults(suiteName: "group.com.mysocialcookbook") {
+                        sharedDefaults.removeObject(forKey: "shared_user_id")
+                    }
                 }
             }
         }

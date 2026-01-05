@@ -33,10 +33,10 @@ create table public.recipes (
   created_at timestamptz default now()
 );
 
--- RLS: Recipes viewable by everyone, editable by owner
+-- RLS: Recipes are private to their owner
 alter table public.recipes enable row level security;
-create policy "Recipes are viewable by everyone" on public.recipes
-  for select using (true);
+create policy "Users can view their own recipes" on public.recipes
+  for select using (auth.uid() = user_id);
 create policy "Users can insert their own recipes" on public.recipes
   for insert with check (auth.uid() = user_id);
 create policy "Users can update own recipes" on public.recipes

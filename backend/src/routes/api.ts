@@ -1,17 +1,24 @@
-import express, { Request, Response } from 'express';
+
+import express from 'express';
+import { supabase } from '../db/supabase';
 import { VideoDownloader } from '../services/video_downloader';
-import { GeminiService } from '../services/gemini_service';
-import { StorageService } from '../services/storage';
-import { db } from '../db/firebase';
-import { v4 as uuidv4 } from 'uuid';
+import { GeminiService } from '../services/gemini';
+import fs from 'fs';
 
 const router = express.Router();
+const downloader = new VideoDownloader();
+const gemini = new GeminiService();
 
-const videoDownloader = new VideoDownloader();
-const geminiService = new GeminiService();
-const storageService = new StorageService();
+// Helper to detect YouTube URLs
+function isYouTubeUrl(url: string): boolean {
+    return url.includes('youtube.com') || url.includes('youtu.be');
+}
 
-router.post('/share', async (req: Request, res: Response) => {
+router.get('/health', (req, res) => {
+    res.json({ status: 'ok', service: 'My Social Cookbook Backend' });
+});
+
+router.post('/process-recipe', async (req, res) => {
     try {
         const { url, userId } = req.body;
 
@@ -19,50 +26,79 @@ router.post('/share', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Missing url or userId' });
         }
 
-        console.log(`Processing share for User: ${userId}, URL: ${url}`);
+        console.log(`Processing recipe for user ${userId} from ${url}`);
 
-        // 1. Download VIdeo
-        const videoMeta = await videoDownloader.downloadVideo(url);
+        let recipeData;
+        let videoPath: string | null = null;
 
-        // 2. Upload to Persistent Storage
-        const filename = `${uuidv4()}.mp4`;
-        const storageUrl = await storageService.uploadVideoFromUrl(videoMeta.url, filename);
+        // For YouTube: process directly with Gemini (no download needed!)
+        if (isYouTubeUrl(url)) {
+            console.log("YouTube detected - processing directly with Gemini");
+            recipeData = await gemini.generateRecipeFromYouTube(url);
+        } else {
+            // For TikTok/Instagram: download first, then upload to Gemini
+            console.log("Non-YouTube video - downloading first");
+            videoPath = await downloader.downloadVideo(url);
+            console.log("Video downloaded:", videoPath);
 
-        // 3. Process with Gemini
-        // We pass the storage URL (or gs:// URI if Gemini supports it directly from the same project)
-        const recipeData = await geminiService.extractRecipe(storageUrl);
+            // Upload to Gemini
+            const uploadFile = await gemini.uploadVideo(videoPath);
+            console.log("Uploaded to Gemini:", uploadFile.uri);
 
-        // 4. Save to Firestore
-        const recipeId = uuidv4();
-        const newRecipe = {
-            id: recipeId,
-            userId,
-            originalUrl: url,
-            videoUrl: storageUrl,
-            metadata: videoMeta,
-            ...recipeData,
-            createdAt: new Date().toISOString()
-        };
+            await gemini.waitForProcessing(uploadFile.name);
 
-        await db.collection('recipes').doc(recipeId).set(newRecipe);
+            // Extract Recipe
+            recipeData = await gemini.generateRecipe(uploadFile.uri);
+        }
 
-        res.status(200).json({ success: true, recipeId, message: 'Recipe processed successfully' });
+        console.log("Recipe extracted:", recipeData.title);
+
+        // Generate Embedding for Search
+        const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
+        const embedding = await gemini.generateEmbedding(embeddingText);
+
+        // Save to Supabase
+        const { data, error } = await supabase
+            .from('recipes')
+            .insert({
+                user_id: userId,
+                title: recipeData.title,
+                description: recipeData.description,
+                video_url: url,
+                ingredients: recipeData.ingredients,
+                instructions: recipeData.instructions,
+                embedding: embedding
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Supabase Insert Error:", error);
+            throw error;
+        }
+
+        // Cleanup local file (if we downloaded one)
+        if (videoPath && fs.existsSync(videoPath)) {
+            fs.unlinkSync(videoPath);
+        }
+
+        res.json({ success: true, recipe: data });
 
     } catch (error: any) {
-        console.error('Error processing share:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        console.error("Error processing recipe:", error);
+        res.status(500).json({ error: error.message || "Internal Server Error" });
     }
 });
 
-router.get('/recipes', async (req: Request, res: Response) => {
-    try {
-        const snapshot = await db.collection('recipes').orderBy('createdAt', 'desc').get();
-        const recipes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.status(200).json(recipes);
-    } catch (error: any) {
-        console.error('Error fetching recipes:', error);
-        res.status(500).json({ error: error.message });
-    }
+// For feed (utility endpoint)
+router.get('/recipes', async (req, res) => {
+    const { data, error } = await supabase
+        .from('recipes')
+        .select('*, profiles(*)')
+        .order('created_at', { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
 });
 
 export default router;

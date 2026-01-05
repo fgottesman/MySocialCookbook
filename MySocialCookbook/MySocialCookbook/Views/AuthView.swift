@@ -45,6 +45,43 @@ struct AuthView: View {
                 }
             }
             .disabled(viewModel.isLoading)
+
+            // Social Login Divider
+            HStack {
+                Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.3))
+                Text("OR").font(.caption).foregroundColor(.gray)
+                Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.3))
+            }
+            .padding(.vertical, 10)
+
+            // Google Sign In
+            Button(action: {
+                Task { await viewModel.signInWithGoogle() }
+            }) {
+                HStack {
+                    Image(systemName: "globe") // Placeholder for Google Logo
+                    Text("Sign in with Google")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray, lineWidth: 1))
+                .foregroundColor(.black)
+            }
+            
+            // Apple Sign In (Simplified Native Button)
+            Button(action: {
+                viewModel.startAppleSignIn()
+            }) {
+                HStack {
+                    Image(systemName: "apple.logo")
+                    Text("Sign in with Apple")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.black)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
             
             Button(action: {
                 isSignUp.toggle()

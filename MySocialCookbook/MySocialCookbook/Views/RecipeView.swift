@@ -18,18 +18,32 @@ struct RecipeView: View {
                 .cornerRadius(12)
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(recipe.title ?? "Unknown Recipe")
+                    Text(recipe.title)
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     
-                    HStack {
-                        Image(systemName: "person.circle.fill")
-                        Text(recipe.creatorHandle)
-                            .font(.headline)
-                            .foregroundColor(.blue)
-                    }
-                    .onTapGesture {
-                        // Open creator profile
+                    if let profile = recipe.profile {
+                        HStack {
+                            if let avatarUrl = profile.avatarUrl, let url = URL(string: avatarUrl) {
+                                AsyncImage(url: url) { image in
+                                    image.resizable().scaledToFill()
+                                } placeholder: {
+                                    Image(systemName: "person.circle.fill")
+                                }
+                                .frame(width: 40, height: 40)
+                                .clipShape(Circle())
+                            } else {
+                                Image(systemName: "person.circle.fill")
+                                    .font(.title)
+                            }
+                            
+                            Text(profile.username ?? profile.fullName ?? "Unknown Chef")
+                                .font(.headline)
+                                .foregroundColor(.blue)
+                        }
+                        .onTapGesture {
+                            // Open creator profile
+                        }
                     }
                 }
                 .padding(.horizontal)
@@ -37,38 +51,41 @@ struct RecipeView: View {
                 Divider()
                 
                 // Ingredients
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Ingredients")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    ForEach(recipe.ingredients ?? ["No ingredients listed"], id: \.self) { ingredient in
-                        HStack {
-                            Image(systemName: "circle.fill")
-                                .font(.system(size: 6))
-                            Text(ingredient)
+                if let ingredients = recipe.ingredients, !ingredients.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Ingredients")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        
+                        ForEach(ingredients, id: \.self) { ingredient in
+                            HStack {
+                                Image(systemName: "circle.fill")
+                                    .font(.system(size: 6))
+                                Text("\(ingredient.amount) \(ingredient.unit) \(ingredient.name)")
+                            }
                         }
                     }
+                    .padding(.horizontal)
+                    Divider()
                 }
-                .padding(.horizontal)
-                
-                Divider()
                 
                 // Instructions
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Instructions")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    ForEach(Array((recipe.instructions ?? ["No instructions"]).enumerated()), id: \.offset) { index, step in
-                        HStack(alignment: .top) {
-                            Text("\(index + 1).")
-                                .fontWeight(.bold)
-                            Text(step)
+                if let instructions = recipe.instructions, !instructions.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Instructions")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        
+                        ForEach(Array(instructions.enumerated()), id: \.offset) { index, step in
+                            HStack(alignment: .top) {
+                                Text("\(index + 1).")
+                                    .fontWeight(.bold)
+                                Text(step)
+                            }
                         }
                     }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
             .padding(.bottom)
         }
