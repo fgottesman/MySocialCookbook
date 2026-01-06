@@ -11,7 +11,7 @@ struct FeedView: View {
                 Group {
                     if viewModel.isLoading && viewModel.recipes.isEmpty {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookAccent))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
                     } else if let error = viewModel.errorMessage {
                         VStack(spacing: 16) {
                             Image(systemName: "exclamationmark.triangle")
