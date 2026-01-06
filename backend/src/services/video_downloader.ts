@@ -12,18 +12,16 @@ export class VideoDownloader {
      * 
      * Subscribe at: https://rapidapi.com/nguyenmanhict-MuTUtGWD7K/api/social-download-all-in-one
      */
-    async downloadVideo(url: string): Promise<{ filePath: string, thumbnailUrl: string | null }> {
+    async fetchVideoMetadata(url: string): Promise<{ downloadUrl: string, thumbnailUrl: string | null }> {
         const rapidApiKey = process.env.RAPIDAPI_KEY;
 
         if (!rapidApiKey) {
             throw new Error("RAPIDAPI_KEY environment variable is not set");
         }
 
-        console.log("Downloading video via Social Download All in One API:", url);
+        console.log("Fetching video metadata via Social Download All in One API:", url);
 
         try {
-            // Social Download All in One API
-            // Supports: Instagram, TikTok, YouTube, Facebook, Twitter, and more
             const response = await axios.post('https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink',
                 { url: url },
                 {
@@ -37,14 +35,10 @@ export class VideoDownloader {
 
             console.log("API response:", JSON.stringify(response.data, null, 2));
 
-            // Extract download URL and thumbnail from response
             let downloadUrl: string | null = null;
             let thumbnailUrl: string | null = null;
 
-            // Handle different response formats
-            // Try to find the best quality video and its thumbnail
             if (response.data?.medias && response.data.medias.length > 0) {
-                // Find the best quality video
                 const videoMedia = response.data.medias.find((m: any) =>
                     m.type === 'video' || m.videoAvailable || m.url
                 );
@@ -54,7 +48,6 @@ export class VideoDownloader {
                 }
             }
 
-            // Fallbacks if media array didn't work or wasn't present
             if (!downloadUrl) {
                 if (response.data?.url) {
                     downloadUrl = response.data.url;
@@ -86,6 +79,26 @@ export class VideoDownloader {
             console.log("Video URL found:", downloadUrl);
             console.log("Thumbnail URL found:", thumbnailUrl);
 
+            return { downloadUrl, thumbnailUrl };
+
+        } catch (error: any) {
+            if (error.response) {
+                console.error("Video Metadata Fetch Failed", error.response.data);
+                if (error.response.status === 403) {
+                    throw new Error(
+                        "RapidAPI subscription required. Please subscribe to 'Social Download All in One' API at: " +
+                        "https://rapidapi.com/nguyenmanhict-MuTUtGWD7K/api/social-download-all-in-one"
+                    );
+                }
+            }
+            throw error;
+        }
+    }
+
+    async downloadVideo(url: string): Promise<{ filePath: string, thumbnailUrl: string | null }> {
+        const { downloadUrl, thumbnailUrl } = await this.fetchVideoMetadata(url);
+
+        try {
             // Download the actual video file
             const videoResponse = await axios.get(downloadUrl, {
                 responseType: 'arraybuffer',
@@ -106,19 +119,27 @@ export class VideoDownloader {
 
             console.log("Video saved to:", filePath);
             return { filePath, thumbnailUrl };
+        } catch (error) {
+            console.error("Video File Download Failed", error);
+            throw error;
+        }
+    }
 
-        } catch (error: any) {
-            if (error.response) {
-                console.error("Video Download Failed", error.response.data);
-
-                // Provide helpful error message for subscription issues
-                if (error.response.status === 403) {
-                    throw new Error(
-                        "RapidAPI subscription required. Please subscribe to 'Social Download All in One' API at: " +
-                        "https://rapidapi.com/nguyenmanhict-MuTUtGWD7K/api/social-download-all-in-one"
-                    );
+    async downloadThumbnail(url: string, outputPath: string): Promise<string> {
+        console.log("Downloading thumbnail from:", url);
+        try {
+            const response = await axios.get(url, {
+                responseType: 'arraybuffer',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
                 }
-            }
+            });
+
+            fs.writeFileSync(outputPath, response.data);
+            console.log("Thumbnail saved to:", outputPath);
+            return outputPath;
+        } catch (error) {
+            console.error("Failed to download thumbnail:", error);
             throw error;
         }
     }

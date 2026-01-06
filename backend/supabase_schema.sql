@@ -30,6 +30,7 @@ create table public.recipes (
   ingredients jsonb, -- Structured data: [{name: "flour", amount: "1", unit: "cup"}]
   instructions jsonb, -- Array of strings
   embedding vector(768), -- Gemini Embedding
+  thumbnail_url text, -- Permanent URL from Supabase Storage
   created_at timestamptz default now()
 );
 

@@ -5,6 +5,8 @@ import { VideoDownloader } from '../services/video_downloader';
 import { GeminiService } from '../services/gemini';
 import { apnsService } from '../services/apns';
 import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 
 const router = express.Router();
 const downloader = new VideoDownloader();
@@ -108,6 +110,57 @@ router.post('/process-recipe', async (req, res) => {
                 fs.unlinkSync(videoPath);
             }
         }
+
+        // --- NEW: Handle Thumbnail Persistence ---
+        if (recipeData.thumbnailUrl) {
+            try {
+                console.log("Processing thumbnail for persistence...");
+                const downloadDir = path.join(__dirname, '../../downloads');
+                if (!fs.existsSync(downloadDir)) {
+                    fs.mkdirSync(downloadDir, { recursive: true });
+                }
+
+                const thumbName = `thumb_${crypto.randomUUID()}.jpg`;
+                const thumbPath = path.join(downloadDir, thumbName);
+
+                // Download to local
+                await downloader.downloadThumbnail(recipeData.thumbnailUrl, thumbPath);
+
+                // Upload to Supabase Storage
+                // Ensure bucket exists or handled by setup
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('recipe-thumbnails')
+                    .upload(thumbName, fs.readFileSync(thumbPath), {
+                        contentType: 'image/jpeg',
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    console.error("Supabase Storage Upload Error:", uploadError);
+                    // Fallback: keep the original remote URL if upload fails
+                } else {
+                    // Get Public URL
+                    const { data: publicUrlData } = supabase.storage
+                        .from('recipe-thumbnails')
+                        .getPublicUrl(thumbName);
+
+                    if (publicUrlData && publicUrlData.publicUrl) {
+                        console.log("Thumbnail uploaded permanently:", publicUrlData.publicUrl);
+                        recipeData.thumbnailUrl = publicUrlData.publicUrl;
+                    }
+                }
+
+                // Cleanup local
+                if (fs.existsSync(thumbPath)) {
+                    fs.unlinkSync(thumbPath);
+                }
+
+            } catch (thumbError) {
+                console.error("Error processing permanent thumbnail:", thumbError);
+                // Continue with original URL if processing fails
+            }
+        }
+        // -----------------------------------------
 
         console.log("Recipe extracted:", recipeData.title);
 

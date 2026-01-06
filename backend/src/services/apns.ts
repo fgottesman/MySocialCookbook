@@ -1,6 +1,6 @@
 
 import jwt from 'jsonwebtoken';
-import https from 'https';
+import http2 from 'http2';
 
 const APNS_KEY = process.env.APNS_KEY;
 const APNS_KEY_ID = process.env.APNS_KEY_ID;
@@ -63,35 +63,54 @@ export class APNsService {
 
                 // Use sandbox for development, production for App Store
                 const host = process.env.NODE_ENV === 'production'
-                    ? 'api.push.apple.com'
-                    : 'api.sandbox.push.apple.com';
+                    ? 'https://api.push.apple.com'
+                    : 'https://api.sandbox.push.apple.com';
 
-                const options = {
-                    hostname: host,
-                    port: 443,
-                    path: `/3/device/${deviceToken}`,
-                    method: 'POST',
-                    headers: {
-                        'authorization': `bearer ${token}`,
-                        'apns-topic': 'com.mysocialcookbook',
-                        'apns-push-type': 'alert',
-                        'content-type': 'application/json',
-                        'content-length': Buffer.byteLength(body)
-                    }
-                };
+                const client = http2.connect(host);
 
-                const req = https.request(options, (res) => {
-                    console.log(`APNs response status: ${res.statusCode}`);
-                    resolve(res.statusCode === 200);
+                client.on('error', (err) => {
+                    console.error('APNs client error:', err);
+                    resolve(false);
                 });
 
-                req.on('error', (e) => {
-                    console.error('APNs request error:', e);
+                const req = client.request({
+                    ':method': 'POST',
+                    ':path': `/3/device/${deviceToken}`,
+                    'authorization': `bearer ${token}`,
+                    'apns-topic': 'com.mysocialcookbook',
+                    'apns-push-type': 'alert',
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(body)
+                });
+
+                req.on('response', (headers, flags) => {
+                    const status = headers[':status'];
+                    console.log(`APNs response status: ${status}`);
+
+                    if (status === 200) {
+                        resolve(true);
+                    } else {
+                        // Consume response data to log error details if needed
+                        let data = '';
+                        req.on('data', (chunk) => { data += chunk; });
+                        req.on('end', () => {
+                            console.error(`APNs error response: ${data}`);
+                            resolve(false);
+                        });
+                    }
+
+                    client.close();
+                });
+
+                req.on('error', (err) => {
+                    console.error('APNs request error:', err);
+                    client.close();
                     resolve(false);
                 });
 
                 req.write(body);
                 req.end();
+
             } catch (error) {
                 console.error('APNs send error:', error);
                 resolve(false);
