@@ -3,6 +3,7 @@ import express from 'express';
 import { supabase } from '../db/supabase';
 import { VideoDownloader } from '../services/video_downloader';
 import { GeminiService } from '../services/gemini';
+import { apnsService } from '../services/apns';
 import fs from 'fs';
 
 const router = express.Router();
@@ -17,16 +18,47 @@ function isDirectProcessableUrl(url: string): boolean {
         url.includes('tiktok.com');
 }
 
+// Helper to send push notification to user
+async function notifyUser(userId: string, title: string, body: string, recipeId?: string) {
+    try {
+        // Get user's device token
+        const { data: devices } = await supabase
+            .from('user_devices')
+            .select('device_token')
+            .eq('user_id', userId)
+            .eq('platform', 'ios');
+
+        if (devices && devices.length > 0) {
+            for (const device of devices) {
+                await apnsService.sendNotification(device.device_token, {
+                    title,
+                    body,
+                    recipeId
+                });
+            }
+            console.log(`Push notification sent to ${devices.length} device(s)`);
+        } else {
+            console.log('No devices registered for user', userId);
+        }
+    } catch (error) {
+        console.error('Error sending push notification:', error);
+    }
+}
+
 router.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'My Social Cookbook Backend' });
 });
 
 router.post('/process-recipe', async (req, res) => {
-    try {
-        const { url, userId } = req.body;
+    const { url, userId } = req.body;
 
+    // Send immediate response for fire-and-forget from Share Extension
+    res.json({ success: true, message: 'Processing started' });
+
+    try {
         if (!url || !userId) {
-            return res.status(400).json({ error: 'Missing url or userId' });
+            console.error('Missing url or userId');
+            return;
         }
 
         console.log(`Processing recipe for user ${userId} from ${url}`);
@@ -94,14 +126,25 @@ router.post('/process-recipe', async (req, res) => {
 
         if (error) {
             console.error("Supabase Insert Error:", error);
-            throw error;
+            await notifyUser(userId, 'Recipe Failed 😕', 'We couldn\'t process that video. Try another one!');
+            return;
         }
 
-        res.json({ success: true, recipe: data });
+        // SUCCESS - Send push notification!
+        await notifyUser(
+            userId,
+            '🍳 Recipe Ready!',
+            `"${recipeData.title}" has been extracted and is ready to cook!`,
+            data.id
+        );
+
+        console.log("Recipe saved and notification sent:", data.id);
 
     } catch (error: any) {
         console.error("Error processing recipe:", error);
-        res.status(500).json({ error: error.message || "Internal Server Error" });
+        if (userId) {
+            await notifyUser(userId, 'Recipe Failed 😕', 'Something went wrong. Please try again.');
+        }
     }
 });
 
