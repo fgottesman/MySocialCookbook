@@ -42,7 +42,6 @@ class ShareViewController: UIViewController {
         containerView.addSubview(iconImageView)
         
         // Loading Circle Layer
-        let center = CGPoint(x: 24, y: 24)
         let circularPath = UIBezierPath(arcCenter: .zero, radius: 30, startAngle: 0, endAngle: 2 * .pi, clockwise: true)
         
         loadingLayer.path = circularPath.cgPath
@@ -156,7 +155,7 @@ class ShareViewController: UIViewController {
         let body: [String: String] = ["url": url.absoluteString, "userId": userId]
         request.httpBody = try? JSONEncoder().encode(body)
         
-        let task = URLSession.shared.dataTask(with: request) { [weak self] _, _, _ in
+        let task = URLSession.shared.dataTask(with: request) { _, _, _ in
             // Silently ignore response for fire-and-forget
         }
         task.resume()
@@ -183,5 +182,4 @@ class ShareViewController: UIViewController {
             self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
         }
     }
-}
 }

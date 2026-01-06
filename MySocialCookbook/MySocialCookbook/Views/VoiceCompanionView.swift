@@ -1,5 +1,7 @@
 
 import SwiftUI
+import AVFoundation
+import AVFAudio
 
 struct VoiceCompanionView: View {
     let recipe: Recipe

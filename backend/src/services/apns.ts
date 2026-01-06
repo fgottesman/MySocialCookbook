@@ -29,8 +29,14 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`APNS_KEY_ID: ${APNS_KEY_ID ? APNS_KEY_ID.substring(0, 3) + '...' : 'MISSING'}`);
     console.log(`APNS_KEY Present: ${!!APNS_KEY}`);
     if (APNS_KEY) {
-        const keyContent = APNS_KEY.replace(/\\n/g, '\n');
+        const keyContent = APNS_KEY.trim().replace(/\\n/g, '\n');
         console.log(`APNS_KEY Length: ${keyContent.length}`);
+        console.log(`APNS_KEY Prefix: ${keyContent.substring(0, 15)}...`);
+        console.log(`APNS_KEY Suffix: ...${keyContent.substring(keyContent.length - 15)}`);
+
+        // Count newlines to verify format
+        const newlineCount = (keyContent.match(/\n/g) || []).length;
+        console.log(`APNS_KEY Newlines: ${newlineCount}`);
     }
     console.log('--------------------------------');
 }

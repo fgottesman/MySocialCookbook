@@ -52,8 +52,15 @@ class AppleSignInManager: NSObject, ASAuthorizationControllerDelegate, ASAuthori
         if let windowScene = sc {
             return UIWindow(windowScene: windowScene)
         }
+        // Last resort fallback: try to find any window or scene
+        if let window = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .flatMap({ $0.windows })
+            .first(where: { $0.isKeyWindow }) {
+            return window
+        }
         
-        return UIWindow() // Last resort fallback
+        return ASPresentationAnchor()
     }
     
     // MARK: - Crypto Helpers
