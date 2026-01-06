@@ -2,6 +2,7 @@
 import Foundation
 import UserNotifications
 import UIKit
+import Combine
 
 class MessagingManager: NSObject, ObservableObject {
     static let shared = MessagingManager()

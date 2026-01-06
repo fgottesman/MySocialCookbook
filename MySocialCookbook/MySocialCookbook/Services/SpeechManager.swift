@@ -1,6 +1,7 @@
 
 import Foundation
 import AVFoundation
+import Combine
 
 class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     static let shared = SpeechManager()
