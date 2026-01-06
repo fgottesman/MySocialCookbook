@@ -68,31 +68,31 @@ struct RecipeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Video Thumbnail
-            ZStack {
-                Rectangle()
-                    .fill(Color.clipCookBackground)
-                    .aspectRatio(9/16, contentMode: .fit)
-                    .cornerRadius(12)
-                
-                if let thumbnailUrl = recipe.thumbnailUrl, let url = URL(string: thumbnailUrl) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        ProgressView()
+            // Video Thumbnail
+            Color.clear
+                .aspectRatio(9/16, contentMode: .fit)
+                .background(Color.clipCookBackground)
+                .cornerRadius(12)
+                .overlay(
+                    Group {
+                        if let thumbnailUrl = recipe.thumbnailUrl, let url = URL(string: thumbnailUrl) {
+                            AsyncImage(url: url) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                ProgressView()
+                            }
+                        } else {
+                            // Fallback Placeholder
+                            Image(systemName: "play.circle.fill")
+                                .foregroundStyle(LinearGradient.sizzle)
+                                .font(.largeTitle)
+                        }
                     }
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(9/16, contentMode: .fit)
-                    .cornerRadius(12)
-                    .clipped()
-                } else {
-                    // Fallback Placeholder
-                    Image(systemName: "play.circle.fill")
-                        .foregroundStyle(LinearGradient.sizzle)
-                        .font(.largeTitle)
-                }
-            }
+                )
+                .clipped()
+                .cornerRadius(12)
             .overlay(
                 // Play icon overlay for video indication
                 Image(systemName: "play.fill")
