@@ -60,7 +60,7 @@ class AppleSignInManager: NSObject, ASAuthorizationControllerDelegate, ASAuthori
             return window
         }
         
-        return ASPresentationAnchor()
+        return UIWindow(frame: .zero)
     }
     
     // MARK: - Crypto Helpers

@@ -7,7 +7,7 @@ struct AddRecipeView: View {
     @State private var promptText = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var successMessage: String?
+    @State private var showSuccessView = false
     
     var body: some View {
         NavigationStack {
@@ -38,18 +38,6 @@ struct AddRecipeView: View {
                                 .padding(.horizontal)
                         }
                         
-                        if let success = successMessage {
-                            VStack(spacing: 8) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.clipCookSuccess)
-                                    .font(.largeTitle)
-                                Text(success)
-                                    .modifier(UtilitySubhead())
-                            }
-                            .padding()
-                            .transition(.scale)
-                        }
-                        
                         Spacer()
                     }
                 }
@@ -67,6 +55,11 @@ struct AddRecipeView: View {
                     .padding(32)
                     .background(Color.clipCookSurface)
                     .cornerRadius(20)
+                }
+                if showSuccessView {
+                    ProcessingSuccessView()
+                        .transition(.opacity)
+                        .zIndex(100)
                 }
             }
             .navigationTitle("New Recipe")
@@ -184,10 +177,7 @@ struct AddRecipeView: View {
                 try await RecipeService.shared.processRecipe(url: urlString, userId: userId)
                 await MainActor.run {
                     isLoading = false
-                    successMessage = "Processing started!"
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        dismiss()
-                    }
+                    showSuccessView = true
                 }
             } catch {
                 await MainActor.run {
@@ -210,10 +200,7 @@ struct AddRecipeView: View {
                 _ = try await RecipeService.shared.createRecipeFromPrompt(prompt: promptText, userId: userId)
                 await MainActor.run {
                     isLoading = false
-                    successMessage = "Recipe created!"
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        dismiss()
-                    }
+                    showSuccessView = true
                 }
             } catch {
                 await MainActor.run {

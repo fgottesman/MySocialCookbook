@@ -22,14 +22,14 @@
 			containerPortal = AC87688A2F0B2A37009D1E74 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AC8768912F0B2A37009D1E74;
-			remoteInfo = MySocialCookbook;
+			remoteInfo = ClipCook;
 		};
 		AC8768AA2F0B2A38009D1E74 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AC87688A2F0B2A37009D1E74 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AC8768912F0B2A37009D1E74;
-			remoteInfo = MySocialCookbook;
+			remoteInfo = ClipCook;
 		};
 		AC8768D52F0B2F2D009D1E74 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -55,9 +55,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		AC8768922F0B2A37009D1E74 /* MySocialCookbook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MySocialCookbook.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AC87689F2F0B2A38009D1E74 /* MySocialCookbookTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MySocialCookbookTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AC8768A92F0B2A38009D1E74 /* MySocialCookbookUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MySocialCookbookUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC8768922F0B2A37009D1E74 /* ClipCook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipCook.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC87689F2F0B2A38009D1E74 /* ClipCookTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipCookTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC8768A92F0B2A38009D1E74 /* ClipCookUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipCookUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AC8768CD2F0B2F2D009D1E74 /* ShareRecipe.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareRecipe.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -69,32 +69,32 @@
 			);
 			target = AC8768CC2F0B2F2D009D1E74 /* ShareRecipe */;
 		};
-		AC87694D2F0C1A13009D1E74 /* Exceptions for "MySocialCookbook" folder in "MySocialCookbook" target */ = {
+		AC87694D2F0C1A13009D1E74 /* Exceptions for "ClipCook" folder in "ClipCook" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = AC8768912F0B2A37009D1E74 /* MySocialCookbook */;
+			target = AC8768912F0B2A37009D1E74 /* ClipCook */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AC8768942F0B2A37009D1E74 /* MySocialCookbook */ = {
+		AC8768942F0B2A37009D1E74 /* ClipCook */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AC87694D2F0C1A13009D1E74 /* Exceptions for "MySocialCookbook" folder in "MySocialCookbook" target */,
+				AC87694D2F0C1A13009D1E74 /* Exceptions for "ClipCook" folder in "ClipCook" target */,
 			);
-			path = MySocialCookbook;
+			path = ClipCook;
 			sourceTree = "<group>";
 		};
-		AC8768A22F0B2A38009D1E74 /* MySocialCookbookTests */ = {
+		AC8768A22F0B2A38009D1E74 /* ClipCookTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MySocialCookbookTests;
+			path = ClipCookTests;
 			sourceTree = "<group>";
 		};
-		AC8768AC2F0B2A38009D1E74 /* MySocialCookbookUITests */ = {
+		AC8768AC2F0B2A38009D1E74 /* ClipCookUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MySocialCookbookUITests;
+			path = ClipCookUITests;
 			sourceTree = "<group>";
 		};
 		AC8768CE2F0B2F2D009D1E74 /* ShareRecipe */ = {
@@ -148,9 +148,9 @@
 		AC8768892F0B2A37009D1E74 = {
 			isa = PBXGroup;
 			children = (
-				AC8768942F0B2A37009D1E74 /* MySocialCookbook */,
-				AC8768A22F0B2A38009D1E74 /* MySocialCookbookTests */,
-				AC8768AC2F0B2A38009D1E74 /* MySocialCookbookUITests */,
+				AC8768942F0B2A37009D1E74 /* ClipCook */,
+				AC8768A22F0B2A38009D1E74 /* ClipCookTests */,
+				AC8768AC2F0B2A38009D1E74 /* ClipCookUITests */,
 				AC8768CE2F0B2F2D009D1E74 /* ShareRecipe */,
 				AC8768932F0B2A37009D1E74 /* Products */,
 			);
@@ -159,9 +159,9 @@
 		AC8768932F0B2A37009D1E74 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AC8768922F0B2A37009D1E74 /* MySocialCookbook.app */,
-				AC87689F2F0B2A38009D1E74 /* MySocialCookbookTests.xctest */,
-				AC8768A92F0B2A38009D1E74 /* MySocialCookbookUITests.xctest */,
+				AC8768922F0B2A37009D1E74 /* ClipCook.app */,
+				AC87689F2F0B2A38009D1E74 /* ClipCookTests.xctest */,
+				AC8768A92F0B2A38009D1E74 /* ClipCookUITests.xctest */,
 				AC8768CD2F0B2F2D009D1E74 /* ShareRecipe.appex */,
 			);
 			name = Products;
@@ -170,9 +170,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AC8768912F0B2A37009D1E74 /* MySocialCookbook */ = {
+		AC8768912F0B2A37009D1E74 /* ClipCook */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AC8768B32F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "MySocialCookbook" */;
+			buildConfigurationList = AC8768B32F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "ClipCook" */;
 			buildPhases = (
 				AC87688E2F0B2A37009D1E74 /* Sources */,
 				AC87688F2F0B2A37009D1E74 /* Frameworks */,
@@ -185,9 +185,9 @@
 				AC8768D62F0B2F2D009D1E74 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AC8768942F0B2A37009D1E74 /* MySocialCookbook */,
+				AC8768942F0B2A37009D1E74 /* ClipCook */,
 			);
-			name = MySocialCookbook;
+			name = ClipCook;
 			packageProductDependencies = (
 				AC8768E22F0B343C009D1E74 /* Auth */,
 				AC8768E42F0B343C009D1E74 /* Functions */,
@@ -196,13 +196,13 @@
 				AC8768EA2F0B343C009D1E74 /* Storage */,
 				AC8768EC2F0B343C009D1E74 /* Supabase */,
 			);
-			productName = MySocialCookbook;
-			productReference = AC8768922F0B2A37009D1E74 /* MySocialCookbook.app */;
+			productName = ClipCook;
+			productReference = AC8768922F0B2A37009D1E74 /* ClipCook.app */;
 			productType = "com.apple.product-type.application";
 		};
-		AC87689E2F0B2A38009D1E74 /* MySocialCookbookTests */ = {
+		AC87689E2F0B2A38009D1E74 /* ClipCookTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AC8768B62F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "MySocialCookbookTests" */;
+			buildConfigurationList = AC8768B62F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "ClipCookTests" */;
 			buildPhases = (
 				AC87689B2F0B2A38009D1E74 /* Sources */,
 				AC87689C2F0B2A38009D1E74 /* Frameworks */,
@@ -214,18 +214,18 @@
 				AC8768A12F0B2A38009D1E74 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AC8768A22F0B2A38009D1E74 /* MySocialCookbookTests */,
+				AC8768A22F0B2A38009D1E74 /* ClipCookTests */,
 			);
-			name = MySocialCookbookTests;
+			name = ClipCookTests;
 			packageProductDependencies = (
 			);
-			productName = MySocialCookbookTests;
-			productReference = AC87689F2F0B2A38009D1E74 /* MySocialCookbookTests.xctest */;
+			productName = ClipCookTests;
+			productReference = AC87689F2F0B2A38009D1E74 /* ClipCookTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		AC8768A82F0B2A38009D1E74 /* MySocialCookbookUITests */ = {
+		AC8768A82F0B2A38009D1E74 /* ClipCookUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AC8768B92F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "MySocialCookbookUITests" */;
+			buildConfigurationList = AC8768B92F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "ClipCookUITests" */;
 			buildPhases = (
 				AC8768A52F0B2A38009D1E74 /* Sources */,
 				AC8768A62F0B2A38009D1E74 /* Frameworks */,
@@ -237,13 +237,13 @@
 				AC8768AB2F0B2A38009D1E74 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				AC8768AC2F0B2A38009D1E74 /* MySocialCookbookUITests */,
+				AC8768AC2F0B2A38009D1E74 /* ClipCookUITests */,
 			);
-			name = MySocialCookbookUITests;
+			name = ClipCookUITests;
 			packageProductDependencies = (
 			);
-			productName = MySocialCookbookUITests;
-			productReference = AC8768A92F0B2A38009D1E74 /* MySocialCookbookUITests.xctest */;
+			productName = ClipCookUITests;
+			productReference = AC8768A92F0B2A38009D1E74 /* ClipCookUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		AC8768CC2F0B2F2D009D1E74 /* ShareRecipe */ = {
@@ -294,7 +294,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AC87688D2F0B2A37009D1E74 /* Build configuration list for PBXProject "MySocialCookbook" */;
+			buildConfigurationList = AC87688D2F0B2A37009D1E74 /* Build configuration list for PBXProject "ClipCook" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -311,9 +311,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AC8768912F0B2A37009D1E74 /* MySocialCookbook */,
-				AC87689E2F0B2A38009D1E74 /* MySocialCookbookTests */,
-				AC8768A82F0B2A38009D1E74 /* MySocialCookbookUITests */,
+				AC8768912F0B2A37009D1E74 /* ClipCook */,
+				AC87689E2F0B2A38009D1E74 /* ClipCookTests */,
+				AC8768A82F0B2A38009D1E74 /* ClipCookUITests */,
 				AC8768CC2F0B2F2D009D1E74 /* ShareRecipe */,
 			);
 		};
@@ -384,12 +384,12 @@
 /* Begin PBXTargetDependency section */
 		AC8768A12F0B2A38009D1E74 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AC8768912F0B2A37009D1E74 /* MySocialCookbook */;
+			target = AC8768912F0B2A37009D1E74 /* ClipCook */;
 			targetProxy = AC8768A02F0B2A38009D1E74 /* PBXContainerItemProxy */;
 		};
 		AC8768AB2F0B2A38009D1E74 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = AC8768912F0B2A37009D1E74 /* MySocialCookbook */;
+			target = AC8768912F0B2A37009D1E74 /* ClipCook */;
 			targetProxy = AC8768AA2F0B2A38009D1E74 /* PBXContainerItemProxy */;
 		};
 		AC8768D62F0B2F2D009D1E74 /* PBXTargetDependency */ = {
@@ -526,13 +526,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MySocialCookbook/MySocialCookbook.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ClipCook/ClipCook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FKQH296593;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MySocialCookbook/Info.plist;
+				INFOPLIST_FILE = ClipCook/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -543,7 +543,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Freddy.MySocialCookbook;
+				PRODUCT_BUNDLE_IDENTIFIER = Freddy.ClipCook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -560,13 +560,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MySocialCookbook/MySocialCookbook.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ClipCook/ClipCook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FKQH296593;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MySocialCookbook/Info.plist;
+				INFOPLIST_FILE = ClipCook/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -577,7 +577,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Freddy.MySocialCookbook;
+				PRODUCT_BUNDLE_IDENTIFIER = Freddy.ClipCook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -599,7 +599,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Freddy.MySocialCookbookTests;
+				PRODUCT_BUNDLE_IDENTIFIER = Freddy.ClipCookTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -607,7 +607,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MySocialCookbook.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MySocialCookbook";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ClipCook.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ClipCook";
 			};
 			name = Debug;
 		};
@@ -621,7 +621,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Freddy.MySocialCookbookTests;
+				PRODUCT_BUNDLE_IDENTIFIER = Freddy.ClipCookTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -629,7 +629,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MySocialCookbook.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MySocialCookbook";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ClipCook.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ClipCook";
 			};
 			name = Release;
 		};
@@ -641,7 +641,7 @@
 				DEVELOPMENT_TEAM = FKQH296593;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Freddy.MySocialCookbookUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = Freddy.ClipCookUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -649,7 +649,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = MySocialCookbook;
+				TEST_TARGET_NAME = ClipCook;
 			};
 			name = Debug;
 		};
@@ -661,7 +661,7 @@
 				DEVELOPMENT_TEAM = FKQH296593;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Freddy.MySocialCookbookUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = Freddy.ClipCookUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -669,7 +669,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = MySocialCookbook;
+				TEST_TARGET_NAME = ClipCook;
 			};
 			name = Release;
 		};
@@ -690,7 +690,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Freddy.MySocialCookbook.ShareRecipe;
+				PRODUCT_BUNDLE_IDENTIFIER = Freddy.ClipCook.ShareRecipe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -719,7 +719,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Freddy.MySocialCookbook.ShareRecipe;
+				PRODUCT_BUNDLE_IDENTIFIER = Freddy.ClipCook.ShareRecipe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -734,7 +734,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AC87688D2F0B2A37009D1E74 /* Build configuration list for PBXProject "MySocialCookbook" */ = {
+		AC87688D2F0B2A37009D1E74 /* Build configuration list for PBXProject "ClipCook" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AC8768B12F0B2A38009D1E74 /* Debug */,
@@ -743,7 +743,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AC8768B32F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "MySocialCookbook" */ = {
+		AC8768B32F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "ClipCook" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AC8768B42F0B2A38009D1E74 /* Debug */,
@@ -752,7 +752,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AC8768B62F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "MySocialCookbookTests" */ = {
+		AC8768B62F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "ClipCookTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AC8768B72F0B2A38009D1E74 /* Debug */,
@@ -761,7 +761,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AC8768B92F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "MySocialCookbookUITests" */ = {
+		AC8768B92F0B2A38009D1E74 /* Build configuration list for PBXNativeTarget "ClipCookUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AC8768BA2F0B2A38009D1E74 /* Debug */,

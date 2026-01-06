@@ -1,5 +1,5 @@
 {
-  "name": "my-social-cookbook-backend",
+  "name": "clipcook-backend",
   "version": "1.0.0",
   "description": "Backend for ClipCook - Your AI Sous Chef for viral recipes",
   "main": "dist/index.js",
@@ -21,7 +21,7 @@
     "@types/uuid": "^10.0.0",
     "axios": "^1.13.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
     "fluent-ffmpeg": "^2.1.2",
     "jsonwebtoken": "^9.0.3",

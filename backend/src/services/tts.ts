@@ -4,7 +4,9 @@ export class TTSService {
     private client: TextToSpeechClient;
 
     constructor() {
-        this.client = new TextToSpeechClient();
+        this.client = new TextToSpeechClient({
+            apiKey: process.env.GEMINI_API_KEY
+        });
     }
 
     async synthesize(text: string): Promise<string> {
@@ -13,10 +15,15 @@ export class TTSService {
             // Select the language and SSML voice gender (optional)
             voice: {
                 languageCode: 'en-US',
-                name: 'en-US-Journey-F', // This is a high-quality "Gemini" like voice
+                name: 'en-US-Chirp3-HD-Gacrux',
             },
             // select the type of audio encoding
-            audioConfig: { audioEncoding: 'MP3' as const },
+            audioConfig: {
+                audioEncoding: 'LINEAR16' as const,
+                sampleRateHertz: 44100,
+                speakingRate: 1.25,
+                volumeGainDb: 0.0,
+            },
         };
 
         // Performs the text-to-speech request

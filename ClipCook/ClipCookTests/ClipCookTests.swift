@@ -1,14 +1,14 @@
 //
-//  MySocialCookbookTests.swift
-//  MySocialCookbookTests
+//  ClipCookTests.swift
+//  ClipCookTests
 //
 //  Created by Freddy Gottesman on 1/4/26.
 //
 
 import Testing
-@testable import MySocialCookbook
+@testable import ClipCook
 
-struct MySocialCookbookTests {
+struct ClipCookTests {
 
     @Test func example() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.

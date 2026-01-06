@@ -4,6 +4,7 @@ struct FeedView: View {
     @StateObject private var viewModel = FeedViewModel()
     @State private var isSearching = false
     @State private var showingAddRecipe = false
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         NavigationView {
@@ -14,7 +15,7 @@ struct FeedView: View {
                     if viewModel.isLoading && viewModel.recipes.isEmpty {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
-                    } else if let error = viewModel.errorMessage {
+                    } else if viewModel.errorMessage != nil {
                         VStack(spacing: 16) {
                             Image(systemName: "flame")
                                 .font(.largeTitle)
@@ -97,6 +98,13 @@ struct FeedView: View {
             }
             .task {
                 await viewModel.fetchRecipes()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    Task {
+                        await viewModel.fetchRecipes()
+                    }
+                }
             }
             .sheet(isPresented: $showingAddRecipe) {
                 AddRecipeView()

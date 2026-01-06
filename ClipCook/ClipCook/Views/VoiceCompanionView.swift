@@ -34,35 +34,7 @@ struct VoiceCompanionView: View {
                     Spacer()
                     
                     // Voice Test Button
-                    Menu {
-                        ForEach(speechManager.availableVoices, id: \.identifier) { voice in
-                            Button(action: {
-                                speechManager.preferredVoiceIdentifier = voice.identifier
-                                speechManager.speak("I am your Sous Chef. How do I sound?")
-                            }) {
-                                HStack {
-                                    Text(voice.name)
-                                    if voice.quality == .enhanced {
-                                        Image(systemName: "sparkles")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "waveform.circle.fill")
-                                .font(.title2)
-                            Text("Voice")
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                        }
-                        .foregroundColor(.white)
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                        .background(Color.clipCookSizzleStart.opacity(0.3))
-                        .cornerRadius(12)
-                        .padding(.trailing, 8)
-                    }
+
                     
                     Button(action: { presentationMode.wrappedValue.dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
@@ -196,7 +168,7 @@ struct VoiceCompanionView: View {
                                     }
                             )
                             
-                            Text(speechManager.isRecording ? "I'm all ears... 👂" : "What's cooking? 🍳")
+                            Text(speechManager.isRecording ? "I'm all ears... 👂" : "Tap and hold to ask the sous chef questions")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.clipCookTextSecondary)
                                 .opacity(speechManager.isRecording ? 0.7 : 1.0)
