@@ -97,7 +97,7 @@ class ShareViewController: UIViewController {
     }
     
     private func sendToBackend(url: URL) {
-        guard let endpoint = URL(string: "http://192.168.7.161:8083/api/process-recipe") else {
+        guard let endpoint = URL(string: "https://mysocialcookbook-production.up.railway.app/api/process-recipe") else {
             showResult(success: false, message: "Invalid backend URL")
             return
         }

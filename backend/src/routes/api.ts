@@ -9,9 +9,12 @@ const router = express.Router();
 const downloader = new VideoDownloader();
 const gemini = new GeminiService();
 
-// Helper to detect YouTube URLs
-function isYouTubeUrl(url: string): boolean {
-    return url.includes('youtube.com') || url.includes('youtu.be');
+// Helper to detect social media URLs that Gemini might process directly
+function isDirectProcessableUrl(url: string): boolean {
+    return url.includes('youtube.com') ||
+        url.includes('youtu.be') ||
+        url.includes('instagram.com') ||
+        url.includes('tiktok.com');
 }
 
 router.get('/health', (req, res) => {
@@ -29,26 +32,43 @@ router.post('/process-recipe', async (req, res) => {
         console.log(`Processing recipe for user ${userId} from ${url}`);
 
         let recipeData;
-        let videoPath: string | null = null;
 
-        // For YouTube: process directly with Gemini (no download needed!)
-        if (isYouTubeUrl(url)) {
-            console.log("YouTube detected - processing directly with Gemini");
-            recipeData = await gemini.generateRecipeFromYouTube(url);
+        // Try processing directly with Gemini first (works for YouTube, might work for others)
+        if (isDirectProcessableUrl(url)) {
+            console.log("Social media URL detected - trying direct Gemini processing");
+            try {
+                recipeData = await gemini.generateRecipeFromURL(url);
+                console.log("Direct processing succeeded!");
+            } catch (directError: any) {
+                console.log("Direct processing failed, will try download approach:", directError.message);
+                // If direct processing fails, try downloading (requires RapidAPI subscription)
+                const videoPath = await downloader.downloadVideo(url);
+                console.log("Video downloaded:", videoPath);
+
+                const uploadFile = await gemini.uploadVideo(videoPath);
+                console.log("Uploaded to Gemini:", uploadFile.uri);
+
+                await gemini.waitForProcessing(uploadFile.name);
+                recipeData = await gemini.generateRecipe(uploadFile.uri);
+
+                // Cleanup
+                if (fs.existsSync(videoPath)) {
+                    fs.unlinkSync(videoPath);
+                }
+            }
         } else {
-            // For TikTok/Instagram: download first, then upload to Gemini
-            console.log("Non-YouTube video - downloading first");
-            videoPath = await downloader.downloadVideo(url);
+            // For other URLs, download first
+            console.log("Unknown video source - downloading first");
+            const videoPath = await downloader.downloadVideo(url);
             console.log("Video downloaded:", videoPath);
 
-            // Upload to Gemini
             const uploadFile = await gemini.uploadVideo(videoPath);
-            console.log("Uploaded to Gemini:", uploadFile.uri);
-
             await gemini.waitForProcessing(uploadFile.name);
-
-            // Extract Recipe
             recipeData = await gemini.generateRecipe(uploadFile.uri);
+
+            if (fs.existsSync(videoPath)) {
+                fs.unlinkSync(videoPath);
+            }
         }
 
         console.log("Recipe extracted:", recipeData.title);
@@ -75,11 +95,6 @@ router.post('/process-recipe', async (req, res) => {
         if (error) {
             console.error("Supabase Insert Error:", error);
             throw error;
-        }
-
-        // Cleanup local file (if we downloaded one)
-        if (videoPath && fs.existsSync(videoPath)) {
-            fs.unlinkSync(videoPath);
         }
 
         res.json({ success: true, recipe: data });

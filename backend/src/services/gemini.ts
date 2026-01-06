@@ -82,6 +82,29 @@ export class GeminiService {
         return this.parseRecipeResponse(result.response.text());
     }
 
+    /**
+     * Attempt to process any social media URL directly via Gemini.
+     * Works for YouTube, may work for other platforms.
+     * If this fails, caller should fall back to download approach.
+     */
+    async generateRecipeFromURL(url: string) {
+        console.log("Attempting direct URL processing:", url);
+
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const result = await model.generateContent([
+            {
+                fileData: {
+                    mimeType: "video/mp4",
+                    fileUri: url,
+                },
+            },
+            { text: RECIPE_PROMPT },
+        ]);
+
+        return this.parseRecipeResponse(result.response.text());
+    }
+
     private parseRecipeResponse(responseText: string) {
         console.log("Raw Gemini response:", responseText);
         // Cleanup potential markdown blocks

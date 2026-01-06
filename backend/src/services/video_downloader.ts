@@ -2,145 +2,101 @@
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-
-const DOWNLOAD_DIR = path.resolve(__dirname, '../../downloads');
-
-// Ensure download dir exists
-if (!fs.existsSync(DOWNLOAD_DIR)) {
-    fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
-}
+import { v4 as uuidv4 } from 'uuid';
 
 export class VideoDownloader {
 
+    /**
+     * Downloads a video from TikTok, Instagram, or other social platforms
+     * using the "Auto Download All In One" API (FastSaverAPI) from RapidAPI.
+     * 
+     * Subscribe at: https://rapidapi.com/FastSaverAPI/api/auto-download-all-in-one
+     */
     async downloadVideo(url: string): Promise<string> {
         const rapidApiKey = process.env.RAPIDAPI_KEY;
 
         if (!rapidApiKey) {
-            throw new Error("Missing RAPIDAPI_KEY in environment");
+            throw new Error("RAPIDAPI_KEY environment variable is not set");
         }
 
-        console.log(`Downloading video via RapidAPI: ${url}`);
-
-        // Detect platform and use appropriate API
-        const isTikTok = url.includes('tiktok.com');
-        const isInstagram = url.includes('instagram.com');
-        const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
-
-        let downloadUrl: string | null = null;
+        console.log("Downloading video via FastSaverAPI:", url);
 
         try {
-            if (isTikTok) {
-                downloadUrl = await this.downloadTikTok(url, rapidApiKey);
-            } else if (isInstagram) {
-                downloadUrl = await this.downloadInstagram(url, rapidApiKey);
-            } else if (isYouTube) {
-                // For YouTube, we'll use a different approach or skip for now
-                throw new Error("YouTube videos are not yet supported. Please share TikTok or Instagram videos.");
-            } else {
-                // Try generic approach
-                downloadUrl = await this.downloadGeneric(url, rapidApiKey);
+            // FastSaverAPI - Auto Download All In One
+            // Supports: Instagram, TikTok, YouTube, Facebook, Twitter, Pinterest, and more
+            const response = await axios.get('https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink', {
+                headers: {
+                    'x-rapidapi-key': rapidApiKey,
+                    'x-rapidapi-host': 'auto-download-all-in-one.p.rapidapi.com'
+                },
+                params: {
+                    url: url
+                }
+            });
+
+            console.log("FastSaverAPI response:", JSON.stringify(response.data, null, 2));
+
+            // Extract download URL from response
+            let downloadUrl: string | null = null;
+
+            // Handle different response formats
+            if (response.data?.medias && response.data.medias.length > 0) {
+                // Find the best quality video
+                const videoMedia = response.data.medias.find((m: any) =>
+                    m.type === 'video' || m.videoAvailable || m.url
+                );
+                if (videoMedia) {
+                    downloadUrl = videoMedia.url || videoMedia.videoUrl;
+                }
+            } else if (response.data?.url) {
+                downloadUrl = response.data.url;
+            } else if (response.data?.videoUrl) {
+                downloadUrl = response.data.videoUrl;
+            } else if (response.data?.downloadUrl) {
+                downloadUrl = response.data.downloadUrl;
             }
 
             if (!downloadUrl) {
-                throw new Error("Could not retrieve download URL");
+                console.error("No download URL found in response:", response.data);
+                throw new Error("Could not extract video download URL from API response");
             }
 
-            console.log("Got direct URL:", downloadUrl);
+            console.log("Video URL found:", downloadUrl);
 
-            // Download the actual file stream
-            const fileResponse = await axios({
-                url: downloadUrl,
-                method: 'GET',
-                responseType: 'stream',
-                timeout: 120000, // 2 minute timeout for large files
+            // Download the actual video file
+            const videoResponse = await axios.get(downloadUrl, {
+                responseType: 'arraybuffer',
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
                 }
             });
 
-            const filename = `${Date.now()}.mp4`;
-            const filePath = path.join(DOWNLOAD_DIR, filename);
-
-            const writer = fs.createWriteStream(filePath);
-            fileResponse.data.pipe(writer);
-
-            return new Promise((resolve, reject) => {
-                writer.on('finish', () => {
-                    console.log(`Video downloaded to: ${filePath}`);
-                    resolve(filePath);
-                });
-                writer.on('error', reject);
-            });
-
-        } catch (e: any) {
-            console.error("Video Download Failed", e.response?.data || e.message);
-            throw e;
-        }
-    }
-
-    private async downloadTikTok(url: string, apiKey: string): Promise<string> {
-        // Using TikTok Video Downloader API
-        // https://rapidapi.com/yi005/api/tiktok-video-downloader
-        const options = {
-            method: 'GET',
-            url: 'https://tiktok-video-downloader.p.rapidapi.com/media',
-            params: { url: url },
-            headers: {
-                'x-rapidapi-key': apiKey,
-                'x-rapidapi-host': 'tiktok-video-downloader.p.rapidapi.com'
+            // Save to local file
+            const downloadDir = path.join(__dirname, '../../downloads');
+            if (!fs.existsSync(downloadDir)) {
+                fs.mkdirSync(downloadDir, { recursive: true });
             }
-        };
 
-        const response = await axios.request(options);
-        console.log("TikTok API Response:", JSON.stringify(response.data, null, 2));
+            const fileName = `${uuidv4()}.mp4`;
+            const filePath = path.join(downloadDir, fileName);
+            fs.writeFileSync(filePath, videoResponse.data);
 
-        // Extract video URL from response
-        return response.data?.video_url || response.data?.data?.play || null;
-    }
+            console.log("Video saved to:", filePath);
+            return filePath;
 
-    private async downloadInstagram(url: string, apiKey: string): Promise<string> {
-        // Using Save Insta API
-        // https://rapidapi.com/maatootz/api/save-insta1
-        const options = {
-            method: 'GET',
-            url: 'https://save-insta1.p.rapidapi.com/media',
-            params: { url: url },
-            headers: {
-                'x-rapidapi-key': apiKey,
-                'x-rapidapi-host': 'save-insta1.p.rapidapi.com'
+        } catch (error: any) {
+            if (error.response) {
+                console.error("Video Download Failed", error.response.data);
+
+                // Provide helpful error message for subscription issues
+                if (error.response.status === 403) {
+                    throw new Error(
+                        "RapidAPI subscription required. Please subscribe to 'Auto Download All In One' API at: " +
+                        "https://rapidapi.com/FastSaverAPI/api/auto-download-all-in-one"
+                    );
+                }
             }
-        };
-
-        const response = await axios.request(options);
-        console.log("Instagram API Response:", JSON.stringify(response.data, null, 2));
-
-        // Extract video URL from response
-        if (response.data?.links && Array.isArray(response.data.links)) {
-            const videoLink = response.data.links.find((l: any) => l.type === 'video');
-            return videoLink?.url || response.data.links[0]?.url || null;
+            throw error;
         }
-        return response.data?.video_url || null;
-    }
-
-    private async downloadGeneric(url: string, apiKey: string): Promise<string> {
-        // Fall back to All-in-One downloader
-        const options = {
-            method: 'GET',
-            url: 'https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink',
-            params: { url: url },
-            headers: {
-                'x-rapidapi-key': apiKey,
-                'x-rapidapi-host': 'auto-download-all-in-one.p.rapidapi.com'
-            }
-        };
-
-        const response = await axios.request(options);
-        console.log("Generic API Response:", JSON.stringify(response.data, null, 2));
-
-        // Extract video URL from response
-        if (response.data?.medias && Array.isArray(response.data.medias)) {
-            return response.data.medias[0]?.url || null;
-        }
-        return response.data?.url || null;
     }
 }
