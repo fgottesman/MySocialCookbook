@@ -8,9 +8,9 @@ export class VideoDownloader {
 
     /**
      * Downloads a video from TikTok, Instagram, or other social platforms
-     * using the "Auto Download All In One" API (FastSaverAPI) from RapidAPI.
+     * using the "Social Download All in One" API from RapidAPI.
      * 
-     * Subscribe at: https://rapidapi.com/FastSaverAPI/api/auto-download-all-in-one
+     * Subscribe at: https://rapidapi.com/nguyenmanhict-MuTUtGWD7K/api/social-download-all-in-one
      */
     async downloadVideo(url: string): Promise<string> {
         const rapidApiKey = process.env.RAPIDAPI_KEY;
@@ -19,22 +19,23 @@ export class VideoDownloader {
             throw new Error("RAPIDAPI_KEY environment variable is not set");
         }
 
-        console.log("Downloading video via FastSaverAPI:", url);
+        console.log("Downloading video via Social Download All in One API:", url);
 
         try {
-            // FastSaverAPI - Auto Download All In One
-            // Supports: Instagram, TikTok, YouTube, Facebook, Twitter, Pinterest, and more
-            const response = await axios.get('https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink', {
-                headers: {
-                    'x-rapidapi-key': rapidApiKey,
-                    'x-rapidapi-host': 'auto-download-all-in-one.p.rapidapi.com'
-                },
-                params: {
-                    url: url
+            // Social Download All in One API
+            // Supports: Instagram, TikTok, YouTube, Facebook, Twitter, and more
+            const response = await axios.post('https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink',
+                { url: url },
+                {
+                    headers: {
+                        'x-rapidapi-key': rapidApiKey,
+                        'x-rapidapi-host': 'social-download-all-in-one.p.rapidapi.com',
+                        'Content-Type': 'application/json'
+                    }
                 }
-            });
+            );
 
-            console.log("FastSaverAPI response:", JSON.stringify(response.data, null, 2));
+            console.log("API response:", JSON.stringify(response.data, null, 2));
 
             // Extract download URL from response
             let downloadUrl: string | null = null;
@@ -54,6 +55,8 @@ export class VideoDownloader {
                 downloadUrl = response.data.videoUrl;
             } else if (response.data?.downloadUrl) {
                 downloadUrl = response.data.downloadUrl;
+            } else if (response.data?.video) {
+                downloadUrl = response.data.video;
             }
 
             if (!downloadUrl) {
@@ -91,8 +94,8 @@ export class VideoDownloader {
                 // Provide helpful error message for subscription issues
                 if (error.response.status === 403) {
                     throw new Error(
-                        "RapidAPI subscription required. Please subscribe to 'Auto Download All In One' API at: " +
-                        "https://rapidapi.com/FastSaverAPI/api/auto-download-all-in-one"
+                        "RapidAPI subscription required. Please subscribe to 'Social Download All in One' API at: " +
+                        "https://rapidapi.com/nguyenmanhict-MuTUtGWD7K/api/social-download-all-in-one"
                     );
                 }
             }
