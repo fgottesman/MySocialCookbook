@@ -6,6 +6,7 @@ struct Recipe: Codable, Identifiable {
     let title: String
     let description: String?
     let videoUrl: String?
+    let thumbnailUrl: String? // Added for Feed Thumbnail
     let ingredients: [Ingredient]?
     let instructions: [String]?
     let createdAt: Date
@@ -18,6 +19,7 @@ struct Recipe: Codable, Identifiable {
         case title
         case description
         case videoUrl = "video_url"
+        case thumbnailUrl = "thumbnail_url"
         case ingredients
         case instructions
         case createdAt = "created_at"
@@ -32,6 +34,7 @@ struct Recipe: Codable, Identifiable {
         title = try container.decode(String.self, forKey: .title)
         description = try container.decodeIfPresent(String.self, forKey: .description)
         videoUrl = try container.decodeIfPresent(String.self, forKey: .videoUrl)
+        thumbnailUrl = try container.decodeIfPresent(String.self, forKey: .thumbnailUrl)
         ingredients = try container.decodeIfPresent([Ingredient].self, forKey: .ingredients)
         instructions = try container.decodeIfPresent([String].self, forKey: .instructions)
         createdAt = try container.decode(Date.self, forKey: .createdAt)

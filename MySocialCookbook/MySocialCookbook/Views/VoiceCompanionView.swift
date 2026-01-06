@@ -72,6 +72,8 @@ struct VoiceCompanionView: View {
                                 Circle()
                                     .fill(speechManager.isRecording ? LinearGradient.sizzle : LinearGradient(colors: [.clipCookSurface, .clipCookSurface], startPoint: .top, endPoint: .bottom))
                                     .frame(width: 80, height: 80)
+                                    .scaleEffect(speechManager.isRecording ? 1.0 + CGFloat(speechManager.audioLevel) * 0.5 : 1.0)
+                                    .animation(.easeInOut(duration: 0.1), value: speechManager.audioLevel)
                                     .shadow(color: speechManager.isRecording ? .clipCookSizzleStart.opacity(0.5) : .clear, radius: 20)
                                 
                                 Image(systemName: speechManager.isRecording ? "waveform" : "mic.fill")

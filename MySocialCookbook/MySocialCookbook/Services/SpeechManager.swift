@@ -43,13 +43,17 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
         ]
         
         do {
+        do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
             try session.setActive(true)
             
             audioRecorder = try AVAudioRecorder(url: audioFileURL!, settings: settings)
+            audioRecorder?.isMeteringEnabled = true // Enable metering
             audioRecorder?.delegate = self
             audioRecorder?.record()
+            
+            startMonitoring() // Start timer
             
             DispatchQueue.main.async {
                 self.isRecording = true
@@ -61,7 +65,25 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
         }
     }
     
+    private var timer: Timer?
+    @Published var audioLevel: Float = 0.0
+    
+    private func startMonitoring() {
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            self.audioRecorder?.updateMeters()
+            // Normalize level from -160..0 to 0..1
+            let power = self.audioRecorder?.averagePower(forChannel: 0) ?? -160
+            let level = max(0.0, (power + 50) / 50) // Show changes from -50dB upwards
+            
+            DispatchQueue.main.async {
+                self.audioLevel = level
+            }
+        }
+    }
+    
     func stopRecording() async -> String? {
+        timer?.invalidate() // Stop monitoring
+        audioLevel = 0
         audioRecorder?.stop()
         
         DispatchQueue.main.async {

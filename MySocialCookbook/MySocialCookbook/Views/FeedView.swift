@@ -67,25 +67,49 @@ struct RecipeCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Video Thumbnail Placeholder
-            Rectangle()
-                .fill(Color.clipCookBackground)
-                .aspectRatio(9/16, contentMode: .fit)
-                .cornerRadius(12)
-                .overlay(
-                    ZStack {
-                        // In reality, we'd load the real thumbnail here
-                        Image(systemName: "play.circle.fill")
-                            .foregroundStyle(LinearGradient.sizzle)
-                            .font(.largeTitle)
+            // Video Thumbnail
+            ZStack {
+                Rectangle()
+                    .fill(Color.clipCookBackground)
+                    .aspectRatio(9/16, contentMode: .fit)
+                    .cornerRadius(12)
+                
+                if let thumbnailUrl = recipe.thumbnailUrl, let url = URL(string: thumbnailUrl) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        ProgressView()
                     }
-                )
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(9/16, contentMode: .fit)
+                    .cornerRadius(12)
+                    .clipped()
+                } else {
+                    // Fallback Placeholder
+                    Image(systemName: "play.circle.fill")
+                        .foregroundStyle(LinearGradient.sizzle)
+                        .font(.largeTitle)
+                }
+            }
+            .overlay(
+                // Play icon overlay for video indication
+                Image(systemName: "play.fill")
+                    .font(.title3)
+                    .foregroundColor(.white)
+                    .padding(8)
+                    .background(Color.black.opacity(0.5))
+                    .clipShape(Circle())
+                    .padding(8),
+                alignment: .bottomTrailing
+            )
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(recipe.title)
                     .font(.headline)
                     .foregroundColor(.clipCookTextPrimary)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true) // Allow full expansion
                     .multilineTextAlignment(.leading)
                 
                 if let profile = recipe.profile {

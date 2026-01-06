@@ -74,7 +74,7 @@ router.post('/process-recipe', async (req, res) => {
             } catch (directError: any) {
                 console.log("Direct processing failed, will try download approach:", directError.message);
                 // If direct processing fails, try downloading (requires RapidAPI subscription)
-                const videoPath = await downloader.downloadVideo(url);
+                const { filePath: videoPath, thumbnailUrl } = await downloader.downloadVideo(url);
                 console.log("Video downloaded:", videoPath);
 
                 const uploadFile = await gemini.uploadVideo(videoPath);
@@ -82,6 +82,9 @@ router.post('/process-recipe', async (req, res) => {
 
                 await gemini.waitForProcessing(uploadFile.name);
                 recipeData = await gemini.generateRecipe(uploadFile.uri);
+
+                // Add thumbnail to recipeData so we can use it later
+                recipeData.thumbnailUrl = thumbnailUrl;
 
                 // Cleanup
                 if (fs.existsSync(videoPath)) {
@@ -91,12 +94,15 @@ router.post('/process-recipe', async (req, res) => {
         } else {
             // For other URLs, download first
             console.log("Unknown video source - downloading first");
-            const videoPath = await downloader.downloadVideo(url);
+            const { filePath: videoPath, thumbnailUrl } = await downloader.downloadVideo(url);
             console.log("Video downloaded:", videoPath);
 
             const uploadFile = await gemini.uploadVideo(videoPath);
             await gemini.waitForProcessing(uploadFile.name);
             recipeData = await gemini.generateRecipe(uploadFile.uri);
+
+            // Add thumbnail to recipeData
+            recipeData.thumbnailUrl = thumbnailUrl;
 
             if (fs.existsSync(videoPath)) {
                 fs.unlinkSync(videoPath);
@@ -119,7 +125,8 @@ router.post('/process-recipe', async (req, res) => {
                 video_url: url,
                 ingredients: recipeData.ingredients,
                 instructions: recipeData.instructions,
-                embedding: embedding
+                embedding: embedding,
+                thumbnail_url: recipeData.thumbnailUrl || null
             })
             .select()
             .single();

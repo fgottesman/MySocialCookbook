@@ -200,7 +200,7 @@ export class GeminiService {
     }
 
     async remixRecipe(originalRecipe: any, userPrompt: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash" })
 
         const REMIX_PROMPT = `
         ${REMIX_SYSTEM_PROMPT}
