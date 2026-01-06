@@ -70,13 +70,13 @@ Return a clean text string of what you want to say back to the user.
 
 export class GeminiService {
 
-    async uploadVideo(path: string, mimeType: string = "video/mp4") {
+    async uploadMedia(path: string, mimeType: string = "video/mp4") {
         const uploadResult = await fileManager.uploadFile(path, {
             mimeType,
-            displayName: "Social Recipe Video",
+            displayName: "Social Recipe Media",
         });
 
-        console.log(`Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri}`);
+        console.log(`Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri} (${mimeType})`);
         return uploadResult.file;
     }
 
@@ -136,17 +136,22 @@ export class GeminiService {
         return file;
     }
 
-    async generateRecipe(fileUri: string) {
+    async generateRecipe(fileUri: string, mimeType: string = "video/mp4", description?: string) {
         const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+        let prompt = RECIPE_PROMPT;
+        if (description) {
+            prompt += `\n\nCONTEXT FROM POST CAPTION/DESCRIPTION:\n${description}\n\nUse this context to ensure ingredient amounts and names are accurate.`;
+        }
 
         const result = await model.generateContent([
             {
                 fileData: {
-                    mimeType: "video/mp4",
+                    mimeType: mimeType,
                     fileUri: fileUri,
                 },
             },
-            { text: RECIPE_PROMPT },
+            { text: prompt },
         ]);
 
         return this.parseRecipeResponse(result.response.text());

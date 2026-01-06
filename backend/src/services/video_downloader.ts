@@ -12,7 +12,7 @@ export class VideoDownloader {
      * 
      * Subscribe at: https://rapidapi.com/nguyenmanhict-MuTUtGWD7K/api/social-download-all-in-one
      */
-    async fetchVideoMetadata(url: string): Promise<{ downloadUrl: string, thumbnailUrl: string | null }> {
+    async fetchVideoMetadata(url: string): Promise<{ downloadUrl: string, thumbnailUrl: string | null, description?: string, mediaType: 'video' | 'image' }> {
         const rapidApiKey = process.env.RAPIDAPI_KEY;
 
         if (!rapidApiKey) {
@@ -37,15 +37,23 @@ export class VideoDownloader {
 
             let downloadUrl: string | null = null;
             let thumbnailUrl: string | null = null;
+            let description: string | null = response.data?.title || response.data?.description || null;
+            let mediaType: 'video' | 'image' = 'video';
 
             if (response.data?.medias && response.data.medias.length > 0) {
-                const videoMedia = response.data.medias.find((m: any) =>
-                    m.type === 'video' || m.videoAvailable || m.url
-                );
-                if (videoMedia) {
+                // Look for images first if it's a photo mode post
+                const imageMedia = response.data.medias.find((m: any) => m.type === 'image' || m.extension === 'webp' || m.extension === 'jpg');
+                const videoMedia = response.data.medias.find((m: any) => m.type === 'video' || m.videoAvailable);
+
+                if (imageMedia && !videoMedia) {
+                    mediaType = 'image';
+                    downloadUrl = imageMedia.url;
+                } else if (videoMedia) {
+                    mediaType = 'video';
                     downloadUrl = videoMedia.url || videoMedia.videoUrl;
-                    thumbnailUrl = videoMedia.cover || videoMedia.thumbnail || response.data.cover || response.data.thumbnail || null;
                 }
+
+                thumbnailUrl = response.data.cover || response.data.thumbnail || null;
             }
 
             if (!downloadUrl) {
@@ -76,10 +84,16 @@ export class VideoDownloader {
                 throw new Error("Could not extract video download URL from API response");
             }
 
-            console.log("Video URL found:", downloadUrl);
-            console.log("Thumbnail URL found:", thumbnailUrl);
+            console.log("Media URL found:", downloadUrl);
+            console.log("Media type:", mediaType);
+            console.log("Description found:", description?.substring(0, 50) + "...");
 
-            return { downloadUrl, thumbnailUrl };
+            return {
+                downloadUrl,
+                thumbnailUrl,
+                description: description || undefined,
+                mediaType
+            };
 
         } catch (error: any) {
             if (error.response) {
@@ -95,8 +109,8 @@ export class VideoDownloader {
         }
     }
 
-    async downloadVideo(url: string): Promise<{ filePath: string, thumbnailUrl: string | null }> {
-        const { downloadUrl, thumbnailUrl } = await this.fetchVideoMetadata(url);
+    async downloadMedia(url: string): Promise<{ filePath: string, thumbnailUrl: string | null, description?: string, mimeType: string }> {
+        const { downloadUrl, thumbnailUrl, description, mediaType } = await this.fetchVideoMetadata(url);
 
         try {
             // Download the actual video file
@@ -113,12 +127,14 @@ export class VideoDownloader {
                 fs.mkdirSync(downloadDir, { recursive: true });
             }
 
-            const fileName = `${crypto.randomUUID()}.mp4`;
+            const extension = mediaType === 'image' ? 'jpg' : 'mp4';
+            const fileName = `${crypto.randomUUID()}.${extension}`;
             const filePath = path.join(downloadDir, fileName);
             fs.writeFileSync(filePath, videoResponse.data);
 
-            console.log("Video saved to:", filePath);
-            return { filePath, thumbnailUrl };
+            const mimeType = mediaType === 'image' ? 'image/jpeg' : 'video/mp4';
+            console.log(`${mediaType} saved to:`, filePath);
+            return { filePath, thumbnailUrl, description, mimeType };
         } catch (error) {
             console.error("Video File Download Failed", error);
             throw error;

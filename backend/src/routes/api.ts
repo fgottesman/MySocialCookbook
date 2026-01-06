@@ -67,6 +67,7 @@ router.post('/process-recipe', async (req, res) => {
         console.log(`Processing recipe for user ${userId} from ${url}`);
 
         let recipeData;
+        let finalDescription: string | undefined;
 
         // Try processing directly with Gemini first (works for YouTube, might work for others)
         if (isDirectProcessableUrl(url)) {
@@ -76,43 +77,43 @@ router.post('/process-recipe', async (req, res) => {
                 console.log("Direct processing succeeded!");
             } catch (directError: any) {
                 console.log("Direct processing failed, will try download approach:", directError.message);
-                // If direct processing fails, try downloading (requires RapidAPI subscription)
-                const { filePath: videoPath, thumbnailUrl } = await downloader.downloadVideo(url);
-                console.log("Video downloaded:", videoPath);
 
-                const uploadFile = await gemini.uploadVideo(videoPath);
-                console.log("Uploaded to Gemini:", uploadFile.uri);
+                // FALLBACK: Download and process
+                const { filePath: mediaPath, thumbnailUrl, description, mimeType } = await downloader.downloadMedia(url);
+                finalDescription = description;
 
+                console.log(`${mimeType} downloaded:`, mediaPath);
+
+                const uploadFile = await gemini.uploadMedia(mediaPath, mimeType);
                 await gemini.waitForProcessing(uploadFile.name);
-                recipeData = await gemini.generateRecipe(uploadFile.uri);
+                recipeData = await gemini.generateRecipe(uploadFile.uri, mimeType, description);
 
-                // Add thumbnail to recipeData so we can use it later
+                // Add thumbnail to recipeData
                 recipeData.thumbnailUrl = thumbnailUrl;
 
                 // Cleanup
-                if (fs.existsSync(videoPath)) {
-                    fs.unlinkSync(videoPath);
+                if (fs.existsSync(mediaPath)) {
+                    fs.unlinkSync(mediaPath);
                 }
             }
         } else {
             // For other URLs, download first
             console.log("Unknown video source - downloading first");
-            const { filePath: videoPath, thumbnailUrl } = await downloader.downloadVideo(url);
-            console.log("Video downloaded:", videoPath);
+            const { filePath: mediaPath, thumbnailUrl, description, mimeType } = await downloader.downloadMedia(url);
+            finalDescription = description;
 
-            const uploadFile = await gemini.uploadVideo(videoPath);
+            const uploadFile = await gemini.uploadMedia(mediaPath, mimeType);
             await gemini.waitForProcessing(uploadFile.name);
-            recipeData = await gemini.generateRecipe(uploadFile.uri);
+            recipeData = await gemini.generateRecipe(uploadFile.uri, mimeType, description);
 
-            // Add thumbnail to recipeData
             recipeData.thumbnailUrl = thumbnailUrl;
 
-            if (fs.existsSync(videoPath)) {
-                fs.unlinkSync(videoPath);
+            if (fs.existsSync(mediaPath)) {
+                fs.unlinkSync(mediaPath);
             }
         }
 
-        // --- NEW: Handle Thumbnail Persistence ---
+        // --- Handle Thumbnail Persistence ---
         if (recipeData.thumbnailUrl) {
             try {
                 console.log("Processing thumbnail for persistence...");
@@ -124,11 +125,8 @@ router.post('/process-recipe', async (req, res) => {
                 const thumbName = `thumb_${crypto.randomUUID()}.jpg`;
                 const thumbPath = path.join(downloadDir, thumbName);
 
-                // Download to local
                 await downloader.downloadThumbnail(recipeData.thumbnailUrl, thumbPath);
 
-                // Upload to Supabase Storage
-                // Ensure bucket exists or handled by setup
                 const { data: uploadData, error: uploadError } = await supabase.storage
                     .from('recipe-thumbnails')
                     .upload(thumbName, fs.readFileSync(thumbPath), {
@@ -138,9 +136,7 @@ router.post('/process-recipe', async (req, res) => {
 
                 if (uploadError) {
                     console.error("Supabase Storage Upload Error:", uploadError);
-                    // Fallback: keep the original remote URL if upload fails
                 } else {
-                    // Get Public URL
                     const { data: publicUrlData } = supabase.storage
                         .from('recipe-thumbnails')
                         .getPublicUrl(thumbName);
@@ -151,22 +147,18 @@ router.post('/process-recipe', async (req, res) => {
                     }
                 }
 
-                // Cleanup local
                 if (fs.existsSync(thumbPath)) {
                     fs.unlinkSync(thumbPath);
                 }
-
             } catch (thumbError) {
                 console.error("Error processing permanent thumbnail:", thumbError);
-                // Continue with original URL if processing fails
             }
         }
-        // -----------------------------------------
 
         console.log("Recipe extracted:", recipeData.title);
 
         // Generate Embedding for Search
-        const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
+        const embeddingText = `${recipeData.title} ${recipeData.description} ${finalDescription || ''} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
         const embedding = await gemini.generateEmbedding(embeddingText);
 
         // Save to Supabase
@@ -187,11 +179,11 @@ router.post('/process-recipe', async (req, res) => {
 
         if (error) {
             console.error("Supabase Insert Error:", error);
-            await notifyUser(userId, 'Recipe Failed 😕', 'We couldn\'t process that video. Try another one!');
+            await notifyUser(userId, 'Recipe Failed 😕', 'We couldn\'t save the recipe results. Please try again.');
             return;
         }
 
-        // SUCCESS - Send push notification!
+        // SUCCESS
         await notifyUser(
             userId,
             '🍳 Recipe Ready!',
@@ -203,8 +195,20 @@ router.post('/process-recipe', async (req, res) => {
 
     } catch (error: any) {
         console.error("Error processing recipe:", error);
+
+        let message = 'Something went wrong. Please try again.';
+        let title = 'Recipe Failed 😕';
+
+        if (error.message?.includes('RapidAPI subscription')) {
+            message = 'Our social connection is down. Please check back later!';
+        } else if (error.message?.includes('Internal Server Error')) {
+            message = 'Our AI chef got a bit confused. Try a different video!';
+        } else if (error.message?.includes('safety')) {
+            message = 'We couldn\'t process this due to content safety rules.';
+        }
+
         if (userId) {
-            await notifyUser(userId, 'Recipe Failed 😕', 'Something went wrong. Please try again.');
+            await notifyUser(userId, title, message);
         }
     }
 });
