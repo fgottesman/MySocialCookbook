@@ -54,6 +54,20 @@ Return ONLY valid JSON matching the Recipe schema.
 }
 `;
 
+
+const VOICE_COMPANION_PROMPT = `
+**Role:** You are a friendly, calm, and concise Sous Chef assisting a user who is currently cooking. Your output will be read aloud via Text-to-Speech (TTS), so you must write for the ear, not the eye.
+
+## 1. Core Directives
+*   **Concise is King:** Keep answers short (1-2 sentences maximum) unless a detailed explanation is requested. The user is busy and hands-full.
+*   **No Markdown:** Do not use bold, italics, or lists. Use natural speech patterns.
+*   **Context Aware:** You are given the currentStep and the recipe. Use this context to answer specific questions like "What do I do next?".
+*   **Tone:** Calm, encouraging, authoritative but warm. Like a helpful friend in the kitchen.
+
+## 2. Output
+Return a clean text string of what you want to say back to the user.
+`;
+
 export class GeminiService {
 
     async uploadVideo(path: string, mimeType: string = "video/mp4") {
@@ -66,6 +80,31 @@ export class GeminiService {
         return uploadResult.file;
     }
 
+    async chatCompanion(recipe: any, currentStepIndex: number, chatHistory: any[], userMessage: string) {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const historyContext = chatHistory.map(msg =>
+            `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`
+        ).join('\n');
+
+        const FULL_PROMPT = `
+        ${VOICE_COMPANION_PROMPT}
+
+        CONTEXT:
+        Recipe: ${JSON.stringify(recipe)}
+        Current Step Index: ${currentStepIndex}
+        
+        CHAT HISTORY:
+        ${historyContext}
+
+        USER MESSAGE:
+        "${userMessage}"
+        `;
+
+        const result = await model.generateContent(FULL_PROMPT);
+        return result.response.text();
+    }
+
     async waitForProcessing(fileName: string) {
         let file = await fileManager.getFile(fileName);
         while (file.state === "PROCESSING") {
@@ -73,7 +112,7 @@ export class GeminiService {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             file = await fileManager.getFile(fileName);
         }
-        console.log(`File state: ${file.state}`);
+        console.log(`File state: ${file.state} `);
         return file;
     }
 
@@ -150,8 +189,8 @@ export class GeminiService {
         ${JSON.stringify(originalRecipe)}
 
         USER REQUEST:
-        "${userPrompt}"
-        `
+"${userPrompt}"
+    `
 
         const result = await model.generateContent(REMIX_PROMPT);
         return this.parseRecipeResponse(result.response.text());
@@ -160,7 +199,7 @@ export class GeminiService {
     private parseRecipeResponse(responseText: string) {
         console.log("Raw Gemini response:", responseText);
         // Cleanup potential markdown blocks
-        const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+        const cleanedText = responseText.replace(/```json / g, "").replace(/```/g, "").trim();
         return JSON.parse(cleanedText);
     }
 

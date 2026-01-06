@@ -156,6 +156,33 @@ router.post('/remix-recipe', async (req, res) => {
     }
 });
 
+router.post('/chat-companion', async (req, res) => {
+    try {
+        const { recipe, currentStepIndex, chatHistory, userMessage } = req.body;
+
+        if (!recipe || !userMessage) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        console.log(`Voice Companion Chat: "${userMessage}" (Step ${currentStepIndex})`);
+
+        const reply = await gemini.chatCompanion(
+            recipe,
+            currentStepIndex || 0,
+            chatHistory || [],
+            userMessage
+        );
+
+        console.log("Companion Reply:", reply);
+
+        res.json({ success: true, reply: reply });
+
+    } catch (error: any) {
+        console.error("Error in Voice Companion:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // For feed (utility endpoint)
 router.get('/recipes', async (req, res) => {
     const { data, error } = await supabase
