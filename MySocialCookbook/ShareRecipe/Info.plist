@@ -17,6 +17,10 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>
 	</dict>
+	<key>CFBundleDisplayName</key>
+	<string>ClipCook</string>
+	<key>CFBundleName</key>
+	<string>ClipCook</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
