@@ -1,93 +1,18 @@
 import UIKit
+import SwiftUI
 import MobileCoreServices
 import UniformTypeIdentifiers
 
 class ShareViewController: UIViewController {
     
-    private let containerView = UIView()
-    private let statusLabel = UILabel()
-    private let iconImageView = UIImageView()
-    private let loadingLayer = CAShapeLayer()
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUI()
+        
+        // Make the view background clear so it overlays nicely if needed,
+        // although we'll present a full screen SwiftUI view.
+        self.view.backgroundColor = .clear
+        
         extractAndShare()
-    }
-    
-    private func setupUI() {
-        // Blur background
-        let blurEffect = UIBlurEffect(style: .systemThinMaterialDark)
-        let blurView = UIVisualEffectView(effect: blurEffect)
-        blurView.frame = view.bounds
-        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(blurView)
-        
-        // Container
-        containerView.backgroundColor = .clear
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(containerView)
-        
-        // App Icon
-        iconImageView.image = UIImage(named: "AppIcon")
-        if iconImageView.image == nil {
-            // Fallback to a system icon and a background color if AppIcon isn't available
-            iconImageView.image = UIImage(systemName: "fork.knife.circle.fill")
-            iconImageView.tintColor = .systemOrange
-        }
-        iconImageView.contentMode = .scaleAspectFill
-        iconImageView.layer.cornerRadius = 24
-        iconImageView.clipsToBounds = true
-        iconImageView.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(iconImageView)
-        
-        // Loading Circle Layer
-        let circularPath = UIBezierPath(arcCenter: .zero, radius: 30, startAngle: 0, endAngle: 2 * .pi, clockwise: true)
-        
-        loadingLayer.path = circularPath.cgPath
-        loadingLayer.strokeColor = UIColor.systemOrange.cgColor
-        loadingLayer.lineWidth = 3
-        loadingLayer.fillColor = UIColor.clear.cgColor
-        loadingLayer.lineCap = .round
-        loadingLayer.strokeEnd = 0.25
-        
-        iconImageView.layer.addSublayer(loadingLayer)
-        
-        // Add rotation animation
-        let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
-        rotationAnimation.toValue = 2 * Double.pi
-        rotationAnimation.duration = 1.2
-        rotationAnimation.repeatCount = .infinity
-        iconImageView.layer.add(rotationAnimation, forKey: "rotate")
-        
-        // Status Label
-        statusLabel.text = "Analysing recipe..."
-        statusLabel.textAlignment = .center
-        statusLabel.textColor = .white
-        statusLabel.font = .systemFont(ofSize: 18, weight: .semibold)
-        statusLabel.numberOfLines = 0
-        statusLabel.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(statusLabel)
-        
-        NSLayoutConstraint.activate([
-            containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
-            
-            iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            iconImageView.topAnchor.constraint(equalTo: containerView.topAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 48),
-            iconImageView.heightAnchor.constraint(equalToConstant: 48),
-            
-            statusLabel.topAnchor.constraint(equalTo: iconImageView.bottomAnchor, constant: 24),
-            statusLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            statusLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            statusLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-        ])
-        
-        // Adjust loading layer position
-        loadingLayer.position = CGPoint(x: 24, y: 24)
     }
     
     private func extractAndShare() {
@@ -161,25 +86,37 @@ class ShareViewController: UIViewController {
         task.resume()
         
         // Show success confirmation
-        showResult(success: true, message: "We'll let you know when the recipe is ready to cook")
+        showResult(success: true, message: "")
     }
     
     private func showResult(success: Bool, message: String) {
         if success {
-            loadingLayer.strokeEnd = 1.0
-            loadingLayer.strokeColor = UIColor.systemGreen.cgColor
-            iconImageView.layer.removeAnimation(forKey: "rotate")
+            // Present the SwiftUI Success View
+            let successView = ShareSuccessView { [weak self] in
+                self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+            }
+            
+            let host = UIHostingController(rootView: successView)
+            host.view.backgroundColor = .clear
+            host.modalPresentationStyle = .fullScreen
+            
+            // Add as child view controller to ensure it fills the space
+            addChild(host)
+            view.addSubview(host.view)
+            host.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                host.view.topAnchor.constraint(equalTo: view.topAnchor),
+                host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            ])
+            host.didMove(toParent: self)
+            
         } else {
-            loadingLayer.isHidden = true
-            iconImageView.layer.removeAnimation(forKey: "rotate")
-            statusLabel.textColor = .systemRed
-        }
-        
-        statusLabel.text = message
-        
-        // Auto-dismiss after short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+            // Fallback for error - just show an alert or close
+            // For now, let's just close after a brief delay if it fails, or show a simple alert.
+            // But to keep it simple and given the task focus is on success:
+             self.extensionContext?.cancelRequest(withError: NSError(domain: "ShareError", code: 0, userInfo: [NSLocalizedDescriptionKey: message]))
         }
     }
 }

@@ -16,9 +16,15 @@ struct RecipeView: View {
     @State private var originalRecipe: Recipe? // Store original for revert
     
     // State for Favorite/Delete
+    // State for Favorite/Delete
     @State private var isFavorite: Bool
     @State private var showDeleteConfirmation = false
     @Environment(\.dismiss) private var dismiss
+    
+    // State for Share
+    @State private var showingShareSheet = false
+    @State private var shareItems: [Any] = []
+    @State private var isSavingRemix = false
     
     init(recipe: Recipe) {
         _recipe = State(initialValue: recipe)
@@ -123,33 +129,50 @@ struct RecipeView: View {
             VStack {
                 HStack {
                     Spacer()
-                    HStack(spacing: 12) {
-                        // Favorite Button
-                        Button(action: { toggleFavorite() }) {
-                            Image(systemName: isFavorite ? "star.fill" : "star")
-                                .font(.system(size: 20))
-                                .foregroundColor(.yellow)
-                                .frame(width: 44, height: 44)
-                                .background(Color.clipCookSurface)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    // More Menu
+                    Menu {
+                        Section {
+                            Button(action: shareLink) {
+                                Label("Share Link", systemImage: "link")
+                            }
+                            Button(action: copyIngredientsAndSteps) {
+                                Label("Copy Recipe", systemImage: "doc.on.doc")
+                            }
                         }
                         
-                        // Delete Button
-                        Button(action: { showDeleteConfirmation = true }) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 20))
-                                .foregroundColor(.red)
-                                .frame(width: 44, height: 44)
-                                .background(Color.clipCookSurface)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        Divider()
+                        
+                        Section {
+                            Button(action: toggleFavorite) {
+                                Label(isFavorite ? "Unfavorite" : "Favorite", systemImage: isFavorite ? "star.fill" : "star")
+                            }
+                            
+                            Button(role: .destructive, action: { showDeleteConfirmation = true }) {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
+                    } label: {
+                        Image(systemName: "ellipsis.circle.fill")
+                            .font(.system(size: 32))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundColor(.white)
+                            .background(Color.black.opacity(0.3))
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
                     }
                     .padding(.trailing, 16)
                     .padding(.top, 8)
                 }
                 Spacer()
+            }
+            
+            // Loading Overlay for Remix Save
+            if isSavingRemix {
+                Color.black.opacity(0.4).ignoresSafeArea()
+                ProgressView("Saving Remix...")
+                    .padding()
+                    .background(Color.clipCookSurface)
+                    .cornerRadius(12)
             }
             
             // MARK: - Floating Action Buttons
@@ -204,6 +227,9 @@ struct RecipeView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This recipe will be permanently deleted. This action cannot be undone.")
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(activityItems: shareItems)
         }
     }
     
@@ -307,6 +333,67 @@ struct RecipeView: View {
                 // Could show error toast here
             }
         }
+    }
+    
+    private func shareLink() {
+        Task {
+            // Check if it's an unsaved remix (exists locally but ID is reused for display)
+            // Ideally we should track "isUnsavedRemix", but checking if originalRecipe != nil is a good proxy in this specific view logic
+            if let original = originalRecipe {
+                // It is a remix, save it first
+                await MainActor.run { isSavingRemix = true }
+                do {
+                    let savedRecipe = try await RecipeService.shared.saveRemixedRecipe(recipe, originalId: original.id)
+                    await MainActor.run {
+                        self.recipe = savedRecipe
+                        self.originalRecipe = nil // No longer transient
+                        self.isSavingRemix = false
+                        
+                        // Now share the new link
+                        let link = URL(string: "https://clipcook.app/recipe/\(savedRecipe.id)")!
+                        self.shareItems = [link]
+                        self.showingShareSheet = true
+                    }
+                } catch {
+                    print("Error saving remix: \(error)")
+                    await MainActor.run { isSavingRemix = false }
+                }
+            } else {
+                // Standard recipe
+                if let link = URL(string: "https://clipcook.app/recipe/\(recipe.id)") {
+                    self.shareItems = [link]
+                    self.showingShareSheet = true
+                }
+            }
+        }
+    }
+    
+    private func copyIngredientsAndSteps() {
+        var text = "\(recipe.title)\n\n"
+        if let desc = recipe.description {
+            text += "\(desc)\n\n"
+        }
+        
+        if let ingredients = recipe.ingredients {
+            text += "Ingredients:\n"
+            for ing in ingredients {
+                text += "• \(ing.amount) \(ing.unit) \(ing.name)\n"
+            }
+            text += "\n"
+        }
+        
+        if let instructions = recipe.instructions {
+            text += "Instructions:\n"
+            for (index, step) in instructions.enumerated() {
+                text += "\(index + 1). \(step)\n"
+            }
+            text += "\n"
+        }
+        
+        text += "Sent from ClipCook"
+        
+        shareItems = [text]
+        showingShareSheet = true
     }
 }
 

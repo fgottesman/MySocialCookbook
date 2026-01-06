@@ -111,5 +111,60 @@ class RecipeService {
         let decodedResponse = try JSONDecoder().decode(BackendResponse.self, from: data)
         return decodedResponse.recipe
     }
+
+    // Save Remixed Recipe
+    func saveRemixedRecipe(_ recipe: Recipe, originalId: UUID) async throws -> Recipe {
+        let newId = UUID()
+        
+        struct RecipeInsert: Encodable {
+            let id: UUID
+            let user_id: UUID
+            let title: String
+            let description: String?
+            let video_url: String?
+            let thumbnail_url: String?
+            let ingredients: [Ingredient]?
+            let instructions: [String]?
+            let chefs_note: String?
+            let is_favorite: Bool
+            let parent_recipe_id: UUID?
+        }
+        
+        let insertPayload = RecipeInsert(
+            id: newId,
+            user_id: recipe.userId,
+            title: recipe.title,
+            description: recipe.description,
+            video_url: recipe.videoUrl,
+            thumbnail_url: recipe.thumbnailUrl,
+            ingredients: recipe.ingredients,
+            instructions: recipe.instructions,
+            chefs_note: recipe.chefsNote,
+            is_favorite: false, // Reset favorite for new recipe
+            parent_recipe_id: originalId
+        )
+        
+        try await client
+            .from("recipes")
+            .insert(insertPayload)
+            .execute()
+            
+        // Return the new recipe with correct ID and parent attribution
+        return Recipe(
+            id: newId,
+            userId: recipe.userId,
+            title: recipe.title,
+            description: recipe.description,
+            videoUrl: recipe.videoUrl,
+            thumbnailUrl: recipe.thumbnailUrl,
+            ingredients: recipe.ingredients,
+            instructions: recipe.instructions,
+            createdAt: Date(), // Will be set by DB default mostly, but useful for local return
+            chefsNote: recipe.chefsNote,
+            profile: recipe.profile,
+            isFavorite: false,
+            parentRecipeId: originalId
+        )
+    }
 }
 

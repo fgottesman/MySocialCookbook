@@ -14,6 +14,8 @@ struct Recipe: Codable, Identifiable {
     let profile: Profile?  // Optional - may not be present
     let isFavorite: Bool?  // Added for Favorites feature
     
+    let parentRecipeId: UUID? // Added for Remix attribution
+    
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
@@ -27,9 +29,10 @@ struct Recipe: Codable, Identifiable {
         case chefsNote = "chefs_note"
         case profile = "profiles"
         case isFavorite = "is_favorite"
+        case parentRecipeId = "parent_recipe_id"
     }
     
-    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?) {
+    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil) {
         self.id = id
         self.userId = userId
         self.title = title
@@ -42,6 +45,7 @@ struct Recipe: Codable, Identifiable {
         self.chefsNote = chefsNote
         self.profile = profile
         self.isFavorite = isFavorite
+        self.parentRecipeId = parentRecipeId
     }
 }
 
@@ -60,6 +64,7 @@ extension Recipe {
         chefsNote = try container.decodeIfPresent(String.self, forKey: .chefsNote)
         profile = try container.decodeIfPresent(Profile.self, forKey: .profile)
         isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite)
+        parentRecipeId = try container.decodeIfPresent(UUID.self, forKey: .parentRecipeId)
     }
 }
 
