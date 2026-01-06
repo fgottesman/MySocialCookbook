@@ -1,4 +1,3 @@
-```swift
 //
 //  MySocialCookbookApp.swift
 //  MySocialCookbook
@@ -39,4 +38,3 @@ struct MySocialCookbookApp: App {
         }
     }
 }
-```
