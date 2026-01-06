@@ -81,7 +81,7 @@ export class GeminiService {
     }
 
     async chatCompanion(recipe: any, currentStepIndex: number, chatHistory: any[], userMessage: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const historyContext = chatHistory.map(msg =>
             `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`
@@ -110,7 +110,7 @@ export class GeminiService {
      * Accepts base64 encoded audio data.
      */
     async transcribeAudio(audioBase64: string, mimeType: string = 'audio/webm') {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const result = await model.generateContent([
             {
@@ -137,7 +137,7 @@ export class GeminiService {
     }
 
     async generateRecipe(fileUri: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const result = await model.generateContent([
             {
@@ -160,7 +160,7 @@ export class GeminiService {
         console.log("Processing YouTube video directly:", youtubeUrl);
 
         // Use gemini-3-flash which has better YouTube support
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const result = await model.generateContent([
             {
@@ -183,7 +183,7 @@ export class GeminiService {
     async generateRecipeFromURL(url: string) {
         console.log("Attempting direct URL processing:", url);
 
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const result = await model.generateContent([
             {
@@ -200,7 +200,7 @@ export class GeminiService {
     }
 
     async remixRecipe(originalRecipe: any, userPrompt: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash" })
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" })
 
         const REMIX_PROMPT = `
         ${REMIX_SYSTEM_PROMPT}

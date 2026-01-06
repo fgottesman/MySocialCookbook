@@ -43,9 +43,8 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
         ]
         
         do {
-        do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true)
             
             audioRecorder = try AVAudioRecorder(url: audioFileURL!, settings: settings)
@@ -82,6 +81,7 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     }
     
     func stopRecording() async -> String? {
+        print("DEBUG: stopRecording called")
         timer?.invalidate() // Stop monitoring
         audioLevel = 0
         audioRecorder?.stop()
@@ -93,17 +93,35 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
         }
         
         guard let fileURL = audioFileURL else {
+            print("DEBUG: No audioFileURL")
             DispatchQueue.main.async { self.isTranscribing = false }
             return nil
         }
         
+        // Check file existence and size
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+           let size = attrs[.size] as? UInt64 {
+            print("DEBUG: Audio file exists at \(fileURL.path), size: \(size) bytes")
+            if size == 0 {
+                print("DEBUG: Audio file is empty!")
+                DispatchQueue.main.async { self.isTranscribing = false }
+                return nil
+            }
+        } else {
+            print("DEBUG: Audio file does not exist or attributes unreadable")
+        }
+        
         do {
             // Read audio file and convert to base64
+            print("DEBUG: Reading audio data...")
             let audioData = try Data(contentsOf: fileURL)
             let base64Audio = audioData.base64EncodedString()
+            print("DEBUG: Base64 string length: \(base64Audio.count)")
             
             // Send to backend for Gemini transcription
+            print("DEBUG: Sending request to backend...")
             let transcript = try await transcribeWithGemini(audioBase64: base64Audio)
+            print("DEBUG: Transcription received: \(transcript)")
             
             DispatchQueue.main.async {
                 self.transcript = transcript
@@ -115,9 +133,9 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
             
             return transcript
         } catch {
-            print("Error processing audio: \(error)")
+            print("DEBUG: Error in stopRecording: \(error)")
             DispatchQueue.main.async {
-                self.transcript = "Error transcribing"
+                self.transcript = "Error transcribing: \(error.localizedDescription)"
                 self.isTranscribing = false
             }
             return nil
@@ -125,7 +143,9 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     }
     
     private func transcribeWithGemini(audioBase64: String) async throws -> String {
+        print("DEBUG: transcribeWithGemini start")
         guard let url = URL(string: backendUrl) else {
+            print("DEBUG: Invalid URL: \(backendUrl)")
             throw URLError(.badURL)
         }
         
@@ -135,12 +155,27 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
         
         let body: [String: Any] = [
             "audioBase64": audioBase64,
-            "mimeType": "audio/mp4" // m4a is mp4 audio
+            "mimeType": "audio/mp4"
         ]
         
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            print("DEBUG: JSON Serialization failed: \(error)")
+            throw error
+        }
+        
+        print("DEBUG: Sending request to \(url.absoluteString)")
         
         let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse {
+            print("DEBUG: HTTP Status Code: \(httpResponse.statusCode)")
+            if httpResponse.statusCode != 200 {
+                let bodyString = String(data: data, encoding: .utf8) ?? "Unable to decode body"
+                print("DEBUG: Response Body: \(bodyString)")
+            }
+        }
         
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw URLError(.badServerResponse)
@@ -151,8 +186,15 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
             let transcript: String
         }
         
-        let decoded = try JSONDecoder().decode(TranscribeResponse.self, from: data)
-        return decoded.transcript
+        do {
+            let decoded = try JSONDecoder().decode(TranscribeResponse.self, from: data)
+            return decoded.transcript
+        } catch {
+            print("DEBUG: JSON Decoding failed: \(error)")
+            let bodyString = String(data: data, encoding: .utf8) ?? "Unable to decode body"
+            print("DEBUG: Raw Response: \(bodyString)")
+            throw error
+        }
     }
     
     func speak(_ text: String) {
