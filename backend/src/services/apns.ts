@@ -1,11 +1,18 @@
 
-import jwt from 'jsonwebtoken';
 import http2 from 'http2';
+import crypto from 'crypto';
 
 const APNS_KEY = process.env.APNS_KEY;
 const APNS_KEY_ID = process.env.APNS_KEY_ID;
 const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
 
+// Helper for base64url encoding
+function base64url(buf: Buffer): string {
+    return buf.toString('base64')
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+}
 
 interface PushPayload {
     title: string;
@@ -17,13 +24,13 @@ interface PushPayload {
 if (process.env.NODE_ENV !== 'test') {
     console.log('--- APNs Configuration Check ---');
     console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`Server Time: ${new Date().toISOString()}`);
     console.log(`APPLE_TEAM_ID: ${APPLE_TEAM_ID ? APPLE_TEAM_ID.substring(0, 3) + '...' : 'MISSING'}`);
     console.log(`APNS_KEY_ID: ${APNS_KEY_ID ? APNS_KEY_ID.substring(0, 3) + '...' : 'MISSING'}`);
     console.log(`APNS_KEY Present: ${!!APNS_KEY}`);
     if (APNS_KEY) {
         const keyContent = APNS_KEY.replace(/\\n/g, '\n');
         console.log(`APNS_KEY Length: ${keyContent.length}`);
-        console.log(`APNS_KEY Starts With: ${keyContent.substring(0, 20).replace(/\n/g, ' ')}...`);
     }
     console.log('--------------------------------');
 }
@@ -48,32 +55,46 @@ export class APNsService {
         const keyId = APNS_KEY_ID.trim();
         const key = APNS_KEY.trim().replace(/\\n/g, '\n');
 
-        // Using standard options for kids and iss
-        const token = jwt.sign(
-            {},
-            key,
+        // 1. Manually construct Header (Minimal for APNs)
+        const header = {
+            alg: 'ES256',
+            kid: keyId
+        };
+
+        // 2. Manually construct Payload
+        const payload = {
+            iss: teamId,
+            iat: now
+        };
+
+        // Base64url encode them
+        const headerPart = base64url(Buffer.from(JSON.stringify(header)));
+        const payloadPart = base64url(Buffer.from(JSON.stringify(payload)));
+
+        // 3. Sign the content
+        const signContent = `${headerPart}.${payloadPart}`;
+        const signer = crypto.createSign('RSA-SHA256'); // Wait, APNs needs ES256 (ECDSA with SHA-256)
+
+        // Correct way to sign ES256 in Node.js crypto:
+        const signature = crypto.sign(
+            'sha256',
+            Buffer.from(signContent),
             {
-                algorithm: 'ES256',
-                issuer: teamId,
-                keyid: keyId,
-                noTimestamp: false // ensures iat is added
+                key: key,
+                format: 'pem',
+                type: 'pkcs8',
+                dsaEncoding: 'ieee-p1363' // Ensures raw R|S output for ES256 compliance
             }
         );
 
-        // Log decoded parts to verify structure
-        const parts = token.split('.');
-        if (parts.length === 3) {
-            try {
-                const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
-                const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-                console.log('--- APNs Token Generated ---');
-                console.log(`Header: ${JSON.stringify(header)}`);
-                console.log(`Payload: ${JSON.stringify(payload)}`);
-                console.log('---------------------------');
-            } catch (e) {
-                console.error('Failed to decode token parts for logging', e);
-            }
-        }
+        const signaturePart = base64url(signature);
+        const token = `${signContent}.${signaturePart}`;
+
+        console.log('--- APNs Manual Token Generated ---');
+        console.log(`Header (No typ): ${JSON.stringify(header)}`);
+        console.log(`Payload: ${JSON.stringify(payload)}`);
+        console.log(`Server Time Now: ${now}`);
+        console.log('---------------------------');
 
         this.cachedToken = token;
         this.tokenExpiry = now + 3600; // 1 hour
