@@ -374,12 +374,25 @@ struct SourceCardHeader: View {
     
     var body: some View {
         HStack {
-            // Placeholder Thumbnail
-            Rectangle()
-                .fill(Color.clipCookSurface)
-                .frame(width: 60, height: 80)
-                .cornerRadius(8)
-                .overlay(Image(systemName: "play.circle").foregroundColor(.white))
+            // Video Thumbnail
+            Group {
+                if let thumbnailUrl = recipe.thumbnailUrl, let url = URL(string: thumbnailUrl) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        ProgressView()
+                    }
+                } else {
+                    // Fallback Placeholder
+                    Color.clipCookSurface
+                        .overlay(Image(systemName: "play.circle").foregroundColor(.white))
+                }
+            }
+            .frame(width: 60, height: 80)
+            .cornerRadius(8)
+            .clipped()
             
             VStack(alignment: .leading) {
                 Text("Original via TikTok")
