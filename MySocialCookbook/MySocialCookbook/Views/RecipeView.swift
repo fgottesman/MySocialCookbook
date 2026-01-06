@@ -12,6 +12,7 @@ struct RecipeView: View {
     @State private var showingRemix = false
     @State private var remixPrompt = ""
     @State private var isRemixing = false
+    @State private var showingVoiceCompanion = false
     
     init(recipe: Recipe) {
         _recipe = State(initialValue: recipe)
@@ -97,21 +98,38 @@ struct RecipeView: View {
                 .padding(.top)
             }
             
-            // MARK: - Floating Action Button (Remix)
+            // MARK: - Floating Action Buttons
             VStack {
                 Spacer()
-                Button(action: { showingRemix = true }) {
-                    HStack {
-                        Image(systemName: "wand.and.stars")
-                        Text("Remix This")
-                            .fontWeight(.bold)
+                HStack(spacing: 20) {
+                    // Remix Button
+                    Button(action: { showingRemix = true }) {
+                        HStack {
+                            Image(systemName: "wand.and.stars")
+                            Text("Remix")
+                                .fontWeight(.bold)
+                        }
+                        .padding()
+                        .background(Color.clipCookSurface)
+                        .foregroundColor(.clipCookSizzleStart)
+                        .cornerRadius(30)
+                        .shadow(radius: 10)
                     }
-                    .padding()
-                    .padding(.horizontal, 4)
-                    .background(LinearGradient.sizzle) // Sizzle Gradient
-                    .foregroundColor(.white)
-                    .cornerRadius(30)
-                    .shadow(radius: 10)
+                    
+                    // Start Cooking (Voice) Button
+                    Button(action: { showingVoiceCompanion = true }) {
+                        HStack {
+                            Image(systemName: "mic.fill")
+                            Text("Start Cooking")
+                                .fontWeight(.bold)
+                        }
+                        .padding()
+                        .padding(.horizontal, 4)
+                        .background(LinearGradient.sizzle)
+                        .foregroundColor(.white)
+                        .cornerRadius(30)
+                        .shadow(radius: 10)
+                    }
                 }
                 .padding(.bottom, 20)
             }
@@ -121,6 +139,9 @@ struct RecipeView: View {
                 performRemix()
             }
             .presentationDetents([.medium])
+        }
+        .fullScreenCover(isPresented: $showingVoiceCompanion) {
+            VoiceCompanionView(recipe: recipe)
         }
     }
     
