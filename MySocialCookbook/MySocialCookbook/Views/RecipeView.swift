@@ -60,7 +60,7 @@ struct RecipeView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Ingredients")
                                 .font(.headline)
-                                .foregroundColor(.clipCookAccent)
+                                .foregroundColor(.clipCookSizzleStart)
                             
                             VStack(spacing: 12) {
                                 ForEach(ingredients, id: \.self) { ingredient in
@@ -83,7 +83,7 @@ struct RecipeView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Instructions")
                                 .font(.headline)
-                                .foregroundColor(.clipCookAccent)
+                                .foregroundColor(.clipCookSizzleStart)
                             
                             ForEach(Array(instructions.enumerated()), id: \.offset) { index, step in
                                 StepCard(index: index + 1, text: step)
@@ -193,7 +193,7 @@ struct RemixSheet: View {
             if isRemixing {
                 VStack(spacing: 20) {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .clipCookAccent))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
                         .scaleEffect(2)
                     Text("Asking the Chef...")
                         .modifier(UtilityHeadline())
@@ -222,7 +222,7 @@ struct RemixSheet: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(prompt.isEmpty ? Color.gray : Color.clipCookAccent)
+                        .background(prompt.isEmpty ? Color.gray : Color.clipCookSizzleStart)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
