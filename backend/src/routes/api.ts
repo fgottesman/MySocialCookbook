@@ -3,6 +3,7 @@ import express from 'express';
 import { supabase } from '../db/supabase';
 import { VideoDownloader } from '../services/video_downloader';
 import { GeminiService } from '../services/gemini';
+import { ttsService } from '../services/tts';
 import { apnsService } from '../services/apns';
 import fs from 'fs';
 import path from 'path';
@@ -374,6 +375,26 @@ router.get('/recipes', async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
+});
+
+router.post('/synthesize', async (req, res) => {
+    try {
+        const { text } = req.body;
+
+        if (!text) {
+            return res.status(400).json({ error: 'Missing text' });
+        }
+
+        console.log(`Synthesizing text (${text.length} chars)`);
+
+        const audioBase64 = await ttsService.synthesize(text);
+
+        res.json({ success: true, audioBase64 });
+
+    } catch (error: any) {
+        console.error("Error synthesizing speech:", error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 export default router;

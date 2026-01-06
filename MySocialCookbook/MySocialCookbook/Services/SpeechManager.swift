@@ -9,14 +9,17 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     private var audioRecorder: AVAudioRecorder?
     private var audioFileURL: URL?
     private let synthesizer = AVSpeechSynthesizer()
+    private var audioPlayer: AVAudioPlayer?
     
     private let backendUrl = "https://mysocialcookbook-production.up.railway.app/api/transcribe-audio"
+    private let ttsUrl = "https://mysocialcookbook-production.up.railway.app/api/synthesize"
     
     @Published var isRecording = false
     @Published var transcript = ""
     @Published var isTranscribing = false
     @Published var permissionGranted = false
     @Published var preferredVoiceIdentifier: String?
+    @Published var isSynthesizing = false
     
     var availableVoices: [AVSpeechSynthesisVoice] {
         AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
@@ -203,27 +206,77 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     }
     
     func speak(_ text: String) {
-        let utterance = AVSpeechUtterance(string: text)
-        
-        if let identifier = preferredVoiceIdentifier,
-           let voice = AVSpeechSynthesisVoice(identifier: identifier) {
-            utterance.voice = voice
-        } else {
-            // Default high quality fallback search
-            let voices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
-            if let enhanced = voices.first(where: { $0.quality == .enhanced }) {
-                utterance.voice = enhanced
-            } else {
-                utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        // High quality cloud voice via Gemini TTS
+        Task {
+            DispatchQueue.main.async { self.isSynthesizing = true }
+            if let audioBase64 = try? await synthesizeWithBackend(text: text) {
+                if let audioData = Data(base64Encoded: audioBase64) {
+                    await playAudio(data: audioData)
+                    DispatchQueue.main.async { self.isSynthesizing = false }
+                    return
+                }
+            }
+            
+            // Fallback to local synthesis if backend fails
+            DispatchQueue.main.async { 
+                self.isSynthesizing = false
+                let utterance = AVSpeechUtterance(string: text)
+                
+                if let identifier = self.preferredVoiceIdentifier,
+                   let voice = AVSpeechSynthesisVoice(identifier: identifier) {
+                    utterance.voice = voice
+                } else {
+                    let voices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
+                    if let enhanced = voices.first(where: { $0.quality == .enhanced }) {
+                        utterance.voice = enhanced
+                    } else {
+                        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                    }
+                }
+                
+                utterance.rate = 0.5
+                try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .voicePrompt)
+                try? AVAudioSession.sharedInstance().setActive(true)
+                self.synthesizer.speak(utterance)
             }
         }
+    }
+    
+    private func synthesizeWithBackend(text: String) async throws -> String? {
+        print("DEBUG: synthesizeWithBackend start")
+        guard let url = URL(string: ttsUrl) else { return nil }
         
-        utterance.rate = 0.5
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Configure audio session for playback
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .voicePrompt)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        let body: [String: Any] = ["text": text]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
-        synthesizer.speak(utterance)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            return nil
+        }
+        
+        struct SynthesizeResponse: Codable {
+            let success: Bool
+            let audioBase64: String
+        }
+        
+        let decoded = try JSONDecoder().decode(SynthesizeResponse.self, from: data)
+        return decoded.audioBase64
+    }
+    
+    @MainActor
+    private func playAudio(data: Data) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+            
+            audioPlayer = try AVAudioPlayer(data: data)
+            audioPlayer?.play()
+        } catch {
+            print("DEBUG: Error playing audio: \(error)")
+        }
     }
 }
