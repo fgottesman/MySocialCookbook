@@ -2,7 +2,7 @@
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 export class VideoDownloader {
 
@@ -80,7 +80,7 @@ export class VideoDownloader {
                 fs.mkdirSync(downloadDir, { recursive: true });
             }
 
-            const fileName = `${uuidv4()}.mp4`;
+            const fileName = `${crypto.randomUUID()}.mp4`;
             const filePath = path.join(downloadDir, fileName);
             fs.writeFileSync(filePath, videoResponse.data);
 
