@@ -2,13 +2,20 @@ import SwiftUI
 import AVKit
 
 struct RecipeView: View {
-    let recipe: Recipe
+    // We use State to allow the recipe to be modified by the Remix engine
+    @State private var recipe: Recipe
     
     // State for interactive checklists
     @State private var checkedIngredients: Set<String> = []
     
-    // State for Remix / Help
+    // State for Remix
     @State private var showingRemix = false
+    @State private var remixPrompt = ""
+    @State private var isRemixing = false
+    
+    init(recipe: Recipe) {
+        _recipe = State(initialValue: recipe)
+    }
     
     var body: some View {
         ZStack {
@@ -24,6 +31,28 @@ struct RecipeView: View {
                     Text(recipe.title)
                         .modifier(UtilityHeadline())
                         .padding(.horizontal)
+                    
+                    // MARK: - Chef's Note (Only if Remixed)
+                    if let note = recipe.chefsNote {
+                        HStack(alignment: .top) {
+                            Image(systemName: "sparkles")
+                                .foregroundStyle(LinearGradient.sizzle)
+                            VStack(alignment: .leading) {
+                                Text("Chef's Note")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(LinearGradient.sizzle)
+                                Text(note)
+                                    .font(.body)
+                                    .foregroundColor(.white)
+                                    .italic()
+                            }
+                        }
+                        .padding()
+                        .background(Color.clipCookSurface)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                    }
                     
                     // MARK: - Ingredients Checklist
                     if let ingredients = recipe.ingredients, !ingredients.isEmpty {
@@ -63,10 +92,35 @@ struct RecipeView: View {
                     }
                     
                     // Bottom padding for Float Button
-                    Color.clear.frame(height: 80)
+                    Color.clear.frame(height: 100)
                 }
                 .padding(.top)
             }
+            
+            // MARK: - Floating Action Button (Remix)
+            VStack {
+                Spacer()
+                Button(action: { showingRemix = true }) {
+                    HStack {
+                        Image(systemName: "wand.and.stars")
+                        Text("Remix This")
+                            .fontWeight(.bold)
+                    }
+                    .padding()
+                    .padding(.horizontal, 4)
+                    .background(LinearGradient.sizzle) // Sizzle Gradient
+                    .foregroundColor(.white)
+                    .cornerRadius(30)
+                    .shadow(radius: 10)
+                }
+                .padding(.bottom, 20)
+            }
+        }
+        .sheet(isPresented: $showingRemix) {
+            RemixSheet(prompt: $remixPrompt, isRemixing: $isRemixing) {
+                performRemix()
+            }
+            .presentationDetents([.medium])
         }
     }
     
@@ -75,6 +129,88 @@ struct RecipeView: View {
             checkedIngredients.remove(name)
         } else {
             checkedIngredients.insert(name)
+        }
+    }
+    
+    private func performRemix() {
+        guard !remixPrompt.isEmpty else { return }
+        isRemixing = true
+        
+        Task {
+            do {
+                let newRecipe = try await RemixService.shared.remixRecipe(originalRecipe: recipe, prompt: remixPrompt)
+                await MainActor.run {
+                    self.recipe = newRecipe
+                    self.remixPrompt = "" // Clear prompt
+                    self.showingRemix = false // Dismiss sheet
+                    self.isRemixing = false
+                    // Reset checked state as ingredients changed
+                    self.checkedIngredients.removeAll()
+                }
+            } catch {
+                print("Remix error: \(error)")
+                await MainActor.run {
+                    isRemixing = false
+                    // Ideally show error toast
+                }
+            }
+        }
+    }
+}
+
+// MARK: - NEW SUBVIEWS
+
+struct RemixSheet: View {
+    @Binding var prompt: String
+    @Binding var isRemixing: Bool
+    let onRemix: () -> Void
+    
+    var body: some View {
+        ZStack {
+            Color.clipCookBackground.ignoresSafeArea()
+            
+            if isRemixing {
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .clipCookAccent))
+                        .scaleEffect(2)
+                    Text("Asking the Chef...")
+                        .modifier(UtilityHeadline())
+                    Text("Rewriting ingredients and steps...")
+                        .modifier(UtilitySubhead())
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("AI Remix")
+                        .modifier(UtilityHeadline())
+                    
+                    Text("Tell the chef how to change this recipe.")
+                        .modifier(UtilitySubhead())
+                    
+                    TextField("Make it vegan, spicy, etc...", text: $prompt, axis: .vertical)
+                        .padding()
+                        .background(Color.clipCookSurface)
+                        .cornerRadius(12)
+                        .foregroundColor(.white)
+                        .lineLimit(3...6)
+                    
+                    Button(action: onRemix) {
+                        HStack {
+                            Image(systemName: "wand.and.stars")
+                            Text("Remix It")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(prompt.isEmpty ? Color.gray : Color.clipCookAccent)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                    .disabled(prompt.isEmpty)
+                    
+                    Spacer()
+                }
+                .padding(24)
+            }
         }
     }
 }
