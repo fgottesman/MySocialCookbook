@@ -61,7 +61,21 @@ export class APNsService {
         const keyId = APNS_KEY_ID.trim();
         const key = APNS_KEY.trim().replace(/\\n/g, '\n');
 
-        // 1. Manually construct Header (Minimal for APNs)
+        // Diagnostic logging during generation
+        console.log('--- APNs Key Diagnostic ---');
+        console.log(`Key ID: ${keyId}`);
+        console.log(`Team ID: ${teamId}`);
+        console.log(`Key Length: ${key.length}`);
+        console.log(`Key Prefix: ${key.substring(0, 30).replace(/\n/g, '\\n')}...`);
+        console.log(`Key Suffix: ...${key.substring(key.length - 20).replace(/\n/g, '\\n')}`);
+        const hasStart = key.includes('BEGIN PRIVATE KEY');
+        const hasEnd = key.includes('END PRIVATE KEY');
+        console.log(`Has Headers: Start=${hasStart}, End=${hasEnd}`);
+        const newlineCount = (key.match(/\n/g) || []).length;
+        console.log(`Newline Count: ${newlineCount}`);
+        console.log('---------------------------');
+
+        // 1. Manually construct Header
         const header = {
             alg: 'ES256',
             kid: keyId
@@ -79,7 +93,6 @@ export class APNsService {
 
         // 3. Sign the content
         const signContent = `${headerPart}.${payloadPart}`;
-        const signer = crypto.createSign('RSA-SHA256'); // Wait, APNs needs ES256 (ECDSA with SHA-256)
 
         // Correct way to sign ES256 in Node.js crypto:
         const signature = crypto.sign(
