@@ -9,6 +9,7 @@ struct Recipe: Codable, Identifiable {
     let ingredients: [Ingredient]?
     let instructions: [String]?
     let createdAt: Date
+    let chefsNote: String? // Added for Remix feature
     let profile: Profile?  // Optional - may not be present
     
     enum CodingKeys: String, CodingKey {
@@ -20,6 +21,7 @@ struct Recipe: Codable, Identifiable {
         case ingredients
         case instructions
         case createdAt = "created_at"
+        case chefsNote = "chefs_note"
         case profile = "profiles"
     }
     
@@ -33,6 +35,7 @@ struct Recipe: Codable, Identifiable {
         ingredients = try container.decodeIfPresent([Ingredient].self, forKey: .ingredients)
         instructions = try container.decodeIfPresent([String].self, forKey: .instructions)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
+        chefsNote = try container.decodeIfPresent(String.self, forKey: .chefsNote)
         profile = try container.decodeIfPresent(Profile.self, forKey: .profile)
     }
 }

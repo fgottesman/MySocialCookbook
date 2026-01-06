@@ -37,7 +37,10 @@ class AppleSignInManager: NSObject, ASAuthorizationControllerDelegate, ASAuthori
     // MARK: - ASAuthorizationControllerPresentationContextProviding
     
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        return UIApplication.shared.windows.first { $0.isKeyWindow } ?? ASPresentationAnchor()
+        return UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
     }
     
     // MARK: - Crypto Helpers
