@@ -1,112 +1,138 @@
 
 import Foundation
-import Speech
 import AVFoundation
 
-class SpeechManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate, AVSpeechSynthesizerDelegate {
+class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     static let shared = SpeechManager()
     
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    private var recognitionTask: SFSpeechRecognitionTask?
-    private let audioEngine = AVAudioEngine()
+    private var audioRecorder: AVAudioRecorder?
+    private var audioFileURL: URL?
     private let synthesizer = AVSpeechSynthesizer()
     
-    @Published var isListening = false
+    private let backendUrl = "https://mysocialcookbook-production.up.railway.app/api/transcribe-audio"
+    
+    @Published var isRecording = false
     @Published var transcript = ""
+    @Published var isTranscribing = false
     @Published var permissionGranted = false
     
     override init() {
         super.init()
-        speechRecognizer?.delegate = self
-        synthesizer.delegate = self
     }
     
     func requestPermissions() {
-        SFSpeechRecognizer.requestAuthorization { authStatus in
+        AVAudioApplication.requestRecordPermission { granted in
             DispatchQueue.main.async {
-                switch authStatus {
-                case .authorized:
-                    self.permissionGranted = true
-                    print("Speech recognition authorized")
-                case .denied, .restricted, .notDetermined:
-                    self.permissionGranted = false
-                    print("Speech recognition not authorized")
-                @unknown default:
-                    self.permissionGranted = false
-                }
+                self.permissionGranted = granted
+                print("Microphone permission: \(granted)")
             }
         }
     }
     
-    func startListening() throws {
-        // Cancel existing tasks
-        recognitionTask?.cancel()
-        recognitionTask = nil
+    func startRecording() {
+        // Create temp file for audio
+        let tempDir = FileManager.default.temporaryDirectory
+        audioFileURL = tempDir.appendingPathComponent("voice_recording.m4a")
         
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        let settings: [String: Any] = [
+            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey: 16000,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+        ]
         
-        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        
-        let inputNode = audioEngine.inputNode
-        guard let recognitionRequest = recognitionRequest else {
-            fatalError("Unable to create recognition request")
-        }
-        
-        recognitionRequest.shouldReportPartialResults = true
-        
-        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
-            var isFinal = false
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try session.setActive(true)
             
-            if let result = result {
-                DispatchQueue.main.async {
-                    self.transcript = result.bestTranscription.formattedString
-                }
-                isFinal = result.isFinal
-            }
+            audioRecorder = try AVAudioRecorder(url: audioFileURL!, settings: settings)
+            audioRecorder?.delegate = self
+            audioRecorder?.record()
             
-            if error != nil || isFinal {
-                self.audioEngine.stop()
-                inputNode.removeTap(onBus: 0)
-                self.recognitionRequest = nil
-                self.recognitionTask = nil
-                DispatchQueue.main.async {
-                    self.isListening = false
-                }
+            DispatchQueue.main.async {
+                self.isRecording = true
+                self.transcript = "Listening..."
             }
+            print("Recording started")
+        } catch {
+            print("Error starting recording: \(error)")
         }
-        
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, when in
-            self.recognitionRequest?.append(buffer)
-        }
-        
-        audioEngine.prepare()
-        try audioEngine.start()
+    }
+    
+    func stopRecording() async -> String? {
+        audioRecorder?.stop()
         
         DispatchQueue.main.async {
-            self.transcript = "Listening..." // Reset/Initial text
-            self.isListening = true
+            self.isRecording = false
+            self.isTranscribing = true
+            self.transcript = "Transcribing..."
+        }
+        
+        guard let fileURL = audioFileURL else {
+            DispatchQueue.main.async { self.isTranscribing = false }
+            return nil
+        }
+        
+        do {
+            // Read audio file and convert to base64
+            let audioData = try Data(contentsOf: fileURL)
+            let base64Audio = audioData.base64EncodedString()
+            
+            // Send to backend for Gemini transcription
+            let transcript = try await transcribeWithGemini(audioBase64: base64Audio)
+            
+            DispatchQueue.main.async {
+                self.transcript = transcript
+                self.isTranscribing = false
+            }
+            
+            // Cleanup temp file
+            try? FileManager.default.removeItem(at: fileURL)
+            
+            return transcript
+        } catch {
+            print("Error processing audio: \(error)")
+            DispatchQueue.main.async {
+                self.transcript = "Error transcribing"
+                self.isTranscribing = false
+            }
+            return nil
         }
     }
     
-    func stopListening() {
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            recognitionRequest?.endAudio()
-            DispatchQueue.main.async {
-                self.isListening = false
-            }
+    private func transcribeWithGemini(audioBase64: String) async throws -> String {
+        guard let url = URL(string: backendUrl) else {
+            throw URLError(.badURL)
         }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "audioBase64": audioBase64,
+            "mimeType": "audio/mp4" // m4a is mp4 audio
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        
+        struct TranscribeResponse: Codable {
+            let success: Bool
+            let transcript: String
+        }
+        
+        let decoded = try JSONDecoder().decode(TranscribeResponse.self, from: data)
+        return decoded.transcript
     }
     
     func speak(_ text: String) {
-        // Stop listening while speaking to generate clean audio? 
-        // Or ducking handles it. For now, let's stop listening to prevent echo feedback loop.
-        stopListening()
-        
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         utterance.rate = 0.5
@@ -116,12 +142,5 @@ class SpeechManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate, AVS
         try? AVAudioSession.sharedInstance().setActive(true)
         
         synthesizer.speak(utterance)
-    }
-    
-    // AVSpeechSynthesizerDelegate
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        // Resume listening automatically?
-        // Maybe better to wait for user to tap again for now. 
-        // "Vibrant Utility" philosophy prefers explicit control over "always on" friction.
     }
 }

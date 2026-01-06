@@ -226,6 +226,28 @@ router.post('/chat-companion', async (req, res) => {
     }
 });
 
+router.post('/transcribe-audio', async (req, res) => {
+    try {
+        const { audioBase64, mimeType } = req.body;
+
+        if (!audioBase64) {
+            return res.status(400).json({ error: 'Missing audioBase64' });
+        }
+
+        console.log(`Transcribing audio (${mimeType || 'audio/webm'}, ${audioBase64.length} chars)`);
+
+        const transcript = await gemini.transcribeAudio(audioBase64, mimeType || 'audio/webm');
+
+        console.log("Transcript:", transcript);
+
+        res.json({ success: true, transcript: transcript });
+
+    } catch (error: any) {
+        console.error("Error transcribing audio:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // For feed (utility endpoint)
 router.get('/recipes', async (req, res) => {
     const { data, error } = await supabase

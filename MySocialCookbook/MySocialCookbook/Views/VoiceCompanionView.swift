@@ -4,9 +4,6 @@ import SwiftUI
 struct VoiceCompanionView: View {
     let recipe: Recipe
     
-    // CURRENTLY, we don't track steps accurately in scrolling view, 
-    // so we pass 0 or maybe allow manual step selection later. 
-    // For MVP, we pass 0 (general context).
     @State private var currentStepIndex: Int = 0
     
     @StateObject private var speechManager = SpeechManager.shared
@@ -45,8 +42,8 @@ struct VoiceCompanionView: View {
                             )
                         }
                         
-                        // Live Transcript
-                        if !speechManager.transcript.isEmpty && speechManager.isListening {
+                        // Live Status
+                        if !speechManager.transcript.isEmpty && (speechManager.isRecording || speechManager.isTranscribing) {
                             Text(speechManager.transcript)
                                 .font(.title2)
                                 .foregroundColor(.clipCookTextSecondary)
@@ -62,28 +59,28 @@ struct VoiceCompanionView: View {
                 
                 // Controls
                 VStack(spacing: 20) {
-                    if isProcessing {
+                    if isProcessing || speechManager.isTranscribing {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
                             .scaleEffect(1.5)
-                        Text("Thinking...")
+                        Text(speechManager.isTranscribing ? "Transcribing..." : "Thinking...")
                             .font(.caption)
                             .foregroundColor(.clipCookTextSecondary)
                     } else {
-                        Button(action: toggleListening) {
+                        Button(action: toggleRecording) {
                             ZStack {
                                 Circle()
-                                    .fill(speechManager.isListening ? LinearGradient.sizzle : LinearGradient(colors: [.clipCookSurface, .clipCookSurface], startPoint: .top, endPoint: .bottom))
+                                    .fill(speechManager.isRecording ? LinearGradient.sizzle : LinearGradient(colors: [.clipCookSurface, .clipCookSurface], startPoint: .top, endPoint: .bottom))
                                     .frame(width: 80, height: 80)
-                                    .shadow(color: speechManager.isListening ? .clipCookSizzleStart.opacity(0.5) : .clear, radius: 20)
+                                    .shadow(color: speechManager.isRecording ? .clipCookSizzleStart.opacity(0.5) : .clear, radius: 20)
                                 
-                                Image(systemName: speechManager.isListening ? "waveform" : "mic.fill")
+                                Image(systemName: speechManager.isRecording ? "waveform" : "mic.fill")
                                     .font(.title)
                                     .foregroundColor(.white)
                             }
                         }
                         
-                        Text(speechManager.isListening ? "Tap to Stop" : "Tap to Speak")
+                        Text(speechManager.isRecording ? "Tap to Stop" : "Tap to Speak")
                             .font(.headline)
                             .foregroundColor(.clipCookTextSecondary)
                     }
@@ -93,39 +90,37 @@ struct VoiceCompanionView: View {
         }
         .onAppear {
             speechManager.requestPermissions()
-            // Initial greeting? 
-            // maybe not, let user initiate
-        }
-        .onDisappear {
-            speechManager.stopListening()
         }
     }
     
-    func toggleListening() {
-        if speechManager.isListening {
+    func toggleRecording() {
+        if speechManager.isRecording {
             stopAndSend()
         } else {
-            do {
-                try speechManager.startListening()
-            } catch {
-                print("Error starting speech: \(error)")
-            }
+            speechManager.startRecording()
         }
     }
     
     func stopAndSend() {
-        speechManager.stopListening()
-        let text = speechManager.transcript
-        
-        guard !text.isEmpty && text != "Listening..." else { return }
-        
-        // Add User Message
-        let userMsg = ChatMessage(role: "user", content: text)
-        chatHistory.append(userMsg)
-        
         isProcessing = true
         
         Task {
+            // Stop recording and get transcription via Gemini
+            guard let text = await speechManager.stopRecording() else {
+                await MainActor.run { isProcessing = false }
+                return
+            }
+            
+            guard !text.isEmpty && text != "Listening..." && text != "Transcribing..." else {
+                await MainActor.run { isProcessing = false }
+                return
+            }
+            
+            // Add User Message
+            await MainActor.run {
+                chatHistory.append(ChatMessage(role: "user", content: text))
+            }
+            
             do {
                 let reply = try await VoiceCompanionService.shared.chat(
                     recipe: recipe,
@@ -136,11 +131,7 @@ struct VoiceCompanionView: View {
                 
                 await MainActor.run {
                     isProcessing = false
-                    // Add AI Message
-                    let aiMsg = ChatMessage(role: "ai", content: reply)
-                    chatHistory.append(aiMsg)
-                    
-                    // Speak it
+                    chatHistory.append(ChatMessage(role: "ai", content: reply))
                     speechManager.speak(reply)
                 }
             } catch {
