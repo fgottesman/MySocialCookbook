@@ -44,14 +44,33 @@ export class APNsService {
             throw new Error('APNs credentials not configured');
         }
 
+        const teamId = APPLE_TEAM_ID.trim();
+        const keyId = APNS_KEY_ID.trim();
+        const key = APNS_KEY.trim().replace(/\\n/g, '\n');
+
         const token = jwt.sign(
-            { iss: APPLE_TEAM_ID, iat: now },
-            APNS_KEY.replace(/\\n/g, '\n'), // Handle escaped newlines from env
+            { iss: teamId, iat: now },
+            key,
             {
                 algorithm: 'ES256',
-                header: { alg: 'ES256', kid: APNS_KEY_ID }
+                header: { alg: 'ES256', kid: keyId }
             }
         );
+
+        // Log masked token parts to verify header content
+        const parts = token.split('.');
+        if (parts.length === 3) {
+            try {
+                const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
+                console.log('--- APNs Token Generated ---');
+                console.log(`Header: ${JSON.stringify(header)}`);
+                console.log(`Payload (iat): ${now}`);
+                console.log(`Payload (iss): ${teamId}`);
+                console.log('---------------------------');
+            } catch (e) {
+                console.error('Failed to decode token parts for logging', e);
+            }
+        }
 
         this.cachedToken = token;
         this.tokenExpiry = now + 3600; // 1 hour

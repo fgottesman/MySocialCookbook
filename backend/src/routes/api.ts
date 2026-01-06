@@ -308,6 +308,63 @@ router.post('/transcribe-audio', async (req, res) => {
     }
 });
 
+// Toggle favorite status
+router.patch('/recipes/:id/favorite', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isFavorite } = req.body;
+        const userId = req.headers['x-user-id'] as string;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized - missing user ID' });
+        }
+
+        if (typeof isFavorite !== 'boolean') {
+            return res.status(400).json({ error: 'isFavorite must be a boolean' });
+        }
+
+        const { data, error } = await supabase
+            .from('recipes')
+            .update({ is_favorite: isFavorite })
+            .eq('id', id)
+            .eq('user_id', userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json({ success: true, recipe: data });
+    } catch (error: any) {
+        console.error("Error toggling favorite:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete recipe
+router.delete('/recipes/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.headers['x-user-id'] as string;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized - missing user ID' });
+        }
+
+        const { error } = await supabase
+            .from('recipes')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+
+        res.json({ success: true });
+    } catch (error: any) {
+        console.error("Error deleting recipe:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // For feed (utility endpoint)
 router.get('/recipes', async (req, res) => {
     const { data, error } = await supabase
