@@ -134,6 +134,28 @@ router.post('/register-device', async (req, res) => {
     }
 });
 
+router.post('/remix-recipe', async (req, res) => {
+    try {
+        const { originalRecipe, userPrompt } = req.body;
+
+        if (!originalRecipe || !userPrompt) {
+            return res.status(400).json({ error: 'Missing originalRecipe or userPrompt' });
+        }
+
+        console.log(`Remixing recipe with prompt: "${userPrompt}"`);
+
+        const remixedRecipe = await gemini.remixRecipe(originalRecipe, userPrompt);
+
+        console.log("Remix complete:", remixedRecipe.title);
+
+        res.json({ success: true, recipe: remixedRecipe });
+
+    } catch (error: any) {
+        console.error("Error remixing recipe:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // For feed (utility endpoint)
 router.get('/recipes', async (req, res) => {
     const { data, error } = await supabase
