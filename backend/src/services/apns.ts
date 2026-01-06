@@ -77,10 +77,18 @@ export class APNsService {
 
                 const body = JSON.stringify(apnsPayload);
 
-                // Use sandbox for development, production for App Store
-                const host = process.env.NODE_ENV === 'production'
+                // Determine APNs environment:
+                // 1. Check strict APNS_ENV override (sandbox/production)
+                // 2. Fallback to NODE_ENV (production -> production, else -> sandbox)
+                const isProduction = process.env.APNS_ENV
+                    ? process.env.APNS_ENV === 'production'
+                    : process.env.NODE_ENV === 'production';
+
+                const host = isProduction
                     ? 'https://api.push.apple.com'
                     : 'https://api.sandbox.push.apple.com';
+
+                console.log(`Using APNs Server: ${host} (Env: ${process.env.APNS_ENV || 'auto'}, Mode: ${isProduction ? 'Production' : 'Sandbox'})`);
 
                 const client = http2.connect(host);
 
