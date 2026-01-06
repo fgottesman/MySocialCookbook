@@ -105,6 +105,35 @@ router.post('/process-recipe', async (req, res) => {
     }
 });
 
+router.post('/register-device', async (req, res) => {
+    try {
+        const { userId, deviceToken, platform } = req.body;
+
+        if (!userId || !deviceToken || !platform) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Upsert device token
+        const { data, error } = await supabase
+            .from('user_devices')
+            .upsert({
+                user_id: userId,
+                device_token: deviceToken,
+                platform: platform,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id, device_token' })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json({ success: true, device: data });
+    } catch (error: any) {
+        console.error("Error registering device:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // For feed (utility endpoint)
 router.get('/recipes', async (req, res) => {
     const { data, error } = await supabase
