@@ -219,7 +219,7 @@ export class GeminiService {
     private parseRecipeResponse(responseText: string) {
         console.log("Raw Gemini response:", responseText);
         // Cleanup potential markdown blocks
-        const cleanedText = responseText.replace(/```json / g, "").replace(/```/g, "").trim();
+        const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
         return JSON.parse(cleanedText);
     }
 
