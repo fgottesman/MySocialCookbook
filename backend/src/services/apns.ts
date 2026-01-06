@@ -6,10 +6,26 @@ const APNS_KEY = process.env.APNS_KEY;
 const APNS_KEY_ID = process.env.APNS_KEY_ID;
 const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
 
+
 interface PushPayload {
     title: string;
     body: string;
     recipeId?: string;
+}
+
+// Debug configuration on startup
+if (process.env.NODE_ENV !== 'test') {
+    console.log('--- APNs Configuration Check ---');
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`APPLE_TEAM_ID: ${APPLE_TEAM_ID ? APPLE_TEAM_ID.substring(0, 3) + '...' : 'MISSING'}`);
+    console.log(`APNS_KEY_ID: ${APNS_KEY_ID ? APNS_KEY_ID.substring(0, 3) + '...' : 'MISSING'}`);
+    console.log(`APNS_KEY Present: ${!!APNS_KEY}`);
+    if (APNS_KEY) {
+        const keyContent = APNS_KEY.replace(/\\n/g, '\n');
+        console.log(`APNS_KEY Length: ${keyContent.length}`);
+        console.log(`APNS_KEY Starts With: ${keyContent.substring(0, 20).replace(/\n/g, ' ')}...`);
+    }
+    console.log('--------------------------------');
 }
 
 export class APNsService {
