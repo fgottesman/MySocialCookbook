@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var viewModel = FeedViewModel()
+    @State private var isSearching = false
     
     var body: some View {
         NavigationView {
@@ -33,7 +34,7 @@ struct FeedView: View {
                     } else {
                         ScrollView {
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                                ForEach(viewModel.recipes) { recipe in
+                                ForEach(viewModel.filteredRecipes) { recipe in
                                     NavigationLink(destination: RecipeView(recipe: recipe)) {
                                         RecipeCard(recipe: recipe)
                                     }
@@ -50,9 +51,33 @@ struct FeedView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("ClipCook")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(LinearGradient.sizzle)
+                    if isSearching {
+                        SearchBar(text: $viewModel.searchQuery, onCancel: {
+                            withAnimation {
+                                isSearching = false
+                                viewModel.searchQuery = ""
+                            }
+                        })
+                        .transition(.opacity)
+                    } else {
+                        Text("ClipCook")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(LinearGradient.sizzle)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        withAnimation {
+                            isSearching.toggle()
+                            if !isSearching {
+                                viewModel.searchQuery = ""
+                            }
+                        }
+                    } label: {
+                        Image(systemName: isSearching ? "xmark.circle.fill" : "magnifyingglass")
+                            .foregroundStyle(LinearGradient.sizzle)
+                    }
                 }
             }
             .task {
@@ -123,5 +148,42 @@ struct RecipeCard: View {
         .background(Color.clipCookSurface)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+    }
+}
+
+struct SearchBar: View {
+    @Binding var text: String
+    var onCancel: () -> Void
+    @FocusState private var isFocused: Bool
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.clipCookTextSecondary)
+                .font(.system(size: 16))
+            
+            TextField("Search recipes...", text: $text)
+                .textFieldStyle(.plain)
+                .foregroundColor(.clipCookTextPrimary)
+                .focused($isFocused)
+                .autocorrectionDisabled()
+            
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.clipCookTextSecondary)
+                        .font(.system(size: 16))
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.clipCookSurface)
+        .cornerRadius(10)
+        .onAppear {
+            isFocused = true
+        }
     }
 }

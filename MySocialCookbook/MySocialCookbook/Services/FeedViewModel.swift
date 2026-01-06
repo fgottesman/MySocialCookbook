@@ -8,6 +8,19 @@ class FeedViewModel: ObservableObject {
     @Published var recipes: [Recipe] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var searchQuery = ""
+    
+    var filteredRecipes: [Recipe] {
+        if searchQuery.isEmpty {
+            return recipes
+        } else {
+            let lowercaseQuery = searchQuery.lowercased()
+            return recipes.filter { recipe in
+                recipe.title.lowercased().contains(lowercaseQuery) ||
+                (recipe.description?.lowercased().contains(lowercaseQuery) ?? false)
+            }
+        }
+    }
     
     func fetchRecipes() async {
         isLoading = true

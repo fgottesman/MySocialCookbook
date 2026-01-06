@@ -13,9 +13,16 @@ struct RecipeView: View {
     @State private var remixPrompt = ""
     @State private var isRemixing = false
     @State private var showingVoiceCompanion = false
+    @State private var originalRecipe: Recipe? // Store original for revert
+    
+    // State for Favorite/Delete
+    @State private var isFavorite: Bool
+    @State private var showDeleteConfirmation = false
+    @Environment(\.dismiss) private var dismiss
     
     init(recipe: Recipe) {
         _recipe = State(initialValue: recipe)
+        _isFavorite = State(initialValue: recipe.isFavorite ?? false)
     }
     
     var body: some View {
@@ -52,6 +59,20 @@ struct RecipeView: View {
                         .padding()
                         .background(Color.clipCookSurface)
                         .cornerRadius(12)
+                        .padding(.horizontal)
+                    }
+                    
+                    // MARK: - Revert Button (Only if Remixed)
+                    if originalRecipe != nil {
+                        Button(action: revertRecipe) {
+                            HStack {
+                                Spacer()
+                                Image(systemName: "arrow.uturn.backward")
+                                Text("Revert to Original")
+                            }
+                            .foregroundColor(.clipCookTextSecondary)
+                            .padding(.vertical, 8)
+                        }
                         .padding(.horizontal)
                     }
                     
@@ -96,6 +117,39 @@ struct RecipeView: View {
                     Color.clear.frame(height: 100)
                 }
                 .padding(.top)
+            }
+            
+            // MARK: - Top-Right Action Buttons
+            VStack {
+                HStack {
+                    Spacer()
+                    HStack(spacing: 12) {
+                        // Favorite Button
+                        Button(action: { toggleFavorite() }) {
+                            Image(systemName: isFavorite ? "star.fill" : "star")
+                                .font(.system(size: 20))
+                                .foregroundColor(.yellow)
+                                .frame(width: 44, height: 44)
+                                .background(Color.clipCookSurface)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                        
+                        // Delete Button
+                        Button(action: { showDeleteConfirmation = true }) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 20))
+                                .foregroundColor(.red)
+                                .frame(width: 44, height: 44)
+                                .background(Color.clipCookSurface)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.top, 8)
+                }
+                Spacer()
             }
             
             // MARK: - Floating Action Buttons
@@ -143,6 +197,14 @@ struct RecipeView: View {
         .fullScreenCover(isPresented: $showingVoiceCompanion) {
             VoiceCompanionView(recipe: recipe)
         }
+        .confirmationDialog("Delete Recipe?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                deleteRecipe()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This recipe will be permanently deleted. This action cannot be undone.")
+        }
     }
     
     private func toggleIngredient(_ name: String) {
@@ -157,10 +219,36 @@ struct RecipeView: View {
         guard !remixPrompt.isEmpty else { return }
         isRemixing = true
         
+        let currentRecipe = recipe
+        
         Task {
             do {
-                let newRecipe = try await RemixService.shared.remixRecipe(originalRecipe: recipe, prompt: remixPrompt)
+                let remixedPart = try await RemixService.shared.remixRecipe(originalRecipe: currentRecipe, prompt: remixPrompt)
+                
                 await MainActor.run {
+                    // Save original if not already saved
+                    if self.originalRecipe == nil {
+                        self.originalRecipe = currentRecipe
+                    }
+                    
+                    // Merge new data with existing recipe
+                    // We keep ID, UserId, VideoUrl, etc. from the original
+                    // We update Title, Description, Ingredients, Instructions, ChefsNote from Remix
+                    let newRecipe = Recipe(
+                        id: currentRecipe.id,
+                        userId: currentRecipe.userId,
+                        title: remixedPart.title ?? currentRecipe.title,
+                        description: remixedPart.description ?? currentRecipe.description,
+                        videoUrl: currentRecipe.videoUrl,
+                        thumbnailUrl: currentRecipe.thumbnailUrl,
+                        ingredients: remixedPart.ingredients ?? currentRecipe.ingredients,
+                        instructions: remixedPart.instructions ?? currentRecipe.instructions,
+                        createdAt: currentRecipe.createdAt,
+                        chefsNote: remixedPart.chefsNote,
+                        profile: currentRecipe.profile,
+                        isFavorite: currentRecipe.isFavorite
+                    )
+                    
                     self.recipe = newRecipe
                     self.remixPrompt = "" // Clear prompt
                     self.showingRemix = false // Dismiss sheet
@@ -174,6 +262,49 @@ struct RecipeView: View {
                     isRemixing = false
                     // Ideally show error toast
                 }
+            }
+        }
+    }
+    
+    private func revertRecipe() {
+        if let original = originalRecipe {
+            withAnimation {
+                self.recipe = original
+                self.originalRecipe = nil
+                self.checkedIngredients.removeAll()
+            }
+        }
+    }
+    
+    private func toggleFavorite() {
+        isFavorite.toggle()
+        
+        Task {
+            do {
+                try await RecipeService.shared.toggleFavorite(
+                    recipeId: recipe.id,
+                    isFavorite: isFavorite
+                )
+            } catch {
+                // Revert on error
+                await MainActor.run {
+                    isFavorite.toggle()
+                }
+                print("Error toggling favorite: \(error)")
+            }
+        }
+    }
+    
+    private func deleteRecipe() {
+        Task {
+            do {
+                try await RecipeService.shared.deleteRecipe(recipeId: recipe.id)
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                print("Error deleting recipe: \(error)")
+                // Could show error toast here
             }
         }
     }

@@ -9,18 +9,59 @@ struct VoiceCompanionView: View {
     @StateObject private var speechManager = SpeechManager.shared
     @State private var chatHistory: [ChatMessage] = []
     @State private var isProcessing = false
+    @State private var showingAIResponse = false
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
         ZStack {
             Color.clipCookBackground.ignoresSafeArea()
             
-            VStack {
+            VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("Sous Chef Mode")
-                        .modifier(UtilityHeadline())
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Sous Chef Mode")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundStyle(LinearGradient.sizzle)
+                        Text(recipe.title)
+                            .font(.caption)
+                            .foregroundColor(.clipCookTextSecondary)
+                            .lineLimit(1)
+                    }
                     Spacer()
+                    
+                    // Voice Test Button
+                    Menu {
+                        ForEach(speechManager.availableVoices, id: \.identifier) { voice in
+                            Button(action: {
+                                speechManager.preferredVoiceIdentifier = voice.identifier
+                                speechManager.speak("I am your Sous Chef. How do I sound?")
+                            }) {
+                                HStack {
+                                    Text(voice.name)
+                                    if voice.quality == .enhanced {
+                                        Image(systemName: "sparkles")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "waveform.circle.fill")
+                                .font(.title2)
+                            Text("Voice")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                        }
+                        .foregroundColor(.white)
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .background(Color.clipCookSizzleStart.opacity(0.3))
+                        .cornerRadius(12)
+                        .padding(.trailing, 8)
+                    }
+                    
                     Button(action: { presentationMode.wrappedValue.dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.title)
@@ -31,63 +72,128 @@ struct VoiceCompanionView: View {
                 
                 Spacer()
                 
-                // Chat Display
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        ForEach(chatHistory.indices, id: \.self) { index in
-                            let msg = chatHistory[index]
-                            ChatBubble(
-                                text: msg.content,
-                                isUser: msg.role == "user"
-                            )
+                // Main Step Content
+                if let instructions = recipe.instructions, !instructions.isEmpty {
+                    HStack(spacing: 20) {
+                        // Back Arrow
+                        Button(action: { navigateStep(by: -1) }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 40, weight: .bold))
+                                .foregroundColor(currentStepIndex > 0 ? .white : .white.opacity(0.1))
                         }
+                        .disabled(currentStepIndex == 0)
                         
-                        // Live Status
-                        if !speechManager.transcript.isEmpty && (speechManager.isRecording || speechManager.isTranscribing) {
-                            Text(speechManager.transcript)
-                                .font(.title2)
-                                .foregroundColor(.clipCookTextSecondary)
-                                .italic()
-                                .padding()
-                                .frame(maxWidth: .infinity, alignment: .center)
+                        // Step Text
+                        VStack(spacing: 24) {
+                            Text("STEP \(currentStepIndex + 1)")
+                                .font(.system(size: 16, weight: .black))
+                                .foregroundColor(.clipCookSizzleStart)
+                                .tracking(2)
+                            
+                            ScrollView {
+                                Text(instructions[currentStepIndex])
+                                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(8)
+                                    .padding(.horizontal)
+                            }
+                            .frame(maxHeight: 300)
                         }
+                        .frame(maxWidth: .infinity)
+                        
+                        // Forward Arrow
+                        Button(action: { navigateStep(by: 1) }) {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 40, weight: .bold))
+                                .foregroundColor(currentStepIndex < instructions.count - 1 ? .white : .white.opacity(0.1))
+                        }
+                        .disabled(currentStepIndex == instructions.count - 1)
                     }
-                    .padding()
+                    .padding(.horizontal)
                 }
                 
                 Spacer()
                 
-                // Controls
-                VStack(spacing: 20) {
-                    if isProcessing || speechManager.isTranscribing {
+                // AI Response / Transcription Overlay
+                if !speechManager.transcript.isEmpty && (speechManager.isRecording || speechManager.isTranscribing) {
+                    Text(speechManager.transcript)
+                        .font(.headline)
+                        .foregroundColor(.clipCookTextSecondary)
+                        .italic()
+                        .padding()
+                        .background(Color.clipCookSurface.opacity(0.8))
+                        .cornerRadius(12)
+                        .padding()
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else if showingAIResponse, let lastMessage = chatHistory.last, lastMessage.role == "ai" {
+                    Text(lastMessage.content)
+                        .font(.body)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.clipCookSizzleStart.opacity(0.2))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.clipCookSizzleStart, lineWidth: 1)
+                        )
+                        .padding()
+                        .transition(.opacity)
+                }
+                
+                // Microphone Controls
+                VStack(spacing: 16) {
+                    if isProcessing {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .scaleEffect(1.5)
-                        Text(speechManager.isTranscribing ? "Transcribing..." : "Thinking...")
+                        Text("Thinking...")
                             .font(.caption)
                             .foregroundColor(.clipCookTextSecondary)
                     } else {
-                        Button(action: toggleRecording) {
+                        VStack(spacing: 12) {
                             ZStack {
+                                // Pulsing background when recording
+                                if speechManager.isRecording {
+                                    Circle()
+                                        .fill(LinearGradient.sizzle)
+                                        .frame(width: 90, height: 90)
+                                        .scaleEffect(1.2 + CGFloat(speechManager.audioLevel))
+                                        .opacity(0.3)
+                                        .animation(.easeInOut(duration: 0.1), value: speechManager.audioLevel)
+                                }
+                                
                                 Circle()
                                     .fill(speechManager.isRecording ? LinearGradient.sizzle : LinearGradient(colors: [.clipCookSurface, .clipCookSurface], startPoint: .top, endPoint: .bottom))
                                     .frame(width: 80, height: 80)
-                                    .scaleEffect(speechManager.isRecording ? 1.0 + CGFloat(speechManager.audioLevel) * 0.5 : 1.0)
-                                    .animation(.easeInOut(duration: 0.1), value: speechManager.audioLevel)
-                                    .shadow(color: speechManager.isRecording ? .clipCookSizzleStart.opacity(0.5) : .clear, radius: 20)
+                                    .shadow(color: speechManager.isRecording ? .clipCookSizzleStart.opacity(0.5) : .black.opacity(0.3), radius: 15)
                                 
                                 Image(systemName: speechManager.isRecording ? "waveform" : "mic.fill")
-                                    .font(.title)
+                                    .font(.system(size: 30, weight: .bold))
                                     .foregroundColor(.white)
                             }
+                            .gesture(
+                                DragGesture(minimumDistance: 0)
+                                    .onChanged { _ in
+                                        if !speechManager.isRecording && !isProcessing {
+                                            speechManager.startRecording()
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        if speechManager.isRecording {
+                                            stopAndSend()
+                                        }
+                                    }
+                            )
+                            
+                            Text("Tap and hold to ask questions")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.clipCookTextSecondary)
+                                .opacity(speechManager.isRecording ? 0.5 : 1.0)
                         }
-                        
-                        Text(speechManager.isRecording ? "Tap to Stop" : "Tap to Speak")
-                            .font(.headline)
-                            .foregroundColor(.clipCookTextSecondary)
                     }
                 }
-                .padding(.bottom, 40)
+                .padding(.bottom, 50)
             }
         }
         .onAppear {
@@ -95,11 +201,13 @@ struct VoiceCompanionView: View {
         }
     }
     
-    func toggleRecording() {
-        if speechManager.isRecording {
-            stopAndSend()
-        } else {
-            speechManager.startRecording()
+    private func navigateStep(by delta: Int) {
+        guard let instructions = recipe.instructions else { return }
+        let newIndex = currentStepIndex + delta
+        if newIndex >= 0 && newIndex < instructions.count {
+            withAnimation {
+                currentStepIndex = newIndex
+            }
         }
     }
     
@@ -134,7 +242,18 @@ struct VoiceCompanionView: View {
                 await MainActor.run {
                     isProcessing = false
                     chatHistory.append(ChatMessage(role: "ai", content: reply))
+                    showingAIResponse = true
                     speechManager.speak(reply)
+                    
+                    // Auto-hide after 5 seconds
+                    Task {
+                        try? await Task.sleep(nanoseconds: 5 * 1_000_000_000)
+                        await MainActor.run {
+                            withAnimation {
+                                showingAIResponse = false
+                            }
+                        }
+                    }
                 }
             } catch {
                 print("Companion error: \(error)")

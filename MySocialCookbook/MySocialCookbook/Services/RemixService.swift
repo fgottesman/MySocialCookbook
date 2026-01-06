@@ -6,9 +6,17 @@ struct RemixRequest: Codable {
     let userPrompt: String
 }
 
+struct RemixedRecipe: Codable {
+    let title: String?
+    let description: String?
+    let ingredients: [Ingredient]?
+    let instructions: [String]?
+    let chefsNote: String?
+}
+
 struct RemixResponse: Codable {
     let success: Bool
-    let recipe: Recipe
+    let recipe: RemixedRecipe
 }
 
 class RemixService {
@@ -16,7 +24,7 @@ class RemixService {
     
     private let backendUrl = "https://mysocialcookbook-production.up.railway.app/api/remix-recipe"
     
-    func remixRecipe(originalRecipe: Recipe, prompt: String) async throws -> Recipe {
+    func remixRecipe(originalRecipe: Recipe, prompt: String) async throws -> RemixedRecipe {
         guard let url = URL(string: backendUrl) else {
             throw URLError(.badURL)
         }

@@ -37,10 +37,23 @@ class AppleSignInManager: NSObject, ASAuthorizationControllerDelegate, ASAuthori
     // MARK: - ASAuthorizationControllerPresentationContextProviding
     
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        return UIApplication.shared.connectedScenes
+        let sc = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first
+
+        if let windowScene = sc, let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
+            return window
+        }
+        
+        // Fallback that avoids the deprecated init() if possible
+        if let windowScene = sc {
+            return UIWindow(windowScene: windowScene)
+        }
+        
+        return UIWindow() // Last resort fallback
     }
     
     // MARK: - Crypto Helpers

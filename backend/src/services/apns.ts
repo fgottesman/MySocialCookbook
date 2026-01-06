@@ -48,24 +48,27 @@ export class APNsService {
         const keyId = APNS_KEY_ID.trim();
         const key = APNS_KEY.trim().replace(/\\n/g, '\n');
 
+        // Using standard options for kids and iss
         const token = jwt.sign(
-            { iss: teamId, iat: now },
+            {},
             key,
             {
                 algorithm: 'ES256',
-                header: { alg: 'ES256', kid: keyId }
+                issuer: teamId,
+                keyid: keyId,
+                noTimestamp: false // ensures iat is added
             }
         );
 
-        // Log masked token parts to verify header content
+        // Log decoded parts to verify structure
         const parts = token.split('.');
         if (parts.length === 3) {
             try {
                 const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
+                const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
                 console.log('--- APNs Token Generated ---');
                 console.log(`Header: ${JSON.stringify(header)}`);
-                console.log(`Payload (iat): ${now}`);
-                console.log(`Payload (iss): ${teamId}`);
+                console.log(`Payload: ${JSON.stringify(payload)}`);
                 console.log('---------------------------');
             } catch (e) {
                 console.error('Failed to decode token parts for logging', e);

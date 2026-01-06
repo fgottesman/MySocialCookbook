@@ -12,6 +12,7 @@ struct Recipe: Codable, Identifiable {
     let createdAt: Date
     let chefsNote: String? // Added for Remix feature
     let profile: Profile?  // Optional - may not be present
+    let isFavorite: Bool?  // Added for Favorites feature
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -25,8 +26,26 @@ struct Recipe: Codable, Identifiable {
         case createdAt = "created_at"
         case chefsNote = "chefs_note"
         case profile = "profiles"
+        case isFavorite = "is_favorite"
     }
     
+    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?) {
+        self.id = id
+        self.userId = userId
+        self.title = title
+        self.description = description
+        self.videoUrl = videoUrl
+        self.thumbnailUrl = thumbnailUrl
+        self.ingredients = ingredients
+        self.instructions = instructions
+        self.createdAt = createdAt
+        self.chefsNote = chefsNote
+        self.profile = profile
+        self.isFavorite = isFavorite
+    }
+}
+
+extension Recipe {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -40,6 +59,7 @@ struct Recipe: Codable, Identifiable {
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         chefsNote = try container.decodeIfPresent(String.self, forKey: .chefsNote)
         profile = try container.decodeIfPresent(Profile.self, forKey: .profile)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite)
     }
 }
 

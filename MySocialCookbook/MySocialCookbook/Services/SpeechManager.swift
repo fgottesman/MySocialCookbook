@@ -16,6 +16,11 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     @Published var transcript = ""
     @Published var isTranscribing = false
     @Published var permissionGranted = false
+    @Published var preferredVoiceIdentifier: String?
+    
+    var availableVoices: [AVSpeechSynthesisVoice] {
+        AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
+    }
     
     override init() {
         super.init()
@@ -199,7 +204,20 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     
     func speak(_ text: String) {
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        
+        if let identifier = preferredVoiceIdentifier,
+           let voice = AVSpeechSynthesisVoice(identifier: identifier) {
+            utterance.voice = voice
+        } else {
+            // Default high quality fallback search
+            let voices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
+            if let enhanced = voices.first(where: { $0.quality == .enhanced }) {
+                utterance.voice = enhanced
+            } else {
+                utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+            }
+        }
+        
         utterance.rate = 0.5
         
         // Configure audio session for playback
