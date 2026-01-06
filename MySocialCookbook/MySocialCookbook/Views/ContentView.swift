@@ -39,5 +39,8 @@ struct ContentView: View {
                 }
             }
         }
+        .onAppear {
+            MessagingManager.shared.requestPermission()
+        }
     }
 }
