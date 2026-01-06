@@ -3,6 +3,7 @@ import SwiftUI
 struct FeedView: View {
     @StateObject private var viewModel = FeedViewModel()
     @State private var isSearching = false
+    @State private var showingAddRecipe = false
     
     var body: some View {
         NavigationView {
@@ -15,12 +16,12 @@ struct FeedView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
                     } else if let error = viewModel.errorMessage {
                         VStack(spacing: 16) {
-                            Image(systemName: "exclamationmark.triangle")
+                            Image(systemName: "flame")
                                 .font(.largeTitle)
                                 .foregroundColor(.clipCookSizzleEnd)
-                            Text("Kitchen Error")
+                            Text("The stove's not lighting")
                                 .modifier(UtilityHeadline())
-                            Text(error)
+                            Text("Let's try again! 🧊")
                                 .modifier(UtilitySubhead())
                                 .multilineTextAlignment(.center)
                             Button("Try Again") {
@@ -31,6 +32,8 @@ struct FeedView: View {
                             .background(Color.clipCookSurface)
                             .cornerRadius(8)
                         }
+                    } else if viewModel.recipes.isEmpty {
+                        NUXView(showingAddRecipe: $showingAddRecipe)
                     } else {
                         ScrollView {
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -66,6 +69,18 @@ struct FeedView: View {
                     }
                 }
                 
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if !isSearching {
+                        Button {
+                            showingAddRecipe = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(LinearGradient.sizzle)
+                        }
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         withAnimation {
@@ -82,6 +97,12 @@ struct FeedView: View {
             }
             .task {
                 await viewModel.fetchRecipes()
+            }
+            .sheet(isPresented: $showingAddRecipe) {
+                AddRecipeView()
+                    .onDisappear {
+                        Task { await viewModel.fetchRecipes() }
+                    }
             }
         }
     }
@@ -109,10 +130,19 @@ struct RecipeCard: View {
                                 ProgressView()
                             }
                         } else {
-                            // Fallback Placeholder
-                            Image(systemName: "play.circle.fill")
-                                .foregroundStyle(LinearGradient.sizzle)
-                                .font(.largeTitle)
+                            // Fallback Placeholder for recipes without video
+                            ZStack {
+                                LinearGradient.sizzle.opacity(0.1)
+                                VStack(spacing: 8) {
+                                    Image(systemName: "sparkles")
+                                        .font(.largeTitle)
+                                        .foregroundStyle(LinearGradient.sizzle)
+                                    Text("AI Recipe")
+                                        .font(.caption)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.clipCookSizzleStart)
+                                }
+                            }
                         }
                     }
                 )
@@ -129,6 +159,7 @@ struct RecipeCard: View {
                     .padding(8),
                 alignment: .bottomTrailing
             )
+            .opacity(recipe.videoUrl == nil ? 0 : 1) // Only show play icon if video exists
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(recipe.title)
@@ -147,6 +178,7 @@ struct RecipeCard: View {
         .padding(12)
         .background(Color.clipCookSurface)
         .cornerRadius(16)
+        .shadow(color: Color.clipCookSizzleStart.opacity(0.1), radius: 10, x: 0, y: 0) // Very subtle glow
         .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
     }
 }

@@ -126,6 +126,7 @@ struct VoiceCompanionView: View {
                         .padding()
                         .background(Color.clipCookSurface.opacity(0.8))
                         .cornerRadius(12)
+                        .magicalShimmer()
                         .padding()
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else if showingAIResponse, let lastMessage = chatHistory.last, lastMessage.role == "ai" {
@@ -140,18 +141,25 @@ struct VoiceCompanionView: View {
                                 .stroke(Color.clipCookSizzleStart, lineWidth: 1)
                         )
                         .padding()
-                        .transition(.opacity)
+                        .withWhimsyBounce(trigger: showingAIResponse)
+                        .transition(.scale.combined(with: .opacity))
                 }
                 
                 // Microphone Controls
                 VStack(spacing: 16) {
                     if isProcessing {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(1.5)
-                        Text("Thinking...")
-                            .font(.caption)
-                            .foregroundColor(.clipCookTextSecondary)
+                        VStack(spacing: 12) {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 40))
+                                .foregroundStyle(LinearGradient.sizzle)
+                                .scaleEffect(isProcessing ? 1.2 : 1.0)
+                                .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isProcessing)
+                            
+                            Text("Stirring the logic... 🥄")
+                                .font(.caption)
+                                .foregroundColor(.clipCookTextSecondary)
+                                .italic()
+                        }
                     } else {
                         VStack(spacing: 12) {
                             ZStack {
@@ -188,10 +196,11 @@ struct VoiceCompanionView: View {
                                     }
                             )
                             
-                            Text("Tap and hold to ask questions")
+                            Text(speechManager.isRecording ? "I'm all ears... 👂" : "What's cooking? 🍳")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.clipCookTextSecondary)
-                                .opacity(speechManager.isRecording ? 0.5 : 1.0)
+                                .opacity(speechManager.isRecording ? 0.7 : 1.0)
+                                .animation(.whimsySpring, value: speechManager.isRecording)
                         }
                     }
                 }

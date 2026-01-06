@@ -5,6 +5,8 @@ class RecipeService {
     static let shared = RecipeService()
     private init() {}
     
+    private let backendBaseUrl = "https://mysocialcookbook-production.up.railway.app/api"
+    
     private var client: SupabaseClient {
         SupabaseManager.shared.client
     }
@@ -60,6 +62,54 @@ class RecipeService {
             .delete()
             .eq("id", value: recipeId.uuidString)
             .execute()
+    }
+    
+    // Process recipe from URL
+    func processRecipe(url: String, userId: String) async throws {
+        guard let endpoint = URL(string: "\(backendBaseUrl)/process-recipe") else {
+            throw URLError(.badURL)
+        }
+        
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: String] = ["url": url, "userId": userId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+    
+    // Create recipe from prompt
+    func createRecipeFromPrompt(prompt: String, userId: String) async throws -> Recipe {
+        guard let endpoint = URL(string: "\(backendBaseUrl)/generate-recipe-from-prompt") else {
+            throw URLError(.badURL)
+        }
+        
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: String] = ["prompt": prompt, "userId": userId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        
+        struct BackendResponse: Codable {
+            let success: Bool
+            let recipe: Recipe
+        }
+        
+        let decodedResponse = try JSONDecoder().decode(BackendResponse.self, from: data)
+        return decodedResponse.recipe
     }
 }
 

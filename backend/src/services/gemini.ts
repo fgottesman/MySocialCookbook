@@ -20,6 +20,23 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
 }
 `;
 
+const PROMPT_TO_RECIPE_SYSTEM_PROMPT = `
+You are an expert chef. A user will describe a dish they want to make.
+Your goal is to turn their description into a fully fleshed out, professional recipe.
+If the description is vague, use your culinary expertise to fill in the gaps (e.g., if they say "grilled cheese", decide on the best bread, cheese, and technique).
+
+Return ONLY a raw JSON object (no markdown formatting) with this schema:
+{
+  "title": "Recipe Title",
+  "description": "Short, appetizing description of the dish",
+  "ingredients": [
+    { "name": "item", "amount": "1", "unit": "cup" }
+  ],
+  "instructions": ["Step 1", "Step 2"],
+  "chefsNote": "A quick tip from the chef about this specific dish"
+}
+`;
+
 const REMIX_SYSTEM_PROMPT = `
 **Role:** You are a World-Class Michelin Star Sous-Chef and Food Scientist. Your goal is to modify recipes based on user requests while maintaining culinary integrity, flavor balance, and food safety.
 
@@ -221,11 +238,33 @@ export class GeminiService {
         return this.parseRecipeResponse(result.response.text());
     }
 
+    async generateRecipeFromPrompt(userPrompt: string) {
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+        const FULL_PROMPT = `
+        ${PROMPT_TO_RECIPE_SYSTEM_PROMPT}
+
+        USER DESCRIPTION:
+        "${userPrompt}"
+        `;
+
+        const result = await model.generateContent(FULL_PROMPT);
+        return this.parseRecipeResponse(result.response.text());
+    }
+
     private parseRecipeResponse(responseText: string) {
         console.log("Raw Gemini response:", responseText);
-        // Cleanup potential markdown blocks
-        const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleanedText);
+
+        // Find the first '{' and the last '}'
+        const firstBrace = responseText.indexOf('{');
+        const lastBrace = responseText.lastIndexOf('}');
+
+        if (firstBrace === -1 || lastBrace === -1) {
+            throw new Error("No JSON object found in Gemini response");
+        }
+
+        const jsonText = responseText.substring(firstBrace, lastBrace + 1);
+        return JSON.parse(jsonText);
     }
 
     async generateEmbedding(text: string) {

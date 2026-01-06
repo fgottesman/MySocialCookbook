@@ -37,6 +37,19 @@ struct MySocialCookbookApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onOpenURL { url in
+                    // Handle OAuth redirects
+                    if url.scheme == "mysocialcookbook" {
+                        Task {
+                            do {
+                                try await SupabaseManager.shared.client.auth.handle(url)
+                                print("Successfully handled auth callback")
+                            } catch {
+                                print("Error handling auth callback: \(error)")
+                            }
+                        }
+                    }
+                }
         }
     }
 }

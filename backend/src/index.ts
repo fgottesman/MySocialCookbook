@@ -19,7 +19,7 @@ import './db/supabase';
 app.use('/api', apiRouter);
 
 app.get('/', (req, res) => {
-    res.send('My Social Cookbook Backend is running!');
+    res.send('ClipCook Backend is running!');
 });
 
 app.listen(port, () => {

@@ -7,12 +7,39 @@ import AuthenticationServices
 
 @MainActor
 class AuthViewModel: ObservableObject {
+    static let shared = AuthViewModel()
     private let appleSignInManager = AppleSignInManager()
 
     @Published var email = ""
     @Published var password = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var session: Session?
+    
+    var userId: String? {
+        session?.user.id.uuidString
+    }
+    
+    init() {
+        // Fetch initial session
+        Task {
+            do {
+                self.session = try await SupabaseManager.shared.client.auth.session
+            } catch {
+                print("Error fetching initial session: \(error)")
+            }
+        }
+        
+        // Listen for auth state changes
+        Task {
+            for await (event, session) in SupabaseManager.shared.client.auth.authStateChanges {
+                await MainActor.run {
+                    self.session = session
+                    print("Auth Event: \(event)")
+                }
+            }
+        }
+    }
     
     func signIn() async {
         isLoading = true

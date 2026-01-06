@@ -23,6 +23,18 @@ extension LinearGradient {
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
+    
+    static let magicalSizzle = LinearGradient(
+        gradient: Gradient(colors: [.clipCookSizzleStart, .clipCookSizzleEnd, .clipCookSizzleStart]),
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+}
+
+// MARK: - Animations
+extension Animation {
+    static let whimsySpring = Animation.spring(response: 0.35, dampingFraction: 0.6, blendDuration: 0)
+    static let slowWhimsy = Animation.easeInOut(duration: 2.0).repeatForever(autoreverses: true)
 }
 
 // MARK: - Typography Modifiers

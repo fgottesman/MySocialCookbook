@@ -1,7 +1,7 @@
 {
   "name": "my-social-cookbook-backend",
   "version": "1.0.0",
-  "description": "Backend for My Social Cookbook using Firebase and Gemini 3.0",
+  "description": "Backend for ClipCook - Your AI Sous Chef for viral recipes",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

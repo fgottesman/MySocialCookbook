@@ -49,7 +49,7 @@ async function notifyUser(userId: string, title: string, body: string, recipeId?
 }
 
 router.get('/health', (req, res) => {
-    res.json({ status: 'ok', service: 'My Social Cookbook Backend' });
+    res.json({ status: 'ok', service: 'ClipCook Backend' });
 });
 
 router.post('/process-recipe', async (req, res) => {
@@ -210,6 +210,54 @@ router.post('/process-recipe', async (req, res) => {
         if (userId) {
             await notifyUser(userId, title, message);
         }
+    }
+});
+
+router.post('/generate-recipe-from-prompt', async (req, res) => {
+    try {
+        const { prompt, userId } = req.body;
+
+        if (!prompt || !userId) {
+            return res.status(400).json({ error: 'Missing prompt or userId' });
+        }
+
+        console.log(`Generating recipe for user ${userId} from prompt: "${prompt}"`);
+
+        const recipeData = await gemini.generateRecipeFromPrompt(prompt);
+
+        console.log("Recipe generated:", recipeData.title);
+
+        // Generate Embedding for Search
+        const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
+        const embedding = await gemini.generateEmbedding(embeddingText);
+
+        // Save to Supabase
+        const { data, error } = await supabase
+            .from('recipes')
+            .insert({
+                user_id: userId,
+                title: recipeData.title,
+                description: recipeData.description,
+                video_url: null,
+                thumbnail_url: null,
+                ingredients: recipeData.ingredients,
+                instructions: recipeData.instructions,
+                chefs_note: recipeData.chefsNote || null,
+                embedding: embedding
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Supabase Insert Error:", error);
+            return res.status(500).json({ error: 'Failed to save recipe' });
+        }
+
+        res.json({ success: true, recipe: data });
+
+    } catch (error: any) {
+        console.error("Error generating recipe from prompt:", error);
+        res.status(500).json({ error: error.message });
     }
 });
 

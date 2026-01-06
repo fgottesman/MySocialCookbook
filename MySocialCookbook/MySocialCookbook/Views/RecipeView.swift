@@ -386,8 +386,11 @@ struct SourceCardHeader: View {
                     }
                 } else {
                     // Fallback Placeholder
-                    Color.clipCookSurface
-                        .overlay(Image(systemName: "play.circle").foregroundColor(.white))
+                    ZStack {
+                        Color.clipCookSurface
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.clipCookSizzleStart)
+                    }
                 }
             }
             .frame(width: 60, height: 80)
@@ -406,11 +409,18 @@ struct SourceCardHeader: View {
                 }
                 
                 // Deep Link Button
-                Link(destination: URL(string: recipe.videoUrl ?? "https://tiktok.com")!) {
-                    Text("Open Original")
+                if let videoUrl = recipe.videoUrl, let _ = URL(string: videoUrl) {
+                    Link(destination: URL(string: videoUrl)!) {
+                        Text("Open Original")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.clipCookSizzleStart)
+                    }
+                } else {
+                    Text("AI Crafted")
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(.clipCookSizzleStart)
+                        .foregroundColor(.clipCookTextSecondary)
                 }
             }
             
