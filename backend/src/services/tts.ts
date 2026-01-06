@@ -19,7 +19,7 @@ export class TTSService {
             },
             // select the type of audio encoding
             audioConfig: {
-                audioEncoding: 'LINEAR16' as const,
+                audioEncoding: 'MP3' as const,
                 sampleRateHertz: 44100,
                 speakingRate: 1.25,
                 volumeGainDb: 0.0,
