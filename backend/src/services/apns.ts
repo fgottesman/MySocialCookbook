@@ -101,7 +101,7 @@ export class APNsService {
                     ':method': 'POST',
                     ':path': `/3/device/${deviceToken}`,
                     'authorization': `bearer ${token}`,
-                    'apns-topic': 'com.mysocialcookbook',
+                    'apns-topic': 'Freddy.MySocialCookbook',
                     'apns-push-type': 'alert',
                     'content-type': 'application/json',
                     'content-length': Buffer.byteLength(body)
