@@ -10,9 +10,14 @@ struct VoiceCompanionView: View {
     @State private var currentStepIndex: Int = 0
     @State private var currentSubStepIndex: Int = 0
     
-    // Step preparation data from backend
-    @State private var stepPreparation: StepPreparation?
-    @State private var isLoadingStep = false
+    // Pre-loaded step preparations (cached for all steps)
+    @State private var stepPreparationCache: [Int: StepPreparation] = [:]
+    @State private var isPreloading = false
+    
+    // Current step's preparation (from cache)
+    private var stepPreparation: StepPreparation? {
+        stepPreparationCache[currentStepIndex]
+    }
     
     // Chat and voice state
     @StateObject private var speechManager = SpeechManager.shared
@@ -96,22 +101,10 @@ struct VoiceCompanionView: View {
                 microphoneControlsView
             }
             
-            // Loading overlay for step preparation
-            if isLoadingStep {
-                Color.black.opacity(0.3).ignoresSafeArea()
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .scaleEffect(1.5)
-                        .tint(.clipCookSizzleStart)
-                    Text("Preparing step...")
-                        .font(.caption)
-                        .foregroundColor(.clipCookTextSecondary)
-                }
-            }
         }
         .onAppear {
             speechManager.requestPermissions()
-            loadStepPreparation()
+            preloadAllSteps()
             loadUserPreferences()
         }
     }
@@ -350,7 +343,7 @@ struct VoiceCompanionView: View {
                 // Go to previous main step
                 currentStepIndex -= 1
                 currentSubStepIndex = 0
-                loadStepPreparation()
+                speakCurrentStepIntro()
             }
         }
     }
@@ -364,46 +357,64 @@ struct VoiceCompanionView: View {
                 // Go to next main step
                 currentStepIndex += 1
                 currentSubStepIndex = 0
-                loadStepPreparation()
+                speakCurrentStepIntro()
             }
         }
     }
     
     // MARK: - Data Loading
-    private func loadStepPreparation() {
+    
+    /// Pre-load all step preparations when cooking starts (non-blocking)
+    private func preloadAllSteps() {
         guard !recipe.instructions.isEmptyOrNil else { return }
         
-        isLoadingStep = true
-        stepPreparation = nil
+        let stepCount = recipe.instructions?.count ?? 0
+        isPreloading = true
         
         Task {
-            do {
-                // Configurable delay before speaking
-                if SpeechManager.stepIntroductionDelay > 0 {
-                    try? await Task.sleep(nanoseconds: UInt64(SpeechManager.stepIntroductionDelay * 1_000_000_000))
+            // Load all steps concurrently
+            await withTaskGroup(of: (Int, StepPreparation?).self) { group in
+                for index in 0..<stepCount {
+                    group.addTask {
+                        do {
+                            let preparation = try await VoiceCompanionService.shared.prepareStep(
+                                recipe: self.recipe,
+                                stepIndex: index,
+                                stepLabel: String(index + 1)
+                            )
+                            return (index, preparation)
+                        } catch {
+                            print("Error preloading step \(index): \(error)")
+                            return (index, nil)
+                        }
+                    }
                 }
                 
-                let preparation = try await VoiceCompanionService.shared.prepareStep(
-                    recipe: recipe,
-                    stepIndex: currentStepIndex,
-                    stepLabel: String(currentStepIndex + 1)
-                )
-                
-                await MainActor.run {
-                    isLoadingStep = false
-                    stepPreparation = preparation
-                    currentSubStepIndex = 0
-                    
-                    // Speak the introduction
-                    speechManager.speak(preparation.introduction)
-                }
-            } catch {
-                print("Error loading step preparation: \(error)")
-                await MainActor.run {
-                    isLoadingStep = false
-                    // Fallback - still allow cooking without AI enhancement
+                // Collect results as they complete
+                for await (index, preparation) in group {
+                    if let prep = preparation {
+                        await MainActor.run {
+                            stepPreparationCache[index] = prep
+                            
+                            // Speak the first step as soon as it's ready
+                            if index == 0 && currentStepIndex == 0 {
+                                speechManager.speak(prep.introduction)
+                            }
+                        }
+                    }
                 }
             }
+            
+            await MainActor.run {
+                isPreloading = false
+            }
+        }
+    }
+    
+    /// Speak the introduction for current step (uses cache)
+    private func speakCurrentStepIntro() {
+        if let prep = stepPreparationCache[currentStepIndex] {
+            speechManager.speak(prep.introduction)
         }
     }
     

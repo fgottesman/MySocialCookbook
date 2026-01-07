@@ -58,6 +58,7 @@ When you receive a originalRecipe JSON and a userPrompt:
     *   **CRITICAL:** You must rewrite the steps to match the new ingredients. Do not leave "sear the steak" if the user swapped to "tofu".
     *   Update timestamps/durations.
 4.  **Add "Chef's Note":** Add a specific note explaining *why* you made certain changes (e.g., "I swapped sugar for honey, so I lowered the oven temp slightly to prevent burning.").
+5.  **Track Changed Ingredients:** List the NAMES of all ingredients that were changed, added, or substituted in the "changedIngredients" array. Use the new ingredient name (not the original).
 
 ## 3. Output Format
 Return ONLY valid JSON matching the Recipe schema.
@@ -67,7 +68,8 @@ Return ONLY valid JSON matching the Recipe schema.
   "description": "Updated description mentioning the remix.",
   "ingredients": [ ... ],
   "instructions": [ ... ],
-  "chefsNote": "Detailed explanation of the changes..."
+  "chefsNote": "Detailed explanation of the changes...",
+  "changedIngredients": ["ingredient1 name", "ingredient2 name"]
 }
 `;
 
@@ -184,9 +186,11 @@ export class GeminiService {
 
         CONTEXT:
         Recipe Title: ${recipe.title}
-        Full Recipe: ${JSON.stringify(recipe)}
         Step Number: ${stepIndex + 1}
         Step Label for Sub-Steps: "${stepLabel}" (use "${stepLabel}-a", "${stepLabel}-b", etc.)
+        
+        INGREDIENTS (scan these for measurements to offer conversions):
+        ${JSON.stringify(recipe.ingredients || [])}
         
         CURRENT STEP TO ANALYZE:
         "${currentStep}"

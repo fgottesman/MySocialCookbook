@@ -12,6 +12,7 @@ struct RemixedRecipe: Codable {
     let ingredients: [Ingredient]?
     let instructions: [String]?
     let chefsNote: String?
+    let changedIngredients: [String]? // Names of changed/added ingredients
 }
 
 struct RemixResponse: Codable {

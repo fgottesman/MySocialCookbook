@@ -13,7 +13,11 @@ struct RecipeView: View {
     @State private var remixPrompt = ""
     @State private var isRemixing = false
     @State private var showingVoiceCompanion = false
-    @State private var originalRecipe: Recipe? // Store original for revert
+    
+    // Version history - stores all versions including original
+    @State private var recipeVersions: [RecipeVersion] = []
+    @State private var currentVersionIndex: Int = 0
+    @State private var changedIngredients: Set<String> = [] // Track remixed ingredients
     
     // State for Favorite/Delete
     // State for Favorite/Delete
@@ -26,9 +30,22 @@ struct RecipeView: View {
     @State private var shareItems: [Any] = []
     @State private var isSavingRemix = false
     
-    init(recipe: Recipe) {
+    /// Original recipe for detecting if in remix mode
+    private var originalRecipe: Recipe? {
+        guard recipeVersions.count > 1 else { return nil }
+        return recipeVersions.first?.recipe
+    }
+    
+    init(recipe: Recipe, savedVersions: [RecipeVersion] = []) {
         _recipe = State(initialValue: recipe)
         _isFavorite = State(initialValue: recipe.isFavorite ?? false)
+        // Initialize with passed versions or just the current recipe
+        if savedVersions.isEmpty {
+            _recipeVersions = State(initialValue: [RecipeVersion(title: "Original", recipe: recipe)])
+        } else {
+            _recipeVersions = State(initialValue: savedVersions)
+            _currentVersionIndex = State(initialValue: savedVersions.count - 1)
+        }
     }
     
     var body: some View {
@@ -68,18 +85,44 @@ struct RecipeView: View {
                         .padding(.horizontal)
                     }
                     
-                    // MARK: - Revert Button (Only if Remixed)
-                    if originalRecipe != nil {
-                        Button(action: revertRecipe) {
-                            HStack {
-                                Spacer()
-                                Image(systemName: "arrow.uturn.backward")
-                                Text("Revert to Original")
+                    // MARK: - Version History (Only if Remixed)
+                    if recipeVersions.count > 1 {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Versions")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.clipCookTextSecondary)
+                                .padding(.horizontal)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(Array(recipeVersions.enumerated()), id: \.element.id) { index, version in
+                                        Button(action: { selectVersion(at: index) }) {
+                                            HStack(spacing: 4) {
+                                                if index == 0 {
+                                                    Image(systemName: "arrow.uturn.backward")
+                                                        .font(.caption2)
+                                                }
+                                                Text(version.title)
+                                                    .font(.caption)
+                                                    .fontWeight(.medium)
+                                                    .lineLimit(1)
+                                            }
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                currentVersionIndex == index
+                                                    ? AnyView(LinearGradient.sizzle)
+                                                    : AnyView(Color.clipCookSurface)
+                                            )
+                                            .foregroundColor(currentVersionIndex == index ? .white : .clipCookTextSecondary)
+                                            .cornerRadius(16)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
                             }
-                            .foregroundColor(.clipCookTextSecondary)
-                            .padding(.vertical, 8)
                         }
-                        .padding(.horizontal)
                     }
                     
                     // MARK: - Ingredients Checklist
@@ -93,7 +136,8 @@ struct RecipeView: View {
                                 ForEach(ingredients, id: \.self) { ingredient in
                                     IngredientRow(
                                         ingredient: ingredient,
-                                        isChecked: checkedIngredients.contains(ingredient.name)
+                                        isChecked: checkedIngredients.contains(ingredient.name),
+                                        isRemixed: changedIngredients.contains(ingredient.name)
                                     ) {
                                         toggleIngredient(ingredient.name)
                                     }
@@ -252,11 +296,6 @@ struct RecipeView: View {
                 let remixedPart = try await RemixService.shared.remixRecipe(originalRecipe: currentRecipe, prompt: remixPrompt)
                 
                 await MainActor.run {
-                    // Save original if not already saved
-                    if self.originalRecipe == nil {
-                        self.originalRecipe = currentRecipe
-                    }
-                    
                     // Merge new data with existing recipe
                     // We keep ID, UserId, VideoUrl, etc. from the original
                     // We update Title, Description, Ingredients, Instructions, ChefsNote from Remix
@@ -275,7 +314,23 @@ struct RecipeView: View {
                         isFavorite: currentRecipe.isFavorite
                     )
                     
+                    // Compute changed ingredients
+                    let newChangedIngredients = Set(remixedPart.changedIngredients ?? [])
+                    
+                    // Create version entry
+                    let versionTitle = newRecipe.title
+                    let newVersion = RecipeVersion(
+                        title: versionTitle,
+                        recipe: newRecipe,
+                        changedIngredients: newChangedIngredients
+                    )
+                    
+                    // Add to version history
+                    self.recipeVersions.append(newVersion)
+                    self.currentVersionIndex = self.recipeVersions.count - 1
+                    
                     self.recipe = newRecipe
+                    self.changedIngredients = newChangedIngredients
                     self.remixPrompt = "" // Clear prompt
                     self.showingRemix = false // Dismiss sheet
                     self.isRemixing = false
@@ -292,13 +347,14 @@ struct RecipeView: View {
         }
     }
     
-    private func revertRecipe() {
-        if let original = originalRecipe {
-            withAnimation {
-                self.recipe = original
-                self.originalRecipe = nil
-                self.checkedIngredients.removeAll()
-            }
+    private func selectVersion(at index: Int) {
+        guard index >= 0, index < recipeVersions.count else { return }
+        withAnimation {
+            currentVersionIndex = index
+            let version = recipeVersions[index]
+            recipe = version.recipe
+            changedIngredients = version.changedIngredients
+            checkedIngredients.removeAll()
         }
     }
     
@@ -337,16 +393,18 @@ struct RecipeView: View {
     
     private func shareLink() {
         Task {
-            // Check if it's an unsaved remix (exists locally but ID is reused for display)
-            // Ideally we should track "isUnsavedRemix", but checking if originalRecipe != nil is a good proxy in this specific view logic
-            if let original = originalRecipe {
+            // Check if it's an unsaved remix (has versions beyond the original)
+            if recipeVersions.count > 1, let original = recipeVersions.first?.recipe {
                 // It is a remix, save it first
                 await MainActor.run { isSavingRemix = true }
                 do {
                     let savedRecipe = try await RecipeService.shared.saveRemixedRecipe(recipe, originalId: original.id)
                     await MainActor.run {
                         self.recipe = savedRecipe
-                        self.originalRecipe = nil // No longer transient
+                        // Reset versions to just the saved recipe (no longer transient)
+                        self.recipeVersions = [RecipeVersion(title: "Original", recipe: savedRecipe)]
+                        self.currentVersionIndex = 0
+                        self.changedIngredients.removeAll()
                         self.isSavingRemix = false
                         
                         // Now share the new link
@@ -404,6 +462,32 @@ struct RemixSheet: View {
     @Binding var isRemixing: Bool
     let onRemix: () -> Void
     
+    // Pool of remix suggestions
+    private let allSuggestions = [
+        "Add a different protein",
+        "Make it vegan",
+        "Remove the spice",
+        "Use fewer ingredients",
+        "Make it kid-friendly",
+        "Add more vegetables",
+        "Make it spicier",
+        "Use pantry staples"
+    ]
+    
+    // Rotating status messages
+    private let statusMessages = [
+        "Checking flavor palette...",
+        "Adjusting proportions...",
+        "Selecting new ingredients...",
+        "Rewriting the steps...",
+        "Adding chef's notes...",
+        "Almost there..."
+    ]
+    
+    @State private var displayedSuggestions: [String] = []
+    @State private var currentStatusIndex = 0
+    @State private var statusTimer: Timer?
+    
     var body: some View {
         ZStack {
             Color.clipCookBackground.ignoresSafeArea()
@@ -415,8 +499,15 @@ struct RemixSheet: View {
                         .scaleEffect(2)
                     Text("Asking the Chef...")
                         .modifier(UtilityHeadline())
-                    Text("Rewriting ingredients and steps...")
+                    Text(statusMessages[currentStatusIndex])
                         .modifier(UtilitySubhead())
+                        .animation(.easeInOut(duration: 0.3), value: currentStatusIndex)
+                }
+                .onAppear {
+                    startStatusRotation()
+                }
+                .onDisappear {
+                    stopStatusRotation()
                 }
             } else {
                 VStack(alignment: .leading, spacing: 20) {
@@ -432,6 +523,26 @@ struct RemixSheet: View {
                         .cornerRadius(12)
                         .foregroundColor(.white)
                         .lineLimit(3...6)
+                    
+                    // Suggestion Bubbles
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(displayedSuggestions, id: \.self) { suggestion in
+                                Button(action: { prompt = suggestion }) {
+                                    Text(suggestion)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(LinearGradient.sizzle, lineWidth: 1.5)
+                                        )
+                                        .foregroundColor(.clipCookTextSecondary)
+                                }
+                            }
+                        }
+                    }
                     
                     Button(action: onRemix) {
                         HStack {
@@ -449,8 +560,26 @@ struct RemixSheet: View {
                     Spacer()
                 }
                 .padding(24)
+                .onAppear {
+                    // Pick 4 random suggestions
+                    displayedSuggestions = Array(allSuggestions.shuffled().prefix(4))
+                }
             }
         }
+    }
+    
+    private func startStatusRotation() {
+        currentStatusIndex = 0
+        statusTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+            withAnimation {
+                currentStatusIndex = (currentStatusIndex + 1) % statusMessages.count
+            }
+        }
+    }
+    
+    private func stopStatusRotation() {
+        statusTimer?.invalidate()
+        statusTimer = nil
     }
 }
 
@@ -555,6 +684,7 @@ struct SourceCardHeader: View {
 struct IngredientRow: View {
     let ingredient: Ingredient
     let isChecked: Bool
+    var isRemixed: Bool = false
     let action: () -> Void
     
     var body: some View {
@@ -568,6 +698,12 @@ struct IngredientRow: View {
                     .font(.body)
                     .foregroundColor(isChecked ? .clipCookTextSecondary : .clipCookTextPrimary)
                     .strikethrough(isChecked)
+                
+                if isRemixed {
+                    Image(systemName: "wand.and.stars")
+                        .font(.caption)
+                        .foregroundStyle(LinearGradient.sizzle)
+                }
                 
                 Spacer()
             }
