@@ -183,7 +183,7 @@ router.post('/process-recipe', async (req, res) => {
             return;
         }
 
-        // SUCCESS
+        // SUCCESS - notify user immediately
         await notifyUser(
             userId,
             '🍳 Recipe Ready!',
@@ -192,6 +192,24 @@ router.post('/process-recipe', async (req, res) => {
         );
 
         console.log("Recipe saved and notification sent:", data.id);
+
+        // Pre-compute step preparations in background (don't block user notification)
+        try {
+            const stepPreparations = await gemini.prepareAllSteps({
+                title: recipeData.title,
+                ingredients: recipeData.ingredients,
+                instructions: recipeData.instructions
+            });
+
+            await supabase
+                .from('recipes')
+                .update({ step_preparations: stepPreparations })
+                .eq('id', data.id);
+
+            console.log(`Step preparations saved for recipe ${data.id}`);
+        } catch (prepError) {
+            console.error("Error pre-computing step preparations (non-blocking):", prepError);
+        }
 
     } catch (error: any) {
         console.error("Error processing recipe:", error);
@@ -288,6 +306,26 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
         if (error) {
             console.error("Supabase Insert Error:", error);
             return res.status(500).json({ error: 'Failed to save recipe' });
+        }
+
+        // Pre-compute step preparations (non-blocking for response, but we await)
+        try {
+            const stepPreparations = await gemini.prepareAllSteps({
+                title: recipeData.title,
+                ingredients: recipeData.ingredients,
+                instructions: recipeData.instructions
+            });
+
+            await supabase
+                .from('recipes')
+                .update({ step_preparations: stepPreparations })
+                .eq('id', data.id);
+
+            // Include in response so iOS has it immediately
+            data.step_preparations = stepPreparations;
+            console.log(`Step preparations saved for AI recipe ${data.id}`);
+        } catch (prepError) {
+            console.error("Error pre-computing step preparations:", prepError);
         }
 
         res.json({ success: true, recipe: data });
@@ -563,6 +601,67 @@ router.post('/synthesize', async (req, res) => {
 
     } catch (error: any) {
         console.error("Error synthesizing speech:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get versions for a recipe
+router.get('/recipes/:recipeId/versions', async (req, res) => {
+    try {
+        const { recipeId } = req.params;
+
+        const { data, error } = await supabase
+            .from('recipe_versions')
+            .select('*')
+            .eq('recipe_id', recipeId)
+            .order('version_number', { ascending: true });
+
+        if (error) throw error;
+
+        res.json({ success: true, versions: data || [] });
+    } catch (error: any) {
+        console.error("Error fetching versions:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Save a new version
+router.post('/recipes/:recipeId/versions', async (req, res) => {
+    try {
+        const { recipeId } = req.params;
+        const { title, description, ingredients, instructions, chefsNote, changedIngredients } = req.body;
+
+        // Get next version number
+        const { data: existingVersions } = await supabase
+            .from('recipe_versions')
+            .select('version_number')
+            .eq('recipe_id', recipeId)
+            .order('version_number', { ascending: false })
+            .limit(1);
+
+        const nextVersionNumber = (existingVersions?.[0]?.version_number || 0) + 1;
+
+        const { data, error } = await supabase
+            .from('recipe_versions')
+            .insert({
+                recipe_id: recipeId,
+                version_number: nextVersionNumber,
+                title,
+                description,
+                ingredients,
+                instructions,
+                chefs_note: chefsNote,
+                changed_ingredients: changedIngredients
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        console.log(`Saved version ${nextVersionNumber} for recipe ${recipeId}`);
+        res.json({ success: true, version: data });
+    } catch (error: any) {
+        console.error("Error saving version:", error);
         res.status(500).json({ error: error.message });
     }
 });

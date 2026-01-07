@@ -137,7 +137,7 @@ struct RecipeView: View {
                                     IngredientRow(
                                         ingredient: ingredient,
                                         isChecked: checkedIngredients.contains(ingredient.name),
-                                        isRemixed: changedIngredients.contains(ingredient.name)
+                                        isRemixed: isIngredientChanged(ingredient.name)
                                     ) {
                                         toggleIngredient(ingredient.name)
                                     }
@@ -275,6 +275,56 @@ struct RecipeView: View {
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(activityItems: shareItems)
         }
+        .task {
+            await loadSavedVersions()
+        }
+    }
+    
+    /// Load saved versions from the database
+    private func loadSavedVersions() async {
+        do {
+            let savedVersions = try await VersionService.shared.fetchVersions(for: recipe.id)
+            
+            if !savedVersions.isEmpty {
+                await MainActor.run {
+                    // Create RecipeVersion objects from saved versions
+                    var versions: [RecipeVersion] = [RecipeVersion(title: "Original", recipe: recipe)]
+                    
+                    for saved in savedVersions {
+                        let versionRecipe = Recipe(
+                            id: recipe.id,
+                            userId: recipe.userId,
+                            title: saved.title,
+                            description: saved.description ?? recipe.description,
+                            videoUrl: recipe.videoUrl,
+                            thumbnailUrl: recipe.thumbnailUrl,
+                            ingredients: saved.ingredients ?? recipe.ingredients,
+                            instructions: saved.instructions ?? recipe.instructions,
+                            createdAt: recipe.createdAt,
+                            chefsNote: saved.chefsNote,
+                            profile: recipe.profile,
+                            isFavorite: recipe.isFavorite
+                        )
+                        versions.append(RecipeVersion(
+                            title: saved.title,
+                            recipe: versionRecipe,
+                            changedIngredients: Set(saved.changedIngredients ?? [])
+                        ))
+                    }
+                    
+                    self.recipeVersions = versions
+                }
+            }
+        } catch {
+            print("Failed to load versions: \(error)")
+            // Non-blocking - versions just won't load from DB
+        }
+    }
+    
+    /// Check if an ingredient was changed (case-insensitive matching)
+    private func isIngredientChanged(_ ingredientName: String) -> Bool {
+        let lowerName = ingredientName.lowercased()
+        return changedIngredients.contains { $0.lowercased() == lowerName || lowerName.contains($0.lowercased()) || $0.lowercased().contains(lowerName) }
     }
     
     private func toggleIngredient(_ name: String) {
@@ -290,41 +340,50 @@ struct RecipeView: View {
         isRemixing = true
         
         let currentRecipe = recipe
+        let originalRecipeId = recipeVersions.first?.recipe.id ?? recipe.id
         
         Task {
             do {
                 let remixedPart = try await RemixService.shared.remixRecipe(originalRecipe: currentRecipe, prompt: remixPrompt)
                 
+                // Merge new data with existing recipe
+                let newRecipe = Recipe(
+                    id: currentRecipe.id,
+                    userId: currentRecipe.userId,
+                    title: remixedPart.title ?? currentRecipe.title,
+                    description: remixedPart.description ?? currentRecipe.description,
+                    videoUrl: currentRecipe.videoUrl,
+                    thumbnailUrl: currentRecipe.thumbnailUrl,
+                    ingredients: remixedPart.ingredients ?? currentRecipe.ingredients,
+                    instructions: remixedPart.instructions ?? currentRecipe.instructions,
+                    createdAt: currentRecipe.createdAt,
+                    chefsNote: remixedPart.chefsNote,
+                    profile: currentRecipe.profile,
+                    isFavorite: currentRecipe.isFavorite
+                )
+                
+                // Compute changed ingredients
+                let newChangedIngredients = Set(remixedPart.changedIngredients ?? [])
+                
+                // Create version entry
+                let versionTitle = newRecipe.title
+                let newVersion = RecipeVersion(
+                    title: versionTitle,
+                    recipe: newRecipe,
+                    changedIngredients: newChangedIngredients
+                )
+                
+                // Save version to database (fire and forget)
+                Task {
+                    do {
+                        _ = try await VersionService.shared.saveVersion(for: originalRecipeId, version: newVersion)
+                        print("Version saved to database")
+                    } catch {
+                        print("Failed to save version to database: \(error)")
+                    }
+                }
+                
                 await MainActor.run {
-                    // Merge new data with existing recipe
-                    // We keep ID, UserId, VideoUrl, etc. from the original
-                    // We update Title, Description, Ingredients, Instructions, ChefsNote from Remix
-                    let newRecipe = Recipe(
-                        id: currentRecipe.id,
-                        userId: currentRecipe.userId,
-                        title: remixedPart.title ?? currentRecipe.title,
-                        description: remixedPart.description ?? currentRecipe.description,
-                        videoUrl: currentRecipe.videoUrl,
-                        thumbnailUrl: currentRecipe.thumbnailUrl,
-                        ingredients: remixedPart.ingredients ?? currentRecipe.ingredients,
-                        instructions: remixedPart.instructions ?? currentRecipe.instructions,
-                        createdAt: currentRecipe.createdAt,
-                        chefsNote: remixedPart.chefsNote,
-                        profile: currentRecipe.profile,
-                        isFavorite: currentRecipe.isFavorite
-                    )
-                    
-                    // Compute changed ingredients
-                    let newChangedIngredients = Set(remixedPart.changedIngredients ?? [])
-                    
-                    // Create version entry
-                    let versionTitle = newRecipe.title
-                    let newVersion = RecipeVersion(
-                        title: versionTitle,
-                        recipe: newRecipe,
-                        changedIngredients: newChangedIngredients
-                    )
-                    
                     // Add to version history
                     self.recipeVersions.append(newVersion)
                     self.currentVersionIndex = self.recipeVersions.count - 1

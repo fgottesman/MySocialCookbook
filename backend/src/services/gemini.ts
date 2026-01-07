@@ -229,6 +229,36 @@ export class GeminiService {
     }
 
     /**
+     * Pre-compute step preparations for all steps in a recipe.
+     * Called at recipe creation time for instant loading in cooking mode.
+     */
+    async prepareAllSteps(recipe: any): Promise<any[]> {
+        const instructions = recipe.instructions || [];
+        if (instructions.length === 0) return [];
+
+        console.log(`Pre-computing ${instructions.length} step preparations for: ${recipe.title}`);
+
+        // Process all steps in parallel
+        const preparations = await Promise.all(
+            instructions.map(async (_: string, index: number) => {
+                try {
+                    return await this.prepareStep(recipe, index, String(index + 1));
+                } catch (error) {
+                    console.error(`Failed to prepare step ${index}:`, error);
+                    return {
+                        introduction: `Let's work on step ${index + 1}.`,
+                        subSteps: null,
+                        conversions: null
+                    };
+                }
+            })
+        );
+
+        console.log(`Pre-computed ${preparations.length} step preparations`);
+        return preparations;
+    }
+
+    /**
      * Transcribe audio to text using Gemini 3 Flash.
      * Accepts base64 encoded audio data.
      */

@@ -364,9 +364,28 @@ struct VoiceCompanionView: View {
     
     // MARK: - Data Loading
     
-    /// Pre-load all step preparations when cooking starts (non-blocking)
+    /// Load step preparations - uses pre-computed data if available, else fetches from API
     private func preloadAllSteps() {
         guard !recipe.instructions.isEmptyOrNil else { return }
+        
+        // Check if we have pre-computed step preparations
+        if let precomputed = recipe.stepPreparations, !precomputed.isEmpty {
+            print("Using pre-computed step preparations (\(precomputed.count) steps)")
+            
+            // Populate cache from pre-computed data
+            for (index, prep) in precomputed.enumerated() {
+                stepPreparationCache[index] = prep
+            }
+            
+            // Speak the first step immediately
+            if let firstPrep = precomputed.first {
+                speechManager.speak(firstPrep.introduction)
+            }
+            return
+        }
+        
+        // Fallback: fetch from API if not pre-computed (older recipes)
+        print("No pre-computed data, fetching step preparations from API...")
         
         let stepCount = recipe.instructions?.count ?? 0
         isPreloading = true

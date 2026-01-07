@@ -16,6 +16,7 @@ struct Recipe: Codable, Identifiable {
     
     let parentRecipeId: UUID? // Added for Remix attribution
     let sourcePrompt: String? // Added for AI recipe attribution
+    let stepPreparations: [StepPreparation]? // Pre-computed step preparations for cooking mode
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -32,9 +33,10 @@ struct Recipe: Codable, Identifiable {
         case isFavorite = "is_favorite"
         case parentRecipeId = "parent_recipe_id"
         case sourcePrompt = "source_prompt"
+        case stepPreparations = "step_preparations"
     }
     
-    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil) {
+    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil) {
         self.id = id
         self.userId = userId
         self.title = title
@@ -49,6 +51,7 @@ struct Recipe: Codable, Identifiable {
         self.isFavorite = isFavorite
         self.parentRecipeId = parentRecipeId
         self.sourcePrompt = sourcePrompt
+        self.stepPreparations = stepPreparations
     }
 }
 
@@ -69,6 +72,7 @@ extension Recipe {
         isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite)
         parentRecipeId = try container.decodeIfPresent(UUID.self, forKey: .parentRecipeId)
         sourcePrompt = try container.decodeIfPresent(String.self, forKey: .sourcePrompt)
+        stepPreparations = try container.decodeIfPresent([StepPreparation].self, forKey: .stepPreparations)
     }
 }
 
