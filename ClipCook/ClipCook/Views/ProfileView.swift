@@ -3,34 +3,74 @@ import Supabase
 import Auth
 
 struct ProfileView: View {
-    @State private var profile: Profile?
+    @State private var userEmail: String?
     @State private var isLoading = true
     @State private var showingSignOutAlert = false
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 32) {
-                if let profile = profile {
-                    VStack(spacing: 8) {
-                        Text(profile.fullName ?? "User")
-                            .font(.title)
-                            .fontWeight(.bold)
-                        
-                        if let username = profile.username {
-                            Text("@\(username)")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                        }
+            VStack(spacing: 0) {
+                // User Info Section
+                VStack(spacing: 12) {
+                    // Profile Icon
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 80))
+                        .foregroundColor(.gray.opacity(0.5))
+                    
+                    // Email
+                    if let email = userEmail {
+                        Text(email)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                    } else if isLoading {
+                        ProgressView()
                     }
-                } else if isLoading {
-                    ProgressView()
-                } else {
-                    Text("Could not load profile")
-                        .foregroundColor(.secondary)
                 }
+                .padding(.top, 20)
+                .padding(.bottom, 40)
+                
+                // Menu Items
+                VStack(spacing: 0) {
+                    // Settings
+                    NavigationLink(destination: UserPreferencesView()) {
+                        MenuRow(
+                            icon: "gearshape",
+                            title: "Settings"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Divider()
+                        .padding(.leading, 56)
+                    
+                    // Data Privacy
+                    MenuRow(
+                        icon: "lock.shield",
+                        title: "Data Privacy",
+                        showComingSoon: true
+                    )
+                    
+                    Divider()
+                        .padding(.leading, 56)
+                    
+                    // Terms of Service
+                    MenuRow(
+                        icon: "doc.text",
+                        title: "Terms of Service",
+                        showComingSoon: true
+                    )
+                }
+                .background(Color(.systemBackground))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(.systemGray5), lineWidth: 1)
+                )
+                .padding(.horizontal)
                 
                 Spacer()
                 
+                // Sign Out Button
                 Button(role: .destructive) {
                     showingSignOutAlert = true
                 } label: {
@@ -55,30 +95,21 @@ struct ProfileView: View {
                 Text("Are you sure you want to sign out?")
             }
             .task {
-                await fetchProfile()
+                await fetchUserEmail()
             }
         }
     }
     
-    private func fetchProfile() async {
+    private func fetchUserEmail() async {
         do {
             let session = try await SupabaseManager.shared.client.auth.session
-            let userId = session.user.id
-            
-            let fetchedProfile: Profile = try await SupabaseManager.shared.client
-                .from("profiles")
-                .select()
-                .eq("id", value: userId.uuidString)
-                .single()
-                .execute()
-                .value
             
             await MainActor.run {
-                self.profile = fetchedProfile
+                self.userEmail = session.user.email
                 self.isLoading = false
             }
         } catch {
-            print("Error fetching profile: \(error)")
+            print("Error fetching user email: \(error)")
             isLoading = false
         }
     }
@@ -91,6 +122,46 @@ struct ProfileView: View {
                 print("Error signing out: \(error)")
             }
         }
+    }
+}
+
+// MARK: - Menu Row Component
+struct MenuRow: View {
+    let icon: String
+    let title: String
+    var showComingSoon: Bool = false
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(.primary)
+                .frame(width: 24)
+            
+            Text(title)
+                .font(.body)
+                .foregroundColor(.primary)
+            
+            Spacer()
+            
+            if showComingSoon {
+                Text("Coming Soon")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color(.systemGray5))
+                    .cornerRadius(12)
+            }
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color(.systemGray3))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
     }
 }
 

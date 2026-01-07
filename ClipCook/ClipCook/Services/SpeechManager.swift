@@ -20,6 +20,10 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     @Published var permissionGranted = false
     @Published var preferredVoiceIdentifier: String?
     @Published var isSynthesizing = false
+    @Published var isMuted = false
+    
+    // Configurable delay before speaking on step change (in seconds)
+    static var stepIntroductionDelay: TimeInterval = 0.0
     
     var availableVoices: [AVSpeechSynthesisVoice] {
         AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
@@ -206,6 +210,12 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     }
     
     func speak(_ text: String) {
+        // Check mute status
+        guard !isMuted else {
+            print("DEBUG: Speech muted, skipping TTS")
+            return
+        }
+        
         // High quality cloud voice via Gemini TTS
         Task {
             DispatchQueue.main.async { self.isSynthesizing = true }
@@ -278,5 +288,10 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
         } catch {
             print("DEBUG: Error playing audio: \(error)")
         }
+    }
+    
+    func stopSpeaking() {
+        audioPlayer?.stop()
+        synthesizer.stopSpeaking(at: .immediate)
     }
 }

@@ -1,6 +1,6 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleAIFileManager } from "@google/generative-ai/files";
+import { GoogleAIFileManager } from "@google/generative-ai/server";
 import fs from 'fs';
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -85,6 +85,52 @@ const VOICE_COMPANION_PROMPT = `
 Return a clean text string of what you want to say back to the user.
 `;
 
+const STEP_PREPARATION_PROMPT = `
+**Role:** You are a friendly Sous Chef helping prepare a cook for their next step. Analyze the step and provide structured guidance.
+
+## Your Tasks:
+
+### 1. Introduction (REQUIRED)
+Write a brief, warm introduction for this step. It will be read aloud via TTS.
+- Keep it to 1-2 sentences
+- Be encouraging and helpful
+- Explain WHAT they're about to do and briefly WHY (if relevant)
+- No markdown, write naturally for speech
+- Example: "Alright, let's get those vegetables ready! We're going to dice them into small cubes so they cook evenly."
+
+### 2. Sub-Steps (CONDITIONAL)
+If the step contains MULTIPLE DISTINCT ACTIONS (connected by "then", "and then", "after that", or containing comma-separated major tasks), break it into sub-steps.
+- Only break down if there are genuinely separate actions
+- Each sub-step should be a single clear action
+- Keep the original wording where possible, just separated
+- If the step is already simple and focused, return null for subSteps
+
+### 3. Measurements & Conversions (CONDITIONAL)
+Scan the step for any measurements (cups, tablespoons, teaspoons, ounces, pounds, Fahrenheit, etc.).
+For each measurement found:
+- Provide the metric equivalent (grams, ml, Celsius)
+- Provide a natural spoken version of the conversion
+- If no measurements found, return null for conversions
+
+## Output Format
+Return ONLY valid JSON matching this schema (no markdown):
+{
+  "introduction": "Your warm, spoken introduction to the step",
+  "subSteps": [
+    { "label": "1-a", "text": "First action" },
+    { "label": "1-b", "text": "Second action" }
+  ] | null,
+  "conversions": [
+    { 
+      "original": "1 cup flour", 
+      "metric": "125g flour",
+      "imperial": "1 cup flour", 
+      "spoken": "One cup of flour is about 125 grams"
+    }
+  ] | null
+}
+`;
+
 export class GeminiService {
 
     async uploadMedia(path: string, mimeType: string = "video/mp4") {
@@ -120,6 +166,62 @@ export class GeminiService {
 
         const result = await model.generateContent(FULL_PROMPT);
         return result.response.text();
+    }
+
+    /**
+     * Prepare a step for cooking mode.
+     * Analyzes the step, generates an introduction, breaks down compound steps,
+     * and provides measurement conversions.
+     */
+    async prepareStep(recipe: any, stepIndex: number, stepLabel: string = "1") {
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+        const instructions = recipe.instructions || [];
+        const currentStep = instructions[stepIndex] || "";
+
+        const FULL_PROMPT = `
+        ${STEP_PREPARATION_PROMPT}
+
+        CONTEXT:
+        Recipe Title: ${recipe.title}
+        Full Recipe: ${JSON.stringify(recipe)}
+        Step Number: ${stepIndex + 1}
+        Step Label for Sub-Steps: "${stepLabel}" (use "${stepLabel}-a", "${stepLabel}-b", etc.)
+        
+        CURRENT STEP TO ANALYZE:
+        "${currentStep}"
+        `;
+
+        const result = await model.generateContent(FULL_PROMPT);
+        return this.parseStepPreparation(result.response.text());
+    }
+
+    private parseStepPreparation(responseText: string) {
+        console.log("Raw step preparation response:", responseText);
+
+        const firstBrace = responseText.indexOf('{');
+        const lastBrace = responseText.lastIndexOf('}');
+
+        if (firstBrace === -1 || lastBrace === -1) {
+            // Fallback if no JSON found - return minimal response
+            return {
+                introduction: "Let's get started on this step.",
+                subSteps: null,
+                conversions: null
+            };
+        }
+
+        const jsonText = responseText.substring(firstBrace, lastBrace + 1);
+        try {
+            return JSON.parse(jsonText);
+        } catch (e) {
+            console.error("Failed to parse step preparation JSON:", e);
+            return {
+                introduction: "Let's get started on this step.",
+                subSteps: null,
+                conversions: null
+            };
+        }
     }
 
     /**
@@ -271,5 +373,53 @@ export class GeminiService {
         const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
         const result = await model.embedContent(text);
         return result.embedding.values;
+    }
+
+    /**
+     * Generate a food image for a recipe using Gemini's image generation (Nano Banana).
+     * Returns base64 encoded image data.
+     */
+    async generateFoodImage(recipeTitle: string, description?: string): Promise<string | null> {
+        try {
+            // Use Gemini 2.5 Flash for image generation (Nano Banana)
+            const model = genAI.getGenerativeModel({
+                model: "gemini-2.5-flash-preview-native-image"
+            });
+
+            const imagePrompt = `Generate a stunning, appetizing food photograph of: "${recipeTitle}"
+            
+Style guidelines:
+- Professional food photography, overhead or 45-degree angle shot
+- Beautiful plating on a rustic wooden table or marble surface
+- Soft natural lighting, slightly warm tones
+- Garnished elegantly, restaurant quality presentation
+- Shallow depth of field with bokeh background
+- Include complementary props like fresh herbs, ingredients, or elegant utensils
+${description ? `\nDish description: ${description}` : ''}
+
+Make it look absolutely delicious and instagram-worthy.`;
+
+            // Use simple text prompt - the model will generate image content
+            const result = await model.generateContent(imagePrompt);
+
+            // Extract image from response
+            const response = result.response;
+            const parts = response.candidates?.[0]?.content?.parts || [];
+
+            for (const part of parts) {
+                // Check for inline image data
+                const partAny = part as any;
+                if (partAny.inlineData?.data) {
+                    console.log("Generated food image successfully");
+                    return partAny.inlineData.data; // base64 encoded image
+                }
+            }
+
+            console.log("No image data in response - model may not support image generation");
+            return null;
+        } catch (error: any) {
+            console.error("Error generating food image:", error.message);
+            return null;
+        }
     }
 }

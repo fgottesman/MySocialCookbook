@@ -31,6 +31,10 @@ create table public.recipes (
   instructions jsonb, -- Array of strings
   embedding vector(768), -- Gemini Embedding
   thumbnail_url text, -- Permanent URL from Supabase Storage
+  chefs_note text, -- AI chef's tip for this recipe
+  is_favorite boolean default false,
+  parent_recipe_id uuid references public.recipes(id), -- For remix attribution
+  source_prompt text, -- AI prompt used to generate this recipe
   created_at timestamptz default now()
 );
 

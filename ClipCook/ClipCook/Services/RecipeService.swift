@@ -108,7 +108,9 @@ class RecipeService {
             let recipe: Recipe
         }
         
-        let decodedResponse = try JSONDecoder().decode(BackendResponse.self, from: data)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decodedResponse = try decoder.decode(BackendResponse.self, from: data)
         return decodedResponse.recipe
     }
 

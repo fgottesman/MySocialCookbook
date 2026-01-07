@@ -459,9 +459,24 @@ struct RemixSheet: View {
 struct SourceCardHeader: View {
     let recipe: Recipe
     
+    // Determine if this is an AI-generated recipe
+    private var isAIRecipe: Bool {
+        recipe.videoUrl == nil
+    }
+    
+    // Detect source platform from video URL
+    private var sourcePlatform: String {
+        guard let videoUrl = recipe.videoUrl?.lowercased() else { return "Video" }
+        if videoUrl.contains("tiktok") { return "TikTok" }
+        if videoUrl.contains("instagram") { return "Instagram" }
+        if videoUrl.contains("youtube") || videoUrl.contains("youtu.be") { return "YouTube" }
+        if videoUrl.contains("pinterest") { return "Pinterest" }
+        return "Video"
+    }
+    
     var body: some View {
         HStack {
-            // Video Thumbnail
+            // Video Thumbnail or AI Placeholder
             Group {
                 if let thumbnailUrl = recipe.thumbnailUrl, let url = URL(string: thumbnailUrl) {
                     AsyncImage(url: url) { image in
@@ -484,30 +499,46 @@ struct SourceCardHeader: View {
             .cornerRadius(8)
             .clipped()
             
-            VStack(alignment: .leading) {
-                Text("Original via TikTok")
-                    .font(.caption)
-                    .foregroundColor(.clipCookTextSecondary)
-                
-                if let profile = recipe.profile {
-                    Text(profile.username ?? "Unknown Chef")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                }
-                
-                // Deep Link Button
-                if let videoUrl = recipe.videoUrl, let _ = URL(string: videoUrl) {
-                    Link(destination: URL(string: videoUrl)!) {
-                        Text("Open Original")
+            VStack(alignment: .leading, spacing: 4) {
+                if isAIRecipe {
+                    // AI-generated recipe attribution
+                    Text("Your AI Creation")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(LinearGradient.sizzle)
+                    
+                    if let prompt = recipe.sourcePrompt {
+                        Text("from \"\(prompt)\"")
                             .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.clipCookSizzleStart)
+                            .foregroundColor(.clipCookTextSecondary)
+                            .lineLimit(2)
                     }
-                } else {
+                    
                     Text("AI Crafted")
                         .font(.caption)
                         .fontWeight(.bold)
                         .foregroundColor(.clipCookTextSecondary)
+                } else {
+                    // Video-based recipe attribution
+                    Text("Original via \(sourcePlatform)")
+                        .font(.caption)
+                        .foregroundColor(.clipCookTextSecondary)
+                    
+                    if let profile = recipe.profile {
+                        Text(profile.username ?? "Unknown Chef")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    
+                    // Deep Link Button
+                    if let videoUrl = recipe.videoUrl, let _ = URL(string: videoUrl) {
+                        Link(destination: URL(string: videoUrl)!) {
+                            Text("Open Original")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.clipCookSizzleStart)
+                        }
+                    }
                 }
             }
             
@@ -519,6 +550,7 @@ struct SourceCardHeader: View {
         .padding(.horizontal)
     }
 }
+
 
 struct IngredientRow: View {
     let ingredient: Ingredient

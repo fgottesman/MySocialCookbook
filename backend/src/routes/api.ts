@@ -231,6 +231,42 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
         const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
         const embedding = await gemini.generateEmbedding(embeddingText);
 
+        // Generate AI food image for thumbnail
+        let thumbnailUrl: string | null = null;
+        try {
+            console.log("Generating AI food image...");
+            const imageBase64 = await gemini.generateFoodImage(recipeData.title, recipeData.description);
+
+            if (imageBase64) {
+                // Upload to Supabase storage
+                const imageName = `ai_recipe_${crypto.randomUUID()}.png`;
+                const imageBuffer = Buffer.from(imageBase64, 'base64');
+
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('recipe-thumbnails')
+                    .upload(imageName, imageBuffer, {
+                        contentType: 'image/png',
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    console.error("Image upload error:", uploadError);
+                } else {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('recipe-thumbnails')
+                        .getPublicUrl(imageName);
+
+                    if (publicUrlData?.publicUrl) {
+                        thumbnailUrl = publicUrlData.publicUrl;
+                        console.log("AI thumbnail uploaded:", thumbnailUrl);
+                    }
+                }
+            }
+        } catch (imageError: any) {
+            console.error("Error generating/uploading AI image:", imageError.message);
+            // Continue without thumbnail - non-blocking
+        }
+
         // Save to Supabase
         const { data, error } = await supabase
             .from('recipes')
@@ -239,10 +275,11 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
                 title: recipeData.title,
                 description: recipeData.description,
                 video_url: null,
-                thumbnail_url: null,
+                thumbnail_url: thumbnailUrl,
                 ingredients: recipeData.ingredients,
                 instructions: recipeData.instructions,
                 chefs_note: recipeData.chefsNote || null,
+                source_prompt: prompt, // Store the AI prompt for attribution
                 embedding: embedding
             })
             .select()
@@ -335,6 +372,87 @@ router.post('/chat-companion', async (req, res) => {
 
     } catch (error: any) {
         console.error("Error in Voice Companion:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Prepare a step for cooking mode - analyzes step, breaks down, provides conversions
+router.post('/prepare-step', async (req, res) => {
+    try {
+        const { recipe, stepIndex, stepLabel } = req.body;
+
+        if (!recipe || stepIndex === undefined) {
+            return res.status(400).json({ error: 'Missing recipe or stepIndex' });
+        }
+
+        console.log(`Preparing step ${stepIndex} for recipe: ${recipe.title}`);
+
+        const preparation = await gemini.prepareStep(recipe, stepIndex, stepLabel || String(stepIndex + 1));
+
+        console.log("Step preparation complete:", preparation.introduction?.substring(0, 50) + "...");
+
+        res.json({ success: true, preparation });
+
+    } catch (error: any) {
+        console.error("Error preparing step:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get user preferences
+router.get('/user-preferences/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const { data, error } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+            throw error;
+        }
+
+        // Return defaults if no preferences exist
+        const preferences = data || {
+            user_id: userId,
+            unit_system: 'imperial', // default
+            prep_style: 'just_in_time', // or 'prep_first'
+            created_at: new Date().toISOString()
+        };
+
+        res.json({ success: true, preferences });
+
+    } catch (error: any) {
+        console.error("Error fetching preferences:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update user preferences
+router.put('/user-preferences/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const updates = req.body;
+
+        // Upsert preferences
+        const { data, error } = await supabase
+            .from('user_preferences')
+            .upsert({
+                user_id: userId,
+                ...updates,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json({ success: true, preferences: data });
+
+    } catch (error: any) {
+        console.error("Error updating preferences:", error);
         res.status(500).json({ error: error.message });
     }
 });
