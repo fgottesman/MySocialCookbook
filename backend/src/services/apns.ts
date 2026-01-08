@@ -1,6 +1,7 @@
 
 import http2 from 'http2';
 import crypto from 'crypto';
+import { supabase } from '../db/supabase';
 
 const APNS_KEY = process.env.APNS_KEY;
 const APNS_KEY_ID = process.env.APNS_KEY_ID;
@@ -176,11 +177,32 @@ export class APNsService {
                     if (status === 200) {
                         resolve(true);
                     } else {
-                        // Consume response data to log error details if needed
+                        // Consume response data to log error details
                         let data = '';
                         req.on('data', (chunk) => { data += chunk; });
-                        req.on('end', () => {
+                        req.on('end', async () => {
                             console.error(`APNs error response: ${data}`);
+
+                            // 410 = Unregistered (Token no longer valid)
+                            // 400 = BadDeviceToken (Token invalid)
+                            if (status === 410 || status === 400) {
+                                console.log(`Removing invalid device token: ${deviceToken} (Status: ${status})`);
+                                try {
+                                    const { error } = await supabase
+                                        .from('user_devices')
+                                        .delete()
+                                        .eq('device_token', deviceToken);
+
+                                    if (error) {
+                                        console.error('Error removing invalid token from DB:', error);
+                                    } else {
+                                        console.log('Successfully removed invalid token from DB.');
+                                    }
+                                } catch (dbError) {
+                                    console.error('Exception removing invalid token:', dbError);
+                                }
+                            }
+
                             resolve(false);
                         });
                     }
