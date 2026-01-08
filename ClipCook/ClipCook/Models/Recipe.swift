@@ -81,3 +81,18 @@ struct Ingredient: Codable, Hashable {
     let amount: String
     let unit: String
 }
+
+extension Recipe {
+    var isAIRecipe: Bool {
+        videoUrl == nil
+    }
+
+    var sourcePlatform: String {
+        guard let videoUrl = videoUrl?.lowercased() else { return "ClipCook" }
+        if videoUrl.contains("tiktok") { return "TikTok" }
+        if videoUrl.contains("instagram") { return "Instagram" }
+        if videoUrl.contains("youtube") || videoUrl.contains("youtu.be") { return "YouTube" }
+        if videoUrl.contains("pinterest") { return "Pinterest" }
+        return "Video"
+    }
+}

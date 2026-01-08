@@ -44,3 +44,5 @@ playground.xcworkspace
 ## CocoaPods
 Pods/
 *.xcarchive
+*.xcarchive
+*.ipa

@@ -176,10 +176,37 @@ struct RecipeCard: View {
                     .fixedSize(horizontal: false, vertical: true) // Allow full expansion
                     .multilineTextAlignment(.leading)
                 
-                if let profile = recipe.profile {
-                    Text(profile.username ?? profile.fullName ?? "Unknown Chef")
-                        .font(.caption)
-                        .foregroundColor(.clipCookTextSecondary)
+                HStack(spacing: 4) {
+                    if recipe.isAIRecipe {
+                        Image(systemName: "sparkles")
+                            .font(.caption2)
+                            .foregroundStyle(LinearGradient.sizzle)
+                        Text("AI Creation")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundStyle(LinearGradient.sizzle)
+                        
+                        if let profile = recipe.profile {
+                            Text("by \(profile.username ?? "You")")
+                                .font(.caption)
+                                .foregroundColor(.clipCookTextSecondary)
+                        }
+                    } else {
+                        if let profile = recipe.profile {
+                            Text(profile.username ?? profile.fullName ?? "Unknown Chef")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                            
+                            Text("•")
+                                .font(.caption)
+                                .foregroundColor(.clipCookTextSecondary)
+                        }
+                        
+                        Text("on \(recipe.sourcePlatform)")
+                            .font(.caption)
+                            .foregroundColor(.clipCookTextSecondary)
+                    }
                 }
             }
         }
