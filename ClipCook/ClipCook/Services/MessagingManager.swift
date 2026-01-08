@@ -37,6 +37,15 @@ class MessagingManager: NSObject, ObservableObject {
         sendTokenToBackend(token: tokenString, userId: userId)
     }
     
+    func registerCurrentDevice(userId: String) {
+        guard let tokenString = self.deviceToken else {
+            print("No device token available to register")
+            return
+        }
+        print("Registering existing token for user \(userId)...")
+        sendTokenToBackend(token: tokenString, userId: userId)
+    }
+    
     private func sendTokenToBackend(token: String, userId: String) {
         guard let url = URL(string: backendUrl) else { return }
         

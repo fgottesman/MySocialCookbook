@@ -36,6 +36,11 @@ class AuthViewModel: ObservableObject {
                 await MainActor.run {
                     self.session = session
                     print("Auth Event: \(event)")
+                    
+                    // Register device token for the new user if we have a session
+                    if let user = session?.user, (event == .signedIn || event == .initialSession) {
+                        MessagingManager.shared.registerCurrentDevice(userId: user.id.uuidString)
+                    }
                 }
             }
         }
