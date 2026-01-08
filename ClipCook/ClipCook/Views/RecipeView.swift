@@ -30,6 +30,9 @@ struct RecipeView: View {
     @State private var shareItems: [Any] = []
     @State private var isSavingRemix = false
     
+    // State for Measurement Conversion
+    @State private var measurementSystem: MeasurementSystem = .us
+    
     /// Original recipe for detecting if in remix mode
     private var originalRecipe: Recipe? {
         guard recipeVersions.count > 1 else { return nil }
@@ -128,16 +131,29 @@ struct RecipeView: View {
                     // MARK: - Ingredients Checklist
                     if let ingredients = recipe.ingredients, !ingredients.isEmpty {
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("Ingredients")
-                                .font(.headline)
-                                .foregroundColor(.clipCookSizzleStart)
+                            HStack {
+                                Text("Ingredients")
+                                    .font(.headline)
+                                    .foregroundColor(.clipCookSizzleStart)
+                                
+                                Spacer()
+                                
+                                Picker("System", selection: $measurementSystem) {
+                                    ForEach(MeasurementSystem.allCases) { system in
+                                        Text(system.rawValue).tag(system)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .frame(width: 150)
+                            }
                             
                             VStack(spacing: 12) {
                                 ForEach(ingredients, id: \.self) { ingredient in
                                     IngredientRow(
                                         ingredient: ingredient,
                                         isChecked: checkedIngredients.contains(ingredient.name),
-                                        isRemixed: isIngredientChanged(ingredient.name)
+                                        isRemixed: isIngredientChanged(ingredient.name),
+                                        measurementSystem: measurementSystem
                                     ) {
                                         toggleIngredient(ingredient.name)
                                     }
@@ -204,6 +220,14 @@ struct RecipeView: View {
                             .clipShape(Circle())
                             .shadow(radius: 4)
                     }
+                    .confirmationDialog("Delete Recipe?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+                        Button("Delete", role: .destructive) {
+                            deleteRecipe()
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("This recipe will be permanently deleted. This action cannot be undone.")
+                    }
                     .padding(.trailing, 16)
                     .padding(.top, 8)
                 }
@@ -264,14 +288,7 @@ struct RecipeView: View {
         .fullScreenCover(isPresented: $showingVoiceCompanion) {
             VoiceCompanionView(recipe: recipe)
         }
-        .confirmationDialog("Delete Recipe?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                deleteRecipe()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This recipe will be permanently deleted. This action cannot be undone.")
-        }
+
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(activityItems: shareItems)
         }
@@ -744,7 +761,16 @@ struct IngredientRow: View {
     let ingredient: Ingredient
     let isChecked: Bool
     var isRemixed: Bool = false
+    var measurementSystem: MeasurementSystem = .us
     let action: () -> Void
+    
+    private var displayValues: (amount: String, unit: String) {
+        MeasurementConverter.shared.convert(
+            amount: ingredient.amount,
+            unit: ingredient.unit,
+            to: measurementSystem
+        )
+    }
     
     var body: some View {
         Button(action: action) {
@@ -753,7 +779,7 @@ struct IngredientRow: View {
                     .foregroundColor(isChecked ? .clipCookSuccess : .clipCookTextSecondary)
                     .font(.title3)
                 
-                Text("\(ingredient.amount) \(ingredient.unit) \(ingredient.name)")
+                Text("\(displayValues.amount) \(displayValues.unit) \(ingredient.name)")
                     .font(.body)
                     .foregroundColor(isChecked ? .clipCookTextSecondary : .clipCookTextPrimary)
                     .strikethrough(isChecked)
