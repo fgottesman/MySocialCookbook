@@ -1,0 +1,225 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -scheme ClipCook -destination id=40F55EE9-2567-4340-B552-111B763B01DF build
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  swift-concurrency-extras: https://github.com/pointfreeco/swift-concurrency-extras @ 1.3.2
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.8.0
+  swift-clocks: https://github.com/pointfreeco/swift-clocks @ 1.0.6
+  swift-http-types: https://github.com/apple/swift-http-types.git @ 1.5.1
+  swift-crypto: https://github.com/apple/swift-crypto.git @ 4.2.0
+  Supabase: https://github.com/supabase/supabase-swift @ 2.39.0
+  swift-asn1: https://github.com/apple/swift-asn1.git @ 1.5.1
+
+2026-01-09 08:28:42.906 xcodebuild[6972:9931054] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (29 targets)
+    Target 'ClipCook' in project 'ClipCook'
+        ➜ Explicit dependency on target 'ShareRecipe' in project 'ClipCook'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+    Target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+    Target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+    Target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'swift-crypto_Crypto' in project 'swift-crypto'
+    Target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'swift-crypto_Crypto' in project 'swift-crypto'
+    Target 'swift-crypto_Crypto' in project 'swift-crypto' (no dependencies)
+    Target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+    Target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+    Target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay' (no dependencies)
+    Target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+    Target 'HTTPTypes' in project 'swift-http-types' (no dependencies)
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras' (no dependencies)
+    Target 'ShareRecipe' in project 'ClipCook' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/ibtool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ReadFileContents /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/share/docc/features.json
+
+Build description signature: 546fc34fd0d505a1c81e0af94df84307
+Build description path: /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/XCBuildData/546fc34fd0d505a1c81e0af94df84307.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk /Users/freddygottesman/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache
+
+ProcessInfoPlistFile /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/swift-crypto_Crypto.bundle/Info.plist /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/swift-crypto_Crypto.build/empty-swift-crypto_Crypto.plist (in target 'swift-crypto_Crypto' from project 'swift-crypto')
+    cd /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/SourcePackages/checkouts/swift-crypto
+    builtin-infoPlistUtility /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/swift-crypto_Crypto.build/empty-swift-crypto_Crypto.plist -producttype com.apple.product-type.bundle -expandbuildsettings -format binary -platform iphonesimulator -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/swift-crypto_Crypto.bundle/Info.plist
+
+ProcessInfoPlistFile /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/Info.plist /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ShareRecipe/Info.plist (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    builtin-infoPlistUtility /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ShareRecipe/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Base.lproj/MainInterface-SBPartialInfo.plist -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/Info.plist
+
+SwiftDriver ClipCook normal arm64 com.apple.xcode.tools.swift.compiler (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name ClipCook -Onone -enforce-exclusivity\=checked @/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook.SwiftFileList -DDEBUG -default-isolation\=MainActor -enable-bare-slash-regex -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64 -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache -output-file-map /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook_const_extract_protocols.json -Xcc -iquote -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-generated-files.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-own-target-headers.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook-69197a6be9298c26298ec9d69fa49007-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-project-headers.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources-normal/arm64 -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources/arm64 -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook-Swift.h -working-directory /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook -experimental-emit-module-separately -disable-cmo
+/Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Views/FeedView.swift:154:1: error: extraneous '}' at top level
+}
+^
+/Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Views/FeedView.swift:154:1: error: Extraneous '}' at top level
+}
+^ (in target 'ClipCook' from project 'ClipCook')
+
+CompileAssetCatalogVariant thinned /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ClipCook.app /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Assets.xcassets (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Assets.xcassets --compile /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/assetcatalog_dependencies_thinned --output-partial-info-plist /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --accent-color AccentColor --compress-pngs --enable-on-demand-resources YES --filter-for-thinning-device-configuration iPhone18,1 --filter-for-device-os-version 26.0 --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 26.0 --platform iphonesimulator
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftDriver ClipCook normal arm64 com.apple.xcode.tools.swift.compiler (in target 'ClipCook' from project 'ClipCook')
+	Building project ClipCook with scheme ClipCook
+(2 failures)

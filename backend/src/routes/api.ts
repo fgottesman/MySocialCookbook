@@ -756,7 +756,7 @@ router.get('/recipes/:recipeId/versions', async (req, res) => {
 router.post('/recipes/:recipeId/versions', async (req, res) => {
     try {
         const { recipeId } = req.params;
-        const { title, description, ingredients, instructions, chefsNote, changedIngredients, step0Summary, step0AudioUrl } = req.body;
+        const { title, description, ingredients, instructions, chefsNote, changedIngredients, step0Summary, step0AudioUrl, difficulty, cookingTime } = req.body;
 
         // Get next version number
         const { data: existingVersions } = await supabase
