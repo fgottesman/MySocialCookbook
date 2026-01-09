@@ -23,11 +23,14 @@ struct VoiceCompanionView: View {
         return nil
     }
     
+
     // Chat and voice state
     @StateObject private var speechManager = SpeechManager.shared
+    @StateObject private var liveManager = LiveVoiceManager.shared
     @State private var chatHistory: [ChatMessage] = []
     @State private var isProcessing = false
     @State private var showingAIResponse = false
+    @State private var isLiveMode = false
     
     // User preferences
     @State private var userPreferences: UserPreferences = .default
@@ -141,16 +144,37 @@ struct VoiceCompanionView: View {
             preloadAllSteps()
             loadUserPreferences()
         }
+        .onDisappear {
+            // Cleanup live mode if active overlay
+            if isLiveMode {
+                liveManager.disconnect()
+            }
+        }
+        .onChange(of: liveManager.errorMessage) { error in
+            if let error = error {
+                print("Live Voice Error: \(error)")
+                isLiveMode = false // Turn off the toggle
+                liveManager.disconnect()
+                // In a real app, we might show an Alert using another state variable
+                // showingErrorAlert = true
+            }
+        }
+        .alert(item: Binding<AlertItem?>(
+            get: { liveManager.errorMessage.map { AlertItem(message: $0) } },
+            set: { _ in liveManager.errorMessage = nil }
+        )) { item in
+            Alert(title: Text("Connection Error"), message: Text(item.message), dismissButton: .default(Text("OK")))
+        }
     }
     
     // MARK: - Header View
     private var headerView: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Sous Chef Mode")
+                Text(isLiveMode ? "Live Chef 🔴" : "Sous Chef Mode")
                     .font(.subheadline)
                     .fontWeight(.bold)
-                    .foregroundStyle(LinearGradient.sizzle)
+                    .foregroundStyle(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing) : LinearGradient.sizzle)
                 Text(recipe.title)
                     .font(.caption)
                     .foregroundColor(.clipCookTextSecondary)
@@ -158,7 +182,32 @@ struct VoiceCompanionView: View {
             }
             Spacer()
             
-            // Mute Button
+            // Live Mode Toggle
+            Button(action: {
+                withAnimation {
+                    isLiveMode.toggle()
+                    if isLiveMode {
+                        liveManager.connect(recipeId: recipe.id ?? "0", initialStepIndex: currentStepIndex)
+                        speechManager.stopSpeaking() // Stop standard TTS
+                    } else {
+                        liveManager.disconnect()
+                    }
+                }
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: isLiveMode ? "phone.down.fill" : "mic.badge.plus")
+                    if !isLiveMode { Text("Call Chef") }
+                }
+                .font(.caption.bold())
+                .foregroundColor(.white)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .background(isLiveMode ? Color.red : Color.clipCookSizzleStart)
+                .cornerRadius(20)
+            }
+            .padding(.trailing, 8)
+            
+            // Mute Button (Only for Standard Mode usually, but useful globally)
             Button(action: { 
                 speechManager.isMuted.toggle()
                 if speechManager.isMuted {
@@ -175,8 +224,8 @@ struct VoiceCompanionView: View {
             
             Button(action: { presentationMode.wrappedValue.dismiss() }) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.title)
-                    .foregroundColor(.clipCookTextSecondary)
+                .font(.title)
+                .foregroundColor(.clipCookTextSecondary)
             }
         }
         .padding()
@@ -261,11 +310,11 @@ struct VoiceCompanionView: View {
                 // Unit preference toggle
                 Button(action: toggleUnitPreference) {
                     Image(systemName: "gearshape.fill")
-                        .font(.caption)
-                        .foregroundColor(.clipCookTextSecondary)
-                        .padding(8)
-                        .background(Color.clipCookSurface.opacity(0.5))
-                        .cornerRadius(12)
+                    .font(.caption)
+                    .foregroundColor(.clipCookTextSecondary)
+                    .padding(8)
+                    .background(Color.clipCookSurface.opacity(0.5))
+                    .cornerRadius(12)
                 }
             }
             .padding(.horizontal)
@@ -276,7 +325,17 @@ struct VoiceCompanionView: View {
     // MARK: - Response Overlay View
     @ViewBuilder
     private var responseOverlayView: some View {
-        if !speechManager.transcript.isEmpty && (speechManager.isRecording || speechManager.isTranscribing) {
+        if isLiveMode {
+            // Live Mode Status
+            VStack {
+                Text(liveManager.isSpeaking ? "Chef is speaking..." : "Chef is listening...")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(liveManager.isSpeaking ? Color.green.opacity(0.3) : Color.blue.opacity(0.3))
+                    .cornerRadius(20)
+            }
+        } else if !speechManager.transcript.isEmpty && (speechManager.isRecording || speechManager.isTranscribing) {
             Text(speechManager.transcript)
                 .font(.headline)
                 .foregroundColor(.clipCookTextSecondary)
@@ -307,7 +366,23 @@ struct VoiceCompanionView: View {
     // MARK: - Microphone Controls View
     private var microphoneControlsView: some View {
         VStack(spacing: 16) {
-            if isProcessing {
+            if isLiveMode {
+                // Live Mode UI
+                VStack(spacing: 12) {
+                    // Visualizer for Live Mode
+                    HStack(spacing: 4) {
+                        ForEach(0..<5) { i in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.clipCookSizzleStart)
+                                .frame(width: 6, height: liveManager.isSpeaking ? CGFloat.random(in: 20...50) : 10)
+                                .animation(.easeInOut(duration: 0.2).repeatForever(), value: liveManager.isSpeaking)
+                        }
+                    }
+                    Text("Hands-free active")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+            } else if isProcessing {
                 VStack(spacing: 12) {
                     Image(systemName: "flame.fill")
                         .font(.system(size: 40))

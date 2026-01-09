@@ -77,7 +77,7 @@ struct UserPreferencesResponse: Codable {
 class VoiceCompanionService {
     static let shared = VoiceCompanionService()
     
-    private let baseUrl = "https://mysocialcookbook-production.up.railway.app/api"
+    private let baseUrl = AppConfig.apiEndpoint
     
     // MARK: - Chat Companion
     func chat(recipe: Recipe, currentStepIndex: Int, history: [ChatMessage], message: String) async throws -> String {

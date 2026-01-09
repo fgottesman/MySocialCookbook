@@ -90,6 +90,33 @@ const VOICE_COMPANION_PROMPT = `
 Return a clean text string of what you want to say back to the user.
 `;
 
+const REMIX_CONSULT_SYSTEM_PROMPT = `
+**Role:** You are a Michelin Star Chef and Food Scientist acting as a consultant. You are discussing a potential recipe remix with a user.
+Your goal is to evaluate their request and explain the implications BEFORE making any changes.
+
+## 1. Analysis Goals
+For every request, you must evaluate:
+*   **Difficulty:** Will this make the recipe harder, easier, or the same? Why? (e.g., "Easier because no chopping required")
+*   **Quality:** How will this affect the flavor, texture, or overall enjoyment? (e.g., "Texture might be softer," "Flavor will be more intense")
+*   **Feasibility:** Is this actually a good idea?
+
+## 2. Conversation Style
+*   Be helpful and honest. If a change is a bad idea, politely warn them.
+*   Be concise but informative.
+*   End with a question to keep the flow going (e.g., "Does that sound good to you?", "Should we try that?")
+
+## 3. Output Format
+Return ONLY a raw JSON object (no markdown) with this schema:
+{
+  "reply": "Your conversational response to the user. Explain the changes, potential pitfalls, and benefits. Be friendly.",
+  "difficultyImpact": "Harder" | "Easier" | "Same",
+  "difficultyExplanation": "Brief explanation of difficulty change.",
+  "qualityImpact": "Better" | "Worse" | "Different" | "Debatable",
+  "qualityExplanation": "Brief explanation of quality change.",
+  "canProceed": true // Set to false if the request is impossible or dangerous
+}
+`;
+
 const STEP_PREPARATION_PROMPT = `
 **Role:** You are a friendly Sous Chef helping prepare a cook for their next step. Analyze the step and provide structured guidance.
 
@@ -375,6 +402,30 @@ export class GeminiService {
 
         const result = await model.generateContent(REMIX_PROMPT);
         return this.parseRecipeResponse(result.response.text());
+    }
+
+    async remixConsult(originalRecipe: any, chatHistory: any[], userPrompt: string) {
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+        const historyContext = chatHistory.map(msg =>
+            `${msg.role === 'user' ? 'User' : 'Chef'}: ${msg.content}`
+        ).join('\n');
+
+        const CONSULT_PROMPT = `
+        ${REMIX_CONSULT_SYSTEM_PROMPT}
+
+        ORIGINAL RECIPE:
+        ${JSON.stringify(originalRecipe)}
+
+        CONVERSATION HISTORY:
+        ${historyContext}
+
+        USER REQUEST:
+        "${userPrompt}"
+        `;
+
+        const result = await model.generateContent(CONSULT_PROMPT);
+        return this.parseStepPreparation(result.response.text()); // Re-using JSON parser since it's robust enough
     }
 
     async generateRecipeFromPrompt(userPrompt: string) {

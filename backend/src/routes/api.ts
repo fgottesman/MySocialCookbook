@@ -488,6 +488,28 @@ router.post('/remix-recipe', async (req, res) => {
     }
 });
 
+router.post('/remix-chat', async (req, res) => {
+    try {
+        const { originalRecipe, chatHistory, userPrompt } = req.body;
+
+        if (!originalRecipe || !userPrompt) {
+            return res.status(400).json({ error: 'Missing originalRecipe or userPrompt' });
+        }
+
+        console.log(`Remix Consultation: "${userPrompt}"`);
+
+        const consultation = await gemini.remixConsult(originalRecipe, chatHistory || [], userPrompt);
+
+        console.log("Consultation:", consultation.reply?.substring(0, 50) + "...");
+
+        res.json({ success: true, consultation });
+
+    } catch (error: any) {
+        console.error("Error in remix consultation:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post('/chat-companion', async (req, res) => {
     try {
         const { recipe, currentStepIndex, chatHistory, userMessage } = req.body;
