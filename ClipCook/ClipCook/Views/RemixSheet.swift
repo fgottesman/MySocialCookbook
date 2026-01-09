@@ -154,15 +154,53 @@ struct RemixSheet: View {
     
     // MARK: - Suggestions View
     private var suggestionsView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("How would you like to tweak this recipe?")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-            
-            FlowLayout(spacing: 10) {
+        VStack(spacing: 32) {
+            Spacer()
+
+            // Hero section
+            VStack(spacing: 20) {
+                // Chef icon with glow
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.clipCookSizzleStart.opacity(0.3), Color.clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 80
+                            )
+                        )
+                        .frame(width: 160, height: 160)
+
+                    Circle()
+                        .fill(Color.clipCookSurface)
+                        .frame(width: 100, height: 100)
+
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 40))
+                        .foregroundStyle(LinearGradient.sizzle)
+                }
+
+                VStack(spacing: 12) {
+                    Text("How would you like to\ntweak this recipe?")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+
+                    Text("Pick a suggestion or type your own request")
+                        .font(.system(size: 16))
+                        .foregroundColor(.clipCookTextSecondary)
+                }
+            }
+
+            // Suggestions grid
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 12) {
                 ForEach(suggestions, id: \.text) { suggestion in
-                    SuggestionChip(
+                    SuggestionCard(
                         text: suggestion.text,
                         icon: suggestion.icon
                     ) {
@@ -172,22 +210,11 @@ struct RemixSheet: View {
                 }
             }
             .padding(.horizontal, 20)
-            
-            // Divider with text
-            HStack {
-                Rectangle()
-                    .fill(Color.clipCookSurface)
-                    .frame(height: 1)
-                Text("or type your own")
-                    .font(.caption)
-                    .foregroundColor(.clipCookTextSecondary)
-                Rectangle()
-                    .fill(Color.clipCookSurface)
-                    .frame(height: 1)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+
+            Spacer()
+            Spacer()
         }
+        .frame(maxWidth: .infinity)
     }
     
     // MARK: - Loading View
@@ -458,6 +485,58 @@ struct SuggestionChip: View {
                 .onEnded { _ in isPressed = false }
         )
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+    }
+}
+
+// MARK: - Suggestion Card Component (Grid Layout)
+struct SuggestionCard: View {
+    let text: String
+    let icon: String
+    let action: () -> Void
+
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.clipCookBackground)
+                        .frame(width: 48, height: 48)
+
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundStyle(LinearGradient.sizzle)
+                }
+
+                Text(text)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+            .padding(.horizontal, 12)
+            .background(Color.clipCookSurface)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        LinearGradient.sizzle.opacity(isPressed ? 0.8 : 0.15),
+                        lineWidth: 1
+                    )
+            )
+            .scaleEffect(isPressed ? 0.96 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
     }
 }
 
