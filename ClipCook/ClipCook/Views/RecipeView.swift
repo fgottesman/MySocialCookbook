@@ -312,7 +312,7 @@ struct RecipeView: View {
             RemixSheet(prompt: $remixPrompt, isRemixing: $isRemixing, recipe: recipe) {
                 performRemix()
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
         }
         .fullScreenCover(isPresented: $showingVoiceCompanion) {
             VoiceCompanionView(recipe: recipe)
