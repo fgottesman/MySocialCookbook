@@ -41,7 +41,9 @@ class VersionService {
             ingredients: version.recipe.ingredients,
             instructions: version.recipe.instructions,
             chefsNote: version.recipe.chefsNote,
-            changedIngredients: Array(version.changedIngredients)
+            changedIngredients: Array(version.changedIngredients),
+            step0Summary: version.recipe.step0Summary,
+            step0AudioUrl: version.recipe.step0AudioUrl
         )
         
         request.httpBody = try JSONEncoder().encode(body)
@@ -73,6 +75,8 @@ struct SaveVersionRequest: Codable {
     let instructions: [String]?
     let chefsNote: String?
     let changedIngredients: [String]
+    let step0Summary: String?
+    let step0AudioUrl: String?
 }
 
 struct SaveVersionResponse: Codable {
@@ -91,6 +95,8 @@ struct SavedRecipeVersion: Codable, Identifiable {
     let chefsNote: String?
     let changedIngredients: [String]?
     let createdAt: Date
+    let step0Summary: String?
+    let step0AudioUrl: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -103,5 +109,7 @@ struct SavedRecipeVersion: Codable, Identifiable {
         case chefsNote = "chefs_note"
         case changedIngredients = "changed_ingredients"
         case createdAt = "created_at"
+        case step0Summary = "step0_summary"
+        case step0AudioUrl = "step0_audio_url"
     }
 }

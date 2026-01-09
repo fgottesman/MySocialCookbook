@@ -278,6 +278,20 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     }
     
     @MainActor
+    func playAudio(url: URL) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+            
+            // For file URLs
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.play()
+        } catch {
+            print("DEBUG: Error playing audio from URL: \(error)")
+        }
+    }
+
+    @MainActor
     private func playAudio(data: Data) {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)

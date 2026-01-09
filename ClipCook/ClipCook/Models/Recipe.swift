@@ -18,6 +18,10 @@ struct Recipe: Codable, Identifiable {
     let sourcePrompt: String? // Added for AI recipe attribution
     let stepPreparations: [StepPreparation]? // Pre-computed step preparations for cooking mode
     
+    let step0Summary: String? // Step 0 Summary text
+    let step0AudioUrl: String? // URL to Step 0 Audio
+    var localStep0AudioUrl: URL? // Local path to downloaded audio (transient)
+    
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
@@ -34,9 +38,11 @@ struct Recipe: Codable, Identifiable {
         case parentRecipeId = "parent_recipe_id"
         case sourcePrompt = "source_prompt"
         case stepPreparations = "step_preparations"
+        case step0Summary = "step0_summary"
+        case step0AudioUrl = "step0_audio_url"
     }
     
-    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil) {
+    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil, step0Summary: String? = nil, step0AudioUrl: String? = nil) {
         self.id = id
         self.userId = userId
         self.title = title
@@ -52,6 +58,8 @@ struct Recipe: Codable, Identifiable {
         self.parentRecipeId = parentRecipeId
         self.sourcePrompt = sourcePrompt
         self.stepPreparations = stepPreparations
+        self.step0Summary = step0Summary
+        self.step0AudioUrl = step0AudioUrl
     }
 }
 
@@ -73,6 +81,30 @@ extension Recipe {
         parentRecipeId = try container.decodeIfPresent(UUID.self, forKey: .parentRecipeId)
         sourcePrompt = try container.decodeIfPresent(String.self, forKey: .sourcePrompt)
         stepPreparations = try container.decodeIfPresent([StepPreparation].self, forKey: .stepPreparations)
+        step0Summary = try container.decodeIfPresent(String.self, forKey: .step0Summary)
+        step0AudioUrl = try container.decodeIfPresent(String.self, forKey: .step0AudioUrl)
+    }
+    
+    // Manual encoder to support updates/remixes if needed
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(userId, forKey: .userId)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(videoUrl, forKey: .videoUrl)
+        try container.encodeIfPresent(thumbnailUrl, forKey: .thumbnailUrl)
+        try container.encodeIfPresent(ingredients, forKey: .ingredients)
+        try container.encodeIfPresent(instructions, forKey: .instructions)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(chefsNote, forKey: .chefsNote)
+        try container.encodeIfPresent(profile, forKey: .profile)
+        try container.encodeIfPresent(isFavorite, forKey: .isFavorite)
+        try container.encodeIfPresent(parentRecipeId, forKey: .parentRecipeId)
+        try container.encodeIfPresent(sourcePrompt, forKey: .sourcePrompt)
+        try container.encodeIfPresent(stepPreparations, forKey: .stepPreparations)
+        try container.encodeIfPresent(step0Summary, forKey: .step0Summary)
+        try container.encodeIfPresent(step0AudioUrl, forKey: .step0AudioUrl)
     }
 }
 

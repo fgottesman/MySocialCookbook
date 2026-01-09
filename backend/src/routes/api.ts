@@ -161,6 +161,41 @@ router.post('/process-recipe', async (req, res) => {
         const embeddingText = `${recipeData.title} ${recipeData.description} ${finalDescription || ''} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
         const embedding = await gemini.generateEmbedding(embeddingText);
 
+        // --- Handle Step 0 Audio ---
+        let step0AudioUrl: string | null = null;
+        if (recipeData.step0Summary) {
+            try {
+                console.log("Synthesizing Step 0 Audio...");
+                const audioBase64 = await ttsService.synthesize(recipeData.step0Summary);
+                const audioName = `audio_${crypto.randomUUID()}.mp3`;
+                const audioBuffer = Buffer.from(audioBase64, 'base64');
+
+                // Upload to Supabase (using recipe-thumbnails bucket for now, or ensure recipe-audio exists)
+                // We'll use 'recipe-thumbnails' since we know it works, but ideally separate bucket
+                const { error: uploadError } = await supabase.storage
+                    .from('recipe-thumbnails')
+                    .upload(audioName, audioBuffer, {
+                        contentType: 'audio/mpeg',
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    console.error("Step 0 Audio Upload Error:", uploadError);
+                } else {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('recipe-thumbnails')
+                        .getPublicUrl(audioName);
+
+                    if (publicUrlData?.publicUrl) {
+                        step0AudioUrl = publicUrlData.publicUrl;
+                        console.log("Step 0 Audio ready:", step0AudioUrl);
+                    }
+                }
+            } catch (audioError) {
+                console.error("Error creating Step 0 Audio:", audioError);
+            }
+        }
+
         // Save to Supabase
         const { data, error } = await supabase
             .from('recipes')
@@ -172,7 +207,9 @@ router.post('/process-recipe', async (req, res) => {
                 ingredients: recipeData.ingredients,
                 instructions: recipeData.instructions,
                 embedding: embedding,
-                thumbnail_url: recipeData.thumbnailUrl || null
+                thumbnail_url: recipeData.thumbnailUrl || null,
+                step0_summary: recipeData.step0Summary || null,
+                step0_audio_url: step0AudioUrl || null
             })
             .select()
             .single();
@@ -249,6 +286,39 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
         const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
         const embedding = await gemini.generateEmbedding(embeddingText);
 
+        // --- Handle Step 0 Audio ---
+        let step0AudioUrl: string | null = null;
+        if (recipeData.step0Summary) {
+            try {
+                console.log("Synthesizing Step 0 Audio...");
+                const audioBase64 = await ttsService.synthesize(recipeData.step0Summary);
+                const audioName = `audio_${crypto.randomUUID()}.mp3`;
+                const audioBuffer = Buffer.from(audioBase64, 'base64');
+
+                const { error: uploadError } = await supabase.storage
+                    .from('recipe-thumbnails')
+                    .upload(audioName, audioBuffer, {
+                        contentType: 'audio/mpeg',
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    console.error("Step 0 Audio Upload Error:", uploadError);
+                } else {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('recipe-thumbnails')
+                        .getPublicUrl(audioName);
+
+                    if (publicUrlData?.publicUrl) {
+                        step0AudioUrl = publicUrlData.publicUrl;
+                        console.log("Step 0 Audio ready:", step0AudioUrl);
+                    }
+                }
+            } catch (audioError) {
+                console.error("Error creating Step 0 Audio:", audioError);
+            }
+        }
+
         // Generate AI food image for thumbnail
         let thumbnailUrl: string | null = null;
         try {
@@ -298,7 +368,9 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
                 instructions: recipeData.instructions,
                 chefs_note: recipeData.chefsNote || null,
                 source_prompt: prompt, // Store the AI prompt for attribution
-                embedding: embedding
+                embedding: embedding,
+                step0_summary: recipeData.step0Summary || null,
+                step0_audio_url: step0AudioUrl || null
             })
             .select()
             .single();
@@ -378,6 +450,35 @@ router.post('/remix-recipe', async (req, res) => {
         const remixedRecipe = await gemini.remixRecipe(originalRecipe, userPrompt);
 
         console.log("Remix complete:", remixedRecipe.title);
+
+        // --- Handle Step 0 Audio for Remix ---
+        if (remixedRecipe.step0Summary) {
+            try {
+                console.log("Synthesizing Remix Step 0 Audio...");
+                const audioBase64 = await ttsService.synthesize(remixedRecipe.step0Summary);
+                const audioName = `audio_remix_${crypto.randomUUID()}.mp3`;
+                const audioBuffer = Buffer.from(audioBase64, 'base64');
+
+                const { error: uploadError } = await supabase.storage
+                    .from('recipe-thumbnails')
+                    .upload(audioName, audioBuffer, {
+                        contentType: 'audio/mpeg',
+                        upsert: true
+                    });
+
+                if (!uploadError) {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('recipe-thumbnails')
+                        .getPublicUrl(audioName);
+
+                    if (publicUrlData?.publicUrl) {
+                        remixedRecipe.step0AudioUrl = publicUrlData.publicUrl;
+                    }
+                }
+            } catch (audioError) {
+                console.error("Error creating Remix Audio:", audioError);
+            }
+        }
 
         res.json({ success: true, recipe: remixedRecipe });
 
@@ -629,7 +730,7 @@ router.get('/recipes/:recipeId/versions', async (req, res) => {
 router.post('/recipes/:recipeId/versions', async (req, res) => {
     try {
         const { recipeId } = req.params;
-        const { title, description, ingredients, instructions, chefsNote, changedIngredients } = req.body;
+        const { title, description, ingredients, instructions, chefsNote, changedIngredients, step0Summary, step0AudioUrl } = req.body;
 
         // Get next version number
         const { data: existingVersions } = await supabase
@@ -651,7 +752,9 @@ router.post('/recipes/:recipeId/versions', async (req, res) => {
                 ingredients,
                 instructions,
                 chefs_note: chefsNote,
-                changed_ingredients: changedIngredients
+                changed_ingredients: changedIngredients,
+                step0_summary: step0Summary,
+                step0_audio_url: step0AudioUrl
             })
             .select()
             .single();

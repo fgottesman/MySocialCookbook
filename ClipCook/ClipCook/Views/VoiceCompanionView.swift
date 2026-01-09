@@ -16,7 +16,11 @@ struct VoiceCompanionView: View {
     
     // Current step's preparation (from cache)
     private var stepPreparation: StepPreparation? {
-        stepPreparationCache[currentStepIndex]
+        if let idx = instructionIndex {
+            return stepPreparationCache[idx]
+        }
+        // Step 0 doesn't have a backend preparation object, return cached dummy if needed via logic below
+        return nil
     }
     
     // Chat and voice state
@@ -32,8 +36,20 @@ struct VoiceCompanionView: View {
     @Environment(\.presentationMode) var presentationMode
     
     // Computed properties for navigation
+    private var hasStep0: Bool {
+        return recipe.step0Summary != nil
+    }
+
     private var totalSteps: Int {
-        recipe.instructions?.count ?? 0
+        (recipe.instructions?.count ?? 0) + (hasStep0 ? 1 : 0)
+    }
+    
+    // Effective index for instructions array
+    private var instructionIndex: Int? {
+        if hasStep0 {
+            return currentStepIndex == 0 ? nil : currentStepIndex - 1
+        }
+        return currentStepIndex
     }
     
     private var hasSubSteps: Bool {
@@ -45,17 +61,31 @@ struct VoiceCompanionView: View {
     }
     
     private var currentDisplayText: String {
+        if hasStep0 && currentStepIndex == 0 {
+            return recipe.step0Summary ?? ""
+        }
+        
         if hasSubSteps, let subSteps = stepPreparation?.subSteps, currentSubStepIndex < subSteps.count {
             return subSteps[currentSubStepIndex].text
         }
-        return recipe.instructions?[currentStepIndex] ?? ""
+        
+        if let idx = instructionIndex, let instructions = recipe.instructions, idx < instructions.count {
+            return instructions[idx]
+        }
+        return ""
     }
     
     private var currentStepLabel: String {
+        if hasStep0 && currentStepIndex == 0 {
+            return "READY TO COOK"
+        }
+        
         if hasSubSteps, let subSteps = stepPreparation?.subSteps, currentSubStepIndex < subSteps.count {
             return "STEP \(subSteps[currentSubStepIndex].label)"
         }
-        return "STEP \(currentStepIndex + 1)"
+        
+        let displayIndex = (instructionIndex ?? 0) + 1
+        return "STEP \(displayIndex)"
     }
     
     private var canGoBack: Bool {
@@ -104,6 +134,10 @@ struct VoiceCompanionView: View {
         }
         .onAppear {
             speechManager.requestPermissions()
+            // If Step 0 exists, speak it initially
+            if hasStep0 && currentStepIndex == 0 {
+                speakCurrentStepIntro()
+            }
             preloadAllSteps()
             loadUserPreferences()
         }
@@ -378,7 +412,12 @@ struct VoiceCompanionView: View {
             }
             
             // Speak the first step immediately
-            if let firstPrep = precomputed.first {
+            if hasStep0 {
+                // Speak/Play Step 0
+                Task {
+                    await MainActor.run {  speakCurrentStepIntro() }
+                }
+            } else if let firstPrep = precomputed.first {
                 speechManager.speak(firstPrep.introduction)
             }
             return
@@ -415,8 +454,8 @@ struct VoiceCompanionView: View {
                         await MainActor.run {
                             stepPreparationCache[index] = prep
                             
-                            // Speak the first step as soon as it's ready
-                            if index == 0 && currentStepIndex == 0 {
+                            // Speak the first step as soon as it's ready (if we are on it)
+                            if !self.hasStep0 && index == 0 && currentStepIndex == 0 {
                                 speechManager.speak(prep.introduction)
                             }
                         }
@@ -432,7 +471,18 @@ struct VoiceCompanionView: View {
     
     /// Speak the introduction for current step (uses cache)
     private func speakCurrentStepIntro() {
-        if let prep = stepPreparationCache[currentStepIndex] {
+        if hasStep0 && currentStepIndex == 0 {
+            // Play local audio if available, else TTS
+            if let localUrl = recipe.localStep0AudioUrl {
+                print("Playing local audio for Step 0: \(localUrl)")
+                speechManager.playAudio(url: localUrl)
+            } else if let summary = recipe.step0Summary {
+                speechManager.speak(summary)
+            }
+            return
+        }
+        
+        if let idx = instructionIndex, let prep = stepPreparationCache[idx] {
             speechManager.speak(prep.introduction)
         }
     }

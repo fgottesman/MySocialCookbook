@@ -35,6 +35,8 @@ create table public.recipes (
   is_favorite boolean default false,
   parent_recipe_id uuid references public.recipes(id), -- For remix attribution
   source_prompt text, -- AI prompt used to generate this recipe
+  step0_summary text, -- AI generated summary for voice over
+  step0_audio_url text, -- URL to the synthesized audio for Step 0
   created_at timestamptz default now()
 );
 

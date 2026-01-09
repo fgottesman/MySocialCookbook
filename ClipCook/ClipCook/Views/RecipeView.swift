@@ -293,7 +293,46 @@ struct RecipeView: View {
             ShareSheet(activityItems: shareItems)
         }
         .task {
-            await loadSavedVersions()
+            // Start concurrent loading
+            async let versions = loadSavedVersions()
+            async let audio = downloadStep0Audio()
+            
+            await versions
+            await audio
+        }
+    }
+    
+    // Download Step 0 Audio if available
+    private func downloadStep0Audio() async {
+        guard let urlString = recipe.step0AudioUrl, let url = URL(string: urlString) else { return }
+        
+        // Use a stable local URL based on recipe ID
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory
+        let localUrl = tempDir.appendingPathComponent("step0_\(recipe.id).mp3")
+        
+        // If file already exists, use it
+        if fileManager.fileExists(atPath: localUrl.path) {
+            await MainActor.run {
+                var updatedRecipe = recipe
+                updatedRecipe.localStep0AudioUrl = localUrl
+                self.recipe = updatedRecipe
+            }
+            return
+        }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            try data.write(to: localUrl)
+            
+            await MainActor.run {
+                var updatedRecipe = recipe
+                updatedRecipe.localStep0AudioUrl = localUrl
+                self.recipe = updatedRecipe
+                print("Step 0 Audio downloaded to: \(localUrl.path)")
+            }
+        } catch {
+            print("Error downloading Step 0 Audio: \(error)")
         }
     }
     

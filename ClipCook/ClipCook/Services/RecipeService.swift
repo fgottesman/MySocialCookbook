@@ -130,6 +130,8 @@ class RecipeService {
             let chefs_note: String?
             let is_favorite: Bool
             let parent_recipe_id: UUID?
+            let step0_summary: String?
+            let step0_audio_url: String?
         }
         
         let insertPayload = RecipeInsert(
@@ -143,7 +145,9 @@ class RecipeService {
             instructions: recipe.instructions,
             chefs_note: recipe.chefsNote,
             is_favorite: false, // Reset favorite for new recipe
-            parent_recipe_id: originalId
+            parent_recipe_id: originalId,
+            step0_summary: recipe.step0Summary,
+            step0_audio_url: recipe.step0AudioUrl
         )
         
         try await client
@@ -165,7 +169,9 @@ class RecipeService {
             chefsNote: recipe.chefsNote,
             profile: recipe.profile,
             isFavorite: false,
-            parentRecipeId: originalId
+            parentRecipeId: originalId,
+            step0Summary: recipe.step0Summary,
+            step0AudioUrl: recipe.step0AudioUrl
         )
     }
 }

@@ -16,7 +16,8 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
   "ingredients": [
     { "name": "item", "amount": "1", "unit": "cup" }
   ],
-  "instructions": ["Step 1", "Step 2"]
+  "instructions": ["Step 1", "Step 2"],
+  "step0Summary": "A brief, enthusiastic 1-2 sentence summary of what we are cooking for voice over."
 }
 `;
 
@@ -33,7 +34,8 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
     { "name": "item", "amount": "1", "unit": "cup" }
   ],
   "instructions": ["Step 1", "Step 2"],
-  "chefsNote": "A quick tip from the chef about this specific dish"
+  "chefsNote": "A quick tip from the chef about this specific dish",
+  "step0Summary": "A brief, enthusiastic 1-2 sentence summary of what we are cooking for voice over."
 }
 `;
 
@@ -69,7 +71,8 @@ Return ONLY valid JSON matching the Recipe schema.
   "ingredients": [ ... ],
   "instructions": [ ... ],
   "chefsNote": "Detailed explanation of the changes...",
-  "changedIngredients": ["ingredient1 name", "ingredient2 name"]
+  "changedIngredients": ["ingredient1 name", "ingredient2 name"],
+  "step0Summary": "A brief, enthusiastic 1-2 sentence summary of the REMIXED dish for voice over."
 }
 `;
 
