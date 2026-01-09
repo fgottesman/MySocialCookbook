@@ -209,7 +209,9 @@ router.post('/process-recipe', async (req, res) => {
                 embedding: embedding,
                 thumbnail_url: recipeData.thumbnailUrl || null,
                 step0_summary: recipeData.step0Summary || null,
-                step0_audio_url: step0AudioUrl || null
+                step0_audio_url: step0AudioUrl || null,
+                difficulty: recipeData.difficulty || null,
+                cooking_time: recipeData.cookingTime || null
             })
             .select()
             .single();
@@ -370,7 +372,9 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
                 source_prompt: prompt, // Store the AI prompt for attribution
                 embedding: embedding,
                 step0_summary: recipeData.step0Summary || null,
-                step0_audio_url: step0AudioUrl || null
+                step0_audio_url: step0AudioUrl || null,
+                difficulty: recipeData.difficulty || null,
+                cooking_time: recipeData.cookingTime || null
             })
             .select()
             .single();
@@ -776,7 +780,9 @@ router.post('/recipes/:recipeId/versions', async (req, res) => {
                 chefs_note: chefsNote,
                 changed_ingredients: changedIngredients,
                 step0_summary: step0Summary,
-                step0_audio_url: step0AudioUrl
+                step0_audio_url: step0AudioUrl,
+                difficulty: difficulty,
+                cooking_time: cookingTime
             })
             .select()
             .single();

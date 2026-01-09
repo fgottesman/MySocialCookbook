@@ -13,6 +13,8 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
 {
   "title": "Recipe Title",
   "description": "Short description",
+  "difficulty": "Easy",
+  "cookingTime": "30-45 minutes",
   "ingredients": [
     { "name": "item", "amount": "1", "unit": "cup" }
   ],
@@ -30,6 +32,8 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
 {
   "title": "Recipe Title",
   "description": "Short, appetizing description of the dish",
+  "difficulty": "Easy",
+  "cookingTime": "30-45 minutes",
   "ingredients": [
     { "name": "item", "amount": "1", "unit": "cup" }
   ],
@@ -68,6 +72,8 @@ Return ONLY valid JSON matching the Recipe schema.
 {
   "title": "Modified Recipe Name",
   "description": "Updated description mentioning the remix.",
+  "difficulty": "Easy",
+  "cookingTime": "30-45 minutes",
   "ingredients": [ ... ],
   "instructions": [ ... ],
   "chefsNote": "Detailed explanation of the changes...",

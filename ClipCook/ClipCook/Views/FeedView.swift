@@ -50,7 +50,6 @@ struct FeedView: View {
                             await viewModel.fetchRecipes(isUserInitiated: true)
                         }
                     }
-                    }
                 }
                 
                 if let toastMessage = viewModel.toastMessage {

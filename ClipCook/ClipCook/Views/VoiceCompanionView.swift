@@ -367,7 +367,7 @@ struct VoiceCompanionView: View {
                     
                     // Button Background
                     Circle()
-                        .fill(isLiveMode ? Color.red : LinearGradient.sizzle)
+                        .fill(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .topLeading, endPoint: .bottomTrailing) : LinearGradient.sizzle)
                         .frame(width: 80, height: 80)
                         .shadow(color: (isLiveMode ? Color.red : Color.clipCookSizzleStart).opacity(0.4), radius: 10, y: 5)
                     

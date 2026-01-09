@@ -22,6 +22,9 @@ struct Recipe: Codable, Identifiable {
     let step0AudioUrl: String? // URL to Step 0 Audio
     var localStep0AudioUrl: URL? // Local path to downloaded audio (transient)
     
+    let difficulty: String? // Added for AI metrics
+    let cookingTime: String? // Added for AI metrics
+    
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
@@ -40,9 +43,11 @@ struct Recipe: Codable, Identifiable {
         case stepPreparations = "step_preparations"
         case step0Summary = "step0_summary"
         case step0AudioUrl = "step0_audio_url"
+        case difficulty
+        case cookingTime = "cooking_time"
     }
     
-    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil, step0Summary: String? = nil, step0AudioUrl: String? = nil) {
+    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil, step0Summary: String? = nil, step0AudioUrl: String? = nil, difficulty: String? = nil, cookingTime: String? = nil) {
         self.id = id
         self.userId = userId
         self.title = title
@@ -60,6 +65,8 @@ struct Recipe: Codable, Identifiable {
         self.stepPreparations = stepPreparations
         self.step0Summary = step0Summary
         self.step0AudioUrl = step0AudioUrl
+        self.difficulty = difficulty
+        self.cookingTime = cookingTime
     }
 }
 
@@ -83,6 +90,8 @@ extension Recipe {
         stepPreparations = try container.decodeIfPresent([StepPreparation].self, forKey: .stepPreparations)
         step0Summary = try container.decodeIfPresent(String.self, forKey: .step0Summary)
         step0AudioUrl = try container.decodeIfPresent(String.self, forKey: .step0AudioUrl)
+        difficulty = try container.decodeIfPresent(String.self, forKey: .difficulty)
+        cookingTime = try container.decodeIfPresent(String.self, forKey: .cookingTime)
     }
     
     // Manual encoder to support updates/remixes if needed
@@ -105,6 +114,8 @@ extension Recipe {
         try container.encodeIfPresent(stepPreparations, forKey: .stepPreparations)
         try container.encodeIfPresent(step0Summary, forKey: .step0Summary)
         try container.encodeIfPresent(step0AudioUrl, forKey: .step0AudioUrl)
+        try container.encodeIfPresent(difficulty, forKey: .difficulty)
+        try container.encodeIfPresent(cookingTime, forKey: .cookingTime)
     }
 }
 
