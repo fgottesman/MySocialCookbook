@@ -46,4 +46,53 @@ class RemixService {
         let decodedResponse = try JSONDecoder().decode(RemixResponse.self, from: data)
         return decodedResponse.recipe
     }
+    
+    // MARK: - Consultation Chat
+    
+    struct RemixConsultation: Codable {
+        let reply: String
+        let difficultyImpact: String
+        let difficultyExplanation: String
+        let qualityImpact: String
+        let qualityExplanation: String
+        let canProceed: Bool
+    }
+    
+    struct RemixConsultResponse: Codable {
+        let success: Bool
+        let consultation: RemixConsultation
+    }
+    
+    struct ChatMessage: Codable {
+        let role: String // "user" or "assistant"
+        let content: String
+    }
+    
+    struct RemixChatRequest: Codable {
+        let originalRecipe: Recipe
+        let chatHistory: [ChatMessage]
+        let userPrompt: String
+    }
+    
+    func remixConsult(originalRecipe: Recipe, chatHistory: [ChatMessage], prompt: String) async throws -> RemixConsultation {
+        guard let url = URL(string: "https://mysocialcookbook-production.up.railway.app/api/remix-chat") else {
+            throw URLError(.badURL)
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = RemixChatRequest(originalRecipe: originalRecipe, chatHistory: chatHistory, userPrompt: prompt)
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        
+        let decodedResponse = try JSONDecoder().decode(RemixConsultResponse.self, from: data)
+        return decodedResponse.consultation
+    }
 }

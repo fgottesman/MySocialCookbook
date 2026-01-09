@@ -1,5 +1,6 @@
 import SwiftUI
 import AVKit
+import UIKit
 
 struct RecipeView: View {
     // We use State to allow the recipe to be modified by the Remix engine
@@ -208,7 +209,13 @@ struct RecipeView: View {
                             }
                             
                             Button(role: .destructive, action: { showDeleteConfirmation = true }) {
-                                Label("Delete", systemImage: "trash")
+                            Button(role: .destructive, action: { showDeleteConfirmation = true }) {
+                                Label {
+                                    Text("Delete")
+                                } icon: {
+                                    Image(systemName: "trash")
+                                }
+                            }
                             }
                         }
                     } label: {
@@ -280,10 +287,10 @@ struct RecipeView: View {
             }
         }
         .sheet(isPresented: $showingRemix) {
-            RemixSheet(prompt: $remixPrompt, isRemixing: $isRemixing) {
+            RemixSheet(prompt: $remixPrompt, isRemixing: $isRemixing, recipe: recipe) {
                 performRemix()
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
         }
         .fullScreenCover(isPresented: $showingVoiceCompanion) {
             VoiceCompanionView(recipe: recipe)
@@ -294,11 +301,10 @@ struct RecipeView: View {
         }
         .task {
             // Start concurrent loading
-            async let versions = loadSavedVersions()
-            async let audio = downloadStep0Audio()
-            
-            await versions
-            await audio
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask { await self.loadSavedVersions() }
+                group.addTask { await self.downloadStep0Audio() }
+            }
         }
     }
     
@@ -575,31 +581,24 @@ struct RecipeView: View {
 struct RemixSheet: View {
     @Binding var prompt: String
     @Binding var isRemixing: Bool
+    var recipe: Recipe // Passed in to access ID/Title for context if needed
     let onRemix: () -> Void
     
-    // Pool of remix suggestions
-    private let allSuggestions = [
-        "Add a different protein",
-        "Make it vegan",
-        "Remove the spice",
-        "Use fewer ingredients",
-        "Make it kid-friendly",
-        "Add more vegetables",
-        "Make it spicier",
-        "Use pantry staples"
-    ]
+    @State private var chatHistory: [RemixService.ChatMessage] = []
+    @State private var inputText: String = ""
+    @State private var isLoading: Bool = false
+    @State private var lastConsultation: RemixService.RemixConsultation?
+    @FocusState private var isInputFocused: Bool
     
     // Rotating status messages
     private let statusMessages = [
-        "Checking flavor palette...",
-        "Adjusting proportions...",
-        "Selecting new ingredients...",
-        "Rewriting the steps...",
-        "Adding chef's notes...",
-        "Almost there..."
+        "Analyzing flavor profile...",
+        "Checking ingredient compatibility...",
+        "Consulting the flavor bible...",
+        "Predicting cooking time...",
+        "Reviewing techniques...",
+        "Calculating difficulty..."
     ]
-    
-    @State private var displayedSuggestions: [String] = []
     @State private var currentStatusIndex = 0
     @State private var statusTimer: Timer?
     
@@ -607,84 +606,293 @@ struct RemixSheet: View {
         ZStack {
             Color.clipCookBackground.ignoresSafeArea()
             
-            if isRemixing {
-                VStack(spacing: 20) {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
-                        .scaleEffect(2)
-                    Text("Asking the Chef...")
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Remix Chef")
                         .modifier(UtilityHeadline())
-                    Text(statusMessages[currentStatusIndex])
-                        .modifier(UtilitySubhead())
-                        .animation(.easeInOut(duration: 0.3), value: currentStatusIndex)
+                    Spacer()
+                    Button(action: {
+                        stopStatusRotation()
+                        // Dismiss logic handles by parent if needed, but here we just close?
+                        // Actually parent controls presentation.
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.title2)
+                    }
                 }
-                .onAppear {
-                    startStatusRotation()
-                }
-                .onDisappear {
-                    stopStatusRotation()
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("AI Remix")
-                        .modifier(UtilityHeadline())
-                    
-                    Text("Tell the chef how to change this recipe.")
-                        .modifier(UtilitySubhead())
-                    
-                    TextField("Make it vegan, spicy, etc...", text: $prompt, axis: .vertical)
-                        .padding()
-                        .background(Color.clipCookSurface)
-                        .cornerRadius(12)
-                        .foregroundColor(.white)
-                        .lineLimit(3...6)
-                    
-                    // Suggestion Bubbles
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(displayedSuggestions, id: \.self) { suggestion in
-                                Button(action: { prompt = suggestion }) {
-                                    Text(suggestion)
-                                        .font(.caption)
-                                        .fontWeight(.medium)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 20)
-                                                .stroke(LinearGradient.sizzle, lineWidth: 1.5)
-                                        )
-                                        .foregroundColor(.clipCookTextSecondary)
+                .padding()
+                .background(Color.clipCookSurface)
+                
+                // Chat ScrollView
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Initial Greeting
+                            HStack {
+                                Image(systemName: "chef.hat.fill")
+                                    .foregroundColor(.white)
+                                    .padding(8)
+                                    .background(LinearGradient.sizzle)
+                                    .clipShape(Circle())
+                                
+                                Text("Hi! I'm your AI Sous Chef. How would you like to tweak this recipe? I can make it vegan, spicier, easier, you name it!")
+                                    .padding()
+                                    .background(Color.clipCookSurface)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(12, corners: [.topRight, .bottomLeft, .bottomRight])
+                                Spacer()
+                            }
+                            .padding(.horizontal)
+                            
+                            // History
+                            ForEach(Array(chatHistory.enumerated()), id: \.offset) { index, msg in
+                                MessageBubble(message: msg)
+                            }
+                            
+                            // Loading Indicator
+                            if isLoading {
+                                HStack {
+                                    Image(systemName: "chef.hat.fill")
+                                        .foregroundColor(.white)
+                                        .padding(8)
+                                        .background(LinearGradient.sizzle)
+                                        .clipShape(Circle())
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(statusMessages[currentStatusIndex])
+                                            .font(.caption)
+                                            .foregroundColor(.clipCookTextSecondary)
+                                            .animation(.easeInOut, value: currentStatusIndex)
+                                        
+                                        HStack(spacing: 4) {
+                                            Circle().frame(width: 6, height: 6).foregroundColor(.clipCookSizzleStart)
+                                                .opacity(0.5)
+                                            Circle().frame(width: 6, height: 6).foregroundColor(.clipCookSizzleStart)
+                                                .opacity(0.8)
+                                            Circle().frame(width: 6, height: 6).foregroundColor(.clipCookSizzleStart)
+                                        }
+                                    }
+                                    .padding()
+                                    .background(Color.clipCookSurface)
+                                    .cornerRadius(12, corners: [.topRight, .bottomLeft, .bottomRight])
+                                    
+                                    Spacer()
                                 }
+                                .padding(.horizontal)
+                                .id("loading")
+                            }
+                            
+                            Color.clear.frame(height: 20)
+                        }
+                        .padding(.vertical)
+                    }
+                    .onChange(of: chatHistory.count) { _, _ in
+                        withAnimation {
+                            proxy.scrollTo(chatHistory.count - 1, anchor: .bottom)
+                        }
+                    }
+                    .onChange(of: isLoading) { _, loading in
+                        if loading {
+                            withAnimation {
+                                proxy.scrollTo("loading", anchor: .bottom)
                             }
                         }
                     }
-                    
-                    Button(action: onRemix) {
-                        HStack {
-                            Image(systemName: "wand.and.stars")
-                            Text("Remix It")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(prompt.isEmpty ? Color.gray : Color.clipCookSizzleStart)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                    }
-                    .disabled(prompt.isEmpty)
-                    
-                    Spacer()
                 }
-                .padding(24)
-                .onAppear {
-                    // Pick 4 random suggestions
-                    displayedSuggestions = Array(allSuggestions.shuffled().prefix(4))
+                
+                // Consultation Card (if available)
+                if let consult = lastConsultation, !isLoading {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 20) {
+                            // Difficulty Metric
+                            VStack {
+                                Text("DIFFICULTY")
+                                    .font(.caption2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.gray)
+                                
+                                Text(consult.difficultyImpact.uppercased())
+                                    .font(.caption)
+                                    .fontWeight(.black)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(difficultyColor(consult.difficultyImpact))
+                                    .cornerRadius(6)
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Divider().frame(height: 30)
+                            
+                            // Quality Metric
+                            VStack {
+                                Text("QUALITY")
+                                    .font(.caption2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.gray)
+                                
+                                Text(consult.qualityImpact.uppercased())
+                                    .font(.caption)
+                                    .fontWeight(.black)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(qualityColor(consult.qualityImpact))
+                                    .cornerRadius(6)
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Spacer()
+                            
+                            // ACTION BUTTON
+                            Button(action: {
+                                confirmRemix()
+                            }) {
+                                HStack {
+                                    Text("Let's Make It")
+                                        .fontWeight(.bold)
+                                    Image(systemName: "arrow.right")
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(LinearGradient.sizzle)
+                                .foregroundColor(.white)
+                                .cornerRadius(20)
+                                .shadow(radius: 4)
+                            }
+                        }
+                        
+                        // Explanations
+                        if !consult.difficultyExplanation.isEmpty {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "info.circle").font(.caption).foregroundColor(.gray)
+                                Text(consult.difficultyExplanation)
+                                    .font(.caption)
+                                    .foregroundColor(.clipCookTextSecondary)
+                            }
+                        }
+                        if !consult.qualityExplanation.isEmpty {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "star").font(.caption).foregroundColor(.gray)
+                                Text(consult.qualityExplanation)
+                                    .font(.caption)
+                                    .foregroundColor(.clipCookTextSecondary)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.clipCookSurface.opacity(0.9))
+                    .cornerRadius(16)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                
+                // Input Area
+                HStack(spacing: 12) {
+                    TextField("E.g. Make it gluten free...", text: $inputText)
+                        .padding(12)
+                        .background(Color.clipCookSurface)
+                        .cornerRadius(20)
+                        .foregroundColor(.white)
+                        .focused($isInputFocused)
+                        .submitLabel(.send)
+                        .onSubmit {
+                            submitConsultation()
+                        }
+                    
+                    Button(action: submitConsultation) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(inputText.isEmpty ? LinearGradient(colors: [.gray], startPoint: .top, endPoint: .bottom) : LinearGradient.sizzle)
+                    }
+                    .disabled(inputText.isEmpty || isLoading)
+                }
+                .padding()
+                .background(Color.black.opacity(0.2))
+            }
+        }
+        .onAppear {
+            if prompt.isEmpty {
+                isInputFocused = true
+            }
+        }
+    }
+    
+    // MARK: - Logic
+    
+    private func submitConsultation() {
+        guard !inputText.isEmpty else { return }
+        
+        let userMsg = RemixService.ChatMessage(role: "user", content: inputText)
+        chatHistory.append(userMsg)
+        
+        // Optimistic UI updates
+        let currentInput = inputText
+        inputText = ""
+        isLoading = true
+        startStatusRotation()
+        lastConsultation = nil // Hide card while thinking
+        
+        Task {
+            do {
+                let consultation = try await RemixService.shared.remixConsult(
+                    originalRecipe: recipe,
+                    chatHistory: chatHistory,
+                    prompt: currentInput
+                )
+                
+                await MainActor.run {
+                    stopStatusRotation()
+                    isLoading = false
+                    lastConsultation = consultation
+                    
+                    // Add AI response to chat
+                    let aiMsg = RemixService.ChatMessage(role: "assistant", content: consultation.reply)
+                    chatHistory.append(aiMsg)
+                }
+            } catch {
+                print("Consultation error: \(error)")
+                await MainActor.run {
+                    stopStatusRotation()
+                    isLoading = false
+                    // Show error message in chat
+                    chatHistory.append(RemixService.ChatMessage(role: "assistant", content: "I'm having a bit of trouble connecting to the kitchen. Can you try again?"))
                 }
             }
         }
     }
     
+    private func confirmRemix() {
+        // Construct final prompt from history to preserve context
+        let conversationLog = chatHistory.map { "\($0.role.uppercased()): \($0.content)" }.joined(separator: "\n")
+        let finalPrompt = "Apply the changes discussed in this conversation:\n\n\(conversationLog)"
+        
+        prompt = finalPrompt
+        onRemix()
+    }
+    
+    private func difficultyColor(_ impact: String) -> Color {
+        switch impact.lowercased() {
+        case "easier": return .green
+        case "harder": return .orange
+        case "same": return .blue
+        default: return .gray
+        }
+    }
+    
+    private func qualityColor(_ impact: String) -> Color {
+        switch impact.lowercased() {
+        case "better": return .green
+        case "worse": return .red
+        case "different": return .purple
+        default: return .gray
+        }
+    }
+    
     private func startStatusRotation() {
         currentStatusIndex = 0
+        statusTimer?.invalidate()
         statusTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
             withAnimation {
                 currentStatusIndex = (currentStatusIndex + 1) % statusMessages.count
@@ -695,6 +903,53 @@ struct RemixSheet: View {
     private func stopStatusRotation() {
         statusTimer?.invalidate()
         statusTimer = nil
+    }
+}
+
+struct MessageBubble: View {
+    let message: RemixService.ChatMessage
+    
+    var isUser: Bool { message.role == "user" }
+    
+    var body: some View {
+        HStack(alignment: .bottom) {
+            if isUser { Spacer() }
+            
+            if !isUser {
+                Image(systemName: "chef.hat.fill")
+                    .foregroundColor(.white)
+                    .padding(8)
+                    .background(LinearGradient.sizzle)
+                    .clipShape(Circle())
+            }
+            
+            Text(message.content)
+                .padding()
+                .background(isUser ? Color.clipCookSizzleStart.opacity(0.8) : Color.clipCookSurface)
+                .foregroundColor(.white)
+                .cornerRadius(12, corners: isUser ? [.topLeft, .topRight, .bottomLeft] : [.topRight, .bottomLeft, .bottomRight])
+                .frame(maxWidth: 280, alignment: isUser ? .trailing : .leading)
+            
+            if !isUser { Spacer() }
+        }
+        .padding(.horizontal)
+    }
+}
+
+// Helper for corners
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape( RoundedCorner(radius: radius, corners: corners) )
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+    
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
     }
 }
 

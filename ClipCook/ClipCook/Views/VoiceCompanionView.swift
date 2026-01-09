@@ -150,7 +150,7 @@ struct VoiceCompanionView: View {
                 liveManager.disconnect()
             }
         }
-        .onChange(of: liveManager.errorMessage) { error in
+        .onChange(of: liveManager.errorMessage) { _, error in
             if let error = error {
                 print("Live Voice Error: \(error)")
                 isLiveMode = false // Turn off the toggle
@@ -181,31 +181,6 @@ struct VoiceCompanionView: View {
                     .lineLimit(1)
             }
             Spacer()
-            
-            // Live Mode Toggle
-            Button(action: {
-                withAnimation {
-                    isLiveMode.toggle()
-                    if isLiveMode {
-                        liveManager.connect(recipeId: recipe.id ?? "0", initialStepIndex: currentStepIndex)
-                        speechManager.stopSpeaking() // Stop standard TTS
-                    } else {
-                        liveManager.disconnect()
-                    }
-                }
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: isLiveMode ? "phone.down.fill" : "mic.badge.plus")
-                    if !isLiveMode { Text("Call Chef") }
-                }
-                .font(.caption.bold())
-                .foregroundColor(.white)
-                .padding(.vertical, 6)
-                .padding(.horizontal, 12)
-                .background(isLiveMode ? Color.red : Color.clipCookSizzleStart)
-                .cornerRadius(20)
-            }
-            .padding(.trailing, 8)
             
             // Mute Button (Only for Standard Mode usually, but useful globally)
             Button(action: { 
@@ -366,80 +341,70 @@ struct VoiceCompanionView: View {
     // MARK: - Microphone Controls View
     private var microphoneControlsView: some View {
         VStack(spacing: 16) {
-            if isLiveMode {
-                // Live Mode UI
-                VStack(spacing: 12) {
-                    // Visualizer for Live Mode
-                    HStack(spacing: 4) {
-                        ForEach(0..<5) { i in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.clipCookSizzleStart)
-                                .frame(width: 6, height: liveManager.isSpeaking ? CGFloat.random(in: 20...50) : 10)
-                                .animation(.easeInOut(duration: 0.2).repeatForever(), value: liveManager.isSpeaking)
-                        }
+            
+            // Main Interaction Button ("Call Chef")
+            Button(action: {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                    isLiveMode.toggle()
+                    if isLiveMode {
+                        let rId = recipe.id.uuidString
+                        liveManager.connect(recipeId: rId, initialStepIndex: currentStepIndex)
+                        speechManager.stopSpeaking() // Stop standard TTS
+                    } else {
+                        liveManager.disconnect()
                     }
-                    Text("Hands-free active")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
                 }
-            } else if isProcessing {
-                VStack(spacing: 12) {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 40))
-                        .foregroundStyle(LinearGradient.sizzle)
-                        .scaleEffect(isProcessing ? 1.2 : 1.0)
-                        .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isProcessing)
-                    
-                    Text("Stirring the logic... 🥄")
-                        .font(.caption)
-                        .foregroundColor(.clipCookTextSecondary)
-                        .italic()
-                }
-            } else {
-                VStack(spacing: 12) {
-                    ZStack {
-                        // Pulsing background when recording
-                        if speechManager.isRecording {
-                            Circle()
-                                .fill(LinearGradient.sizzle)
-                                .frame(width: 90, height: 90)
-                                .scaleEffect(1.2 + CGFloat(speechManager.audioLevel))
-                                .opacity(0.3)
-                                .animation(.easeInOut(duration: 0.1), value: speechManager.audioLevel)
-                        }
-                        
+            }) {
+                ZStack {
+                    // Outer Glow / Ring
+                    if isLiveMode {
                         Circle()
-                            .fill(speechManager.isRecording ? LinearGradient.sizzle : LinearGradient(colors: [.clipCookSurface, .clipCookSurface], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 80, height: 80)
-                            .shadow(color: speechManager.isRecording ? .clipCookSizzleStart.opacity(0.5) : .black.opacity(0.3), radius: 15)
-                        
-                        Image(systemName: speechManager.isRecording ? "waveform" : "mic.fill")
-                            .font(.system(size: 30, weight: .bold))
-                            .foregroundColor(.white)
+                            .fill(Color.red.opacity(0.2))
+                            .frame(width: 100, height: 100)
+                            .scaleEffect(liveManager.isSpeaking ? 1.2 : 1.1)
+                            .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: liveManager.isSpeaking)
                     }
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { _ in
-                                if !speechManager.isRecording && !isProcessing {
-                                    speechManager.startRecording()
-                                }
-                            }
-                            .onEnded { _ in
-                                if speechManager.isRecording {
-                                    stopAndSend()
-                                }
-                            }
-                    )
                     
-                    Text(speechManager.isRecording ? "I'm all ears... 👂" : "Tap and hold to ask the sous chef questions")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.clipCookTextSecondary)
-                        .opacity(speechManager.isRecording ? 0.7 : 1.0)
-                        .animation(.whimsySpring, value: speechManager.isRecording)
+                    // Button Background
+                    Circle()
+                        .fill(isLiveMode ? Color.red : LinearGradient.sizzle)
+                        .frame(width: 80, height: 80)
+                        .shadow(color: (isLiveMode ? Color.red : Color.clipCookSizzleStart).opacity(0.4), radius: 10, y: 5)
+                    
+                    // Icon
+                    Image(systemName: isLiveMode ? "phone.down.fill" : "phone.fill")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.white)
                 }
             }
+            .padding(.bottom, 8)
+            
+            // Status / Hint Text
+            if isLiveMode {
+                VStack(spacing: 4) {
+                    Text(liveManager.isSpeaking ? "Chef is talking..." : "Listening...")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    // Visualizer (Simple dots)
+                    HStack(spacing: 4) {
+                        ForEach(0..<4) { i in
+                            Circle()
+                                .fill(Color.white.opacity(0.7))
+                                .frame(width: 6, height: 6)
+                                .scaleEffect(liveManager.isSpeaking ? 1.5 : 1.0)
+                                .animation(.easeInOut(duration: 0.2).repeatForever().delay(Double(i) * 0.1), value: liveManager.isSpeaking)
+                        }
+                    }
+                }
+            } else {
+                Text("Call Chef for help")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.clipCookTextSecondary)
+            }
         }
-        .padding(.bottom, 50)
+        .padding(.bottom, 40)
     }
     
     // MARK: - Navigation Methods

@@ -9,6 +9,7 @@ class FeedViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var searchQuery = ""
+    @Published var toastMessage: String?
     
     var filteredRecipes: [Recipe] {
         if searchQuery.isEmpty {
@@ -22,27 +23,54 @@ class FeedViewModel: ObservableObject {
         }
     }
     
-    func fetchRecipes() async {
+    func fetchRecipes(isUserInitiated: Bool = false) async {
         isLoading = true
-        errorMessage = nil
+        // Don't clear recipes or errorMessage immediately to avoid flicker
         
         do {
             let client = SupabaseManager.shared.client
+            let previousCount = recipes.count
             
             // Fetch recipes without profile join for now
             // (Profile join fails if user_id doesn't exist in profiles table)
-            let recipes: [Recipe] = try await client
+            let newRecipes: [Recipe] = try await client
                 .from("recipes")
                 .select("*")
                 .order("created_at", ascending: false)
                 .execute()
                 .value
             
-            self.recipes = recipes
-            print("Fetched \(recipes.count) recipes")
+            self.recipes = newRecipes
+            
+            // If we found new recipes, assume background processing is done
+            if newRecipes.count > previousCount {
+                RecipeService.shared.isProcessingRecipe = false
+            } else if isUserInitiated {
+                if RecipeService.shared.isProcessingRecipe {
+                    toastMessage = "Your recipe is still cooking in the background..."
+                } else {
+                     toastMessage = "Nothing new right now."
+                }
+            }
+            
+            errorMessage = nil
+            print("Fetched \(newRecipes.count) recipes")
         } catch {
             print("Error fetching recipes: \(error)")
-            errorMessage = error.localizedDescription
+            
+            // Logic for user feedback on error/refresh
+            if isUserInitiated {
+                if RecipeService.shared.isProcessingRecipe {
+                    toastMessage = "Your recipe is still cooking in the background..."
+                } else {
+                     toastMessage = "Nothing new right now."
+                }
+            }
+            
+            // Only show full screen error if we have no recipes to show
+            if recipes.isEmpty {
+                errorMessage = error.localizedDescription
+            }
         }
         
         isLoading = false

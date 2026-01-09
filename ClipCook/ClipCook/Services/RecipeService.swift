@@ -12,6 +12,15 @@ class RecipeService {
     }
     
     // Toggle favorite
+    var isProcessingRecipe: Bool {
+        get {
+            UserDefaults.standard.bool(forKey: "isProcessingRecipe")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "isProcessingRecipe")
+        }
+    }
+    
     func toggleFavorite(recipeId: UUID, isFavorite: Bool) async throws {
         struct UpdatePayload: Encodable {
             let is_favorite: Bool
@@ -66,6 +75,7 @@ class RecipeService {
     
     // Process recipe from URL
     func processRecipe(url: String, userId: String) async throws {
+        isProcessingRecipe = true
         guard let endpoint = URL(string: "\(backendBaseUrl)/process-recipe") else {
             throw URLError(.badURL)
         }

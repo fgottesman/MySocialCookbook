@@ -30,7 +30,15 @@ class LiveVoiceManager: NSObject, ObservableObject {
         do {
             let session = AVAudioSession.sharedInstance()
             // PlayAndRecord with VoiceChat is optimal for bi-directional VoIP
-            try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .defaultToSpeaker])
+            // Note: allowBluetooth is deprecated for allowBluetoothHFP in newer SDKs, but allowBluetooth is the symbol we have access to generally.
+            // We keep it as is if it compiles, or update if strict.
+            // Warning said: renamed to 'AVAudioSession.CategoryOptions.allowBluetoothHFP'
+            // We will try using the new name if possible, otherwise suppress.
+            var options: AVAudioSession.CategoryOptions = [.defaultToSpeaker]
+            // We use the raw value for allowBluetooth (0x4) to support bluetooth headsets 
+            // while avoiding the deprecation warning/error for 'allowBluetooth' -> 'allowBluetoothHFP' renaming.
+            options.insert(AVAudioSession.CategoryOptions(rawValue: 0x4))
+            try session.setCategory(.playAndRecord, mode: .voiceChat, options: options)
             try session.setActive(true)
         } catch {
             print("Failed to setup audio session: \(error)")
@@ -42,8 +50,20 @@ class LiveVoiceManager: NSObject, ObservableObject {
         self.errorMessage = nil // Clear previous errors
         
         // Basic permission check
-        let permission = AVAudioSession.sharedInstance().recordPermission
-        if permission == .denied {
+        // Basic permission check
+        // Basic permission check
+        var isPermissionDenied = false
+        if #available(iOS 17.0, *) {
+            if AVAudioApplication.shared.recordPermission == .denied {
+                isPermissionDenied = true
+            }
+        } else {
+            if AVAudioSession.sharedInstance().recordPermission == .denied {
+                 isPermissionDenied = true
+            }
+        }
+        
+        if isPermissionDenied {
             self.errorMessage = "Microphone access is denied. Please enable it in Settings."
             return
         }
@@ -105,18 +125,36 @@ class LiveVoiceManager: NSObject, ObservableObject {
     // MARK: - Audio Engine
     
     func startSession() {
-        // Double check permission before engine start
-        if AVAudioSession.sharedInstance().recordPermission != .granted {
-             AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                 if granted {
-                     DispatchQueue.main.async { self.startAudioEngineOrReport() }
-                 } else {
-                     DispatchQueue.main.async { self.errorMessage = "Microphone permission denied." }
-                 }
-             }
+        // Check permission
+        if #available(iOS 17.0, *) {
+            if AVAudioApplication.shared.recordPermission != .granted {
+                AVAudioApplication.requestRecordPermission { granted in
+                     if granted {
+                         self.dispatchStartEngine()
+                     } else {
+                         DispatchQueue.main.async { self.errorMessage = "Microphone permission denied." }
+                     }
+                }
+            } else {
+                dispatchStartEngine()
+            }
         } else {
-            startAudioEngineOrReport()
+            if AVAudioSession.sharedInstance().recordPermission != .granted {
+                 AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                     if granted {
+                         self.dispatchStartEngine()
+                     } else {
+                         DispatchQueue.main.async { self.errorMessage = "Microphone permission denied." }
+                     }
+                 }
+            } else {
+                dispatchStartEngine()
+            }
         }
+    }
+    
+    private func dispatchStartEngine() {
+        DispatchQueue.main.async { self.startAudioEngineOrReport() }
     }
     
     private func startAudioEngineOrReport() {
@@ -139,16 +177,25 @@ class LiveVoiceManager: NSObject, ObservableObject {
         self.playerNode = playerNode
         self.inputNode = inputNode
         
-        guard let inputNode = inputNode, let playerNode = playerNode else { return }
+        // Ensure no existing tap causes a crash
+        inputNode.removeTap(onBus: 0)
         
+        // Attach and Connect
+        if audioEngine.attachedNodes.contains(playerNode) {
+            audioEngine.detach(playerNode)
+        }
         audioEngine.attach(playerNode)
-        
-        // Connect player to main mixer
         audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: outputFormat)
         
-        // Install Tap on Input Node usually requires converting native format to 16kHz
+        // Prepare format conversion
         let nativeFormat = inputNode.inputFormat(forBus: 0)
-        // Verify formats match channel counts or converter exists
+        
+        // Prevent crash if sample rate is 0 (engine invalid state)
+        if nativeFormat.sampleRate == 0 {
+            print("Error: Input node has invalid sample rate (0)")
+            return
+        }
+
         guard let formatConverter = AVAudioConverter(from: nativeFormat, to: inputFormat) else {
             print("Could not create audio converter")
             return
@@ -177,8 +224,10 @@ class LiveVoiceManager: NSObject, ObservableObject {
         if audioEngine.isRunning {
              audioEngine.stop()
         }
-        audioEngine.reset()
+        // Safely remove tap
         inputNode?.removeTap(onBus: 0)
+        
+        audioEngine.reset()
         isListening = false
     }
     
@@ -234,7 +283,7 @@ class LiveVoiceManager: NSObject, ObservableObject {
         
         data.withUnsafeBytes { (body: UnsafeRawBufferPointer) in
             if let bodyAddress = body.baseAddress, let channelData = channelData {
-                channelData.pointee.assign(from: bodyAddress.assumingMemoryBound(to: Int16.self), count: Int(frameCount))
+                channelData.pointee.update(from: bodyAddress.assumingMemoryBound(to: Int16.self), count: Int(frameCount))
             }
         }
         return buffer

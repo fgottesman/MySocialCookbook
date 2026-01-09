@@ -15,7 +15,7 @@ struct FeedView: View {
                     if viewModel.isLoading && viewModel.recipes.isEmpty {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
-                    } else if viewModel.errorMessage != nil {
+                    } else if viewModel.errorMessage != nil && viewModel.recipes.isEmpty {
                         VStack(spacing: 16) {
                             Image(systemName: "flame")
                                 .font(.largeTitle)
@@ -26,7 +26,7 @@ struct FeedView: View {
                                 .modifier(UtilitySubhead())
                                 .multilineTextAlignment(.center)
                             Button("Try Again") {
-                                Task { await viewModel.fetchRecipes() }
+                                Task { await viewModel.fetchRecipes(isUserInitiated: true) }
                             }
                             .padding()
                             .foregroundColor(.white)
@@ -47,9 +47,46 @@ struct FeedView: View {
                             .padding()
                         }
                         .refreshable {
-                            await viewModel.fetchRecipes()
+                            await viewModel.fetchRecipes(isUserInitiated: true)
                         }
                     }
+                    }
+                }
+                
+                if let toastMessage = viewModel.toastMessage {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 12) {
+                            if toastMessage.contains("cooking") {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: "info.circle")
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Text(toastMessage)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color.clipCookSurface.opacity(0.95))
+                        .cornerRadius(30)
+                        .shadow(radius: 10)
+                        .padding(.bottom, 20)
+                        .padding(.horizontal)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            withAnimation {
+                                viewModel.toastMessage = nil
+                            }
+                        }
+                    }
+                    .zIndex(100)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
