@@ -50,8 +50,6 @@ class LiveVoiceManager: NSObject, ObservableObject {
         self.errorMessage = nil // Clear previous errors
         
         // Basic permission check
-        // Basic permission check
-        // Basic permission check
         var isPermissionDenied = false
         if #available(iOS 17.0, *) {
             if AVAudioApplication.shared.recordPermission == .denied {
@@ -68,13 +66,27 @@ class LiveVoiceManager: NSObject, ObservableObject {
             return
         }
         
-        guard let url = URL(string: "\(AppConfig.wsEndpoint)/live-cooking?recipeId=\(recipeId)&stepIndex=\(initialStepIndex)") else {
+        // Build WebSocket URL - MUST use wss:// scheme, not https://
+        let wsUrlString = "\(AppConfig.wsEndpoint)/live-cooking?recipeId=\(recipeId)&stepIndex=\(initialStepIndex)"
+        
+        guard let url = URL(string: wsUrlString) else {
             self.errorMessage = "Invalid connection URL"
             return
         }
-        // Note: URLSession automatically handles ws/wss upgrade from http/https
         
-        let session = URLSession(configuration: .default, delegate: self, delegateQueue: OperationQueue.main)
+        // Validate the URL has a WebSocket scheme
+        guard url.scheme == "wss" || url.scheme == "ws" else {
+            self.errorMessage = "Live Chef is not available right now. Please try again later."
+            print("Error: WebSocket URL has invalid scheme '\(url.scheme ?? "nil")'. Expected 'wss' or 'ws'.")
+            return
+        }
+        
+        // Create WebSocket connection
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
+        let session = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue.main)
+        
         webSocketTask = session.webSocketTask(with: url)
         webSocketTask?.resume()
         

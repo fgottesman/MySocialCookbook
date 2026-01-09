@@ -8,7 +8,8 @@ struct AppConfig {
         "\(apiBaseUrl)/api"
     }
     
+    // WebSocket requires wss:// scheme, not https://
     static var wsEndpoint: String {
-        "\(apiBaseUrl)/ws"
+        "wss://mysocialcookbook-production.up.railway.app/ws"
     }
 }

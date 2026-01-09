@@ -4,7 +4,8 @@ import { IncomingMessage } from 'http';
 import { supabase } from '../db/supabase';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_WEBSOCKET_URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`;
+// Use v1beta endpoint (the correct one for Live API)
+const GEMINI_WEBSOCKET_URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`;
 
 export class GeminiLiveService {
 
@@ -17,7 +18,6 @@ export class GeminiLiveService {
         console.log("New Live Mode connection initiated");
 
         // 1. Parse Query Params for Context (Recipe ID, User ID)
-        // expected url: /ws/live-cooking?recipeId=123&stepIndex=2
         const url = new URL(req.url || '', `http://${req.headers.host}`);
         const recipeId = url.searchParams.get('recipeId');
         const stepIndex = parseInt(url.searchParams.get('stepIndex') || '0');
@@ -47,36 +47,27 @@ export class GeminiLiveService {
         const geminiWs = new WebSocket(GEMINI_WEBSOCKET_URL);
 
         // 4. Setup Relay Logic
-
         geminiWs.on('open', () => {
             console.log("Connected to Gemini Live API");
 
-            // Send Initial Application Config (System Instruction)
-            // We use the "tool_use" or "setup" message format
+            // Send Initial BidiGenerateContentSetup message (correct format per docs)
             const setupMessage = {
                 setup: {
-                    model: "models/gemini-2.0-flash-exp", // Verify model name availability
-                    tools: [
-                        {
-                            function_declarations: [
-                                {
-                                    name: "get_step_instructions",
-                                    description: "Get the full text instructions for a specific step index.",
-                                    parameters: {
-                                        type: "OBJECT",
-                                        properties: {
-                                            step_index: { type: "INTEGER" }
-                                        },
-                                        required: ["step_index"]
-                                    }
+                    model: "models/gemini-2.0-flash-live-001",
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: {
+                                    voiceName: "Puck"
                                 }
-                            ]
+                            }
                         }
-                    ],
-                    system_instructions: {
+                    },
+                    systemInstruction: {
                         parts: [
                             { text: "You are a friendly, helpful, and concise professional Sous Chef named 'Chef'." },
-                            { text: "The user is currently cooking so keep your hands-free via voice interaction." },
+                            { text: "The user is currently cooking so keep responses brief for hands-free voice interaction." },
                             { text: `You are guiding them through the recipe: "${recipe.title}".` },
                             { text: `Ingredients: ${JSON.stringify(recipe.ingredients)}` },
                             { text: `Instructions: ${JSON.stringify(recipe.instructions)}` },
@@ -88,35 +79,52 @@ export class GeminiLiveService {
             };
 
             geminiWs.send(JSON.stringify(setupMessage));
+            console.log("Sent setup message to Gemini");
         });
 
         geminiWs.on('message', (data: WebSocket.Data) => {
             // Forward Gemini -> Client
-            // Gemini sends JSON or Binary blobs. We can just pipe them? 
-            // Better to parse if possible to log, but raw piping is faster for audio.
-            // But we might need to inspect for tool calls.
-
-            // For now, simple relay of text/audio data
             if (ws.readyState === WebSocket.OPEN) {
+                // Log first few chars for debugging
+                if (typeof data === 'string') {
+                    console.log("Gemini text response:", data.substring(0, 200));
+                } else {
+                    console.log("Gemini binary response:", (data as Buffer).length, "bytes");
+                }
                 ws.send(data);
             }
         });
 
-        geminiWs.on('close', () => {
-            console.log("Gemini connection closed");
+        geminiWs.on('close', (code, reason) => {
+            console.log("Gemini connection closed:", code, reason?.toString());
             if (ws.readyState === WebSocket.OPEN) ws.close();
         });
 
         geminiWs.on('error', (err) => {
-            console.error("Gemini WebSocket error:", err);
+            console.error("Gemini WebSocket error:", err.message);
             ws.close(1011, "Upstream error");
         });
 
         // 5. Setup Client -> Gemini Logic
         ws.on('message', (data: WebSocket.Data) => {
             // Forward Client -> Gemini
+            // Client sends raw audio bytes, we wrap them in realtimeInput format
             if (geminiWs.readyState === WebSocket.OPEN) {
-                geminiWs.send(data);
+                if (Buffer.isBuffer(data)) {
+                    // Wrap audio in the correct format
+                    const audioMessage = {
+                        realtimeInput: {
+                            mediaChunks: [{
+                                mimeType: "audio/pcm;rate=16000",
+                                data: data.toString('base64')
+                            }]
+                        }
+                    };
+                    geminiWs.send(JSON.stringify(audioMessage));
+                } else {
+                    // Text/JSON messages pass through
+                    geminiWs.send(data);
+                }
             }
         });
 
