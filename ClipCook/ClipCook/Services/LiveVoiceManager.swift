@@ -47,39 +47,52 @@ class LiveVoiceManager: NSObject, ObservableObject {
     }
     
     func connect(recipeId: String, initialStepIndex: Int) {
+        print("🎙️ [LiveVoice] Starting connection...")
+        print("🎙️ [LiveVoice] Recipe ID: \(recipeId), Step: \(initialStepIndex)")
+        
         self.errorMessage = nil // Clear previous errors
         
         // Basic permission check
         var isPermissionDenied = false
         if #available(iOS 17.0, *) {
-            if AVAudioApplication.shared.recordPermission == .denied {
+            let permission = AVAudioApplication.shared.recordPermission
+            print("🎙️ [LiveVoice] Mic permission (iOS 17+): \(permission.rawValue)")
+            if permission == .denied {
                 isPermissionDenied = true
             }
         } else {
-            if AVAudioSession.sharedInstance().recordPermission == .denied {
+            let permission = AVAudioSession.sharedInstance().recordPermission
+            print("🎙️ [LiveVoice] Mic permission: \(permission.rawValue)")
+            if permission == .denied {
                  isPermissionDenied = true
             }
         }
         
         if isPermissionDenied {
+            print("🎙️ [LiveVoice] ❌ Microphone permission DENIED")
             self.errorMessage = "Microphone access is denied. Please enable it in Settings."
             return
         }
         
         // Build WebSocket URL - MUST use wss:// scheme, not https://
         let wsUrlString = "\(AppConfig.wsEndpoint)/live-cooking?recipeId=\(recipeId)&stepIndex=\(initialStepIndex)"
+        print("🎙️ [LiveVoice] WebSocket URL: \(wsUrlString)")
         
         guard let url = URL(string: wsUrlString) else {
+            print("🎙️ [LiveVoice] ❌ Failed to create URL from string")
             self.errorMessage = "Invalid connection URL"
             return
         }
         
         // Validate the URL has a WebSocket scheme
+        print("🎙️ [LiveVoice] URL scheme: \(url.scheme ?? "nil")")
         guard url.scheme == "wss" || url.scheme == "ws" else {
             self.errorMessage = "Live Chef is not available right now. Please try again later."
-            print("Error: WebSocket URL has invalid scheme '\(url.scheme ?? "nil")'. Expected 'wss' or 'ws'.")
+            print("🎙️ [LiveVoice] ❌ Invalid scheme '\(url.scheme ?? "nil")'. Expected 'wss' or 'ws'.")
             return
         }
+        
+        print("🎙️ [LiveVoice] ✅ URL validation passed, creating WebSocket task...")
         
         // Create WebSocket connection
         let config = URLSessionConfiguration.default
@@ -88,9 +101,11 @@ class LiveVoiceManager: NSObject, ObservableObject {
         let session = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue.main)
         
         webSocketTask = session.webSocketTask(with: url)
+        print("🎙️ [LiveVoice] WebSocket task created, resuming...")
         webSocketTask?.resume()
         
         listen()
+        print("🎙️ [LiveVoice] Now listening for messages...")
     }
     
     func disconnect() {
@@ -109,7 +124,8 @@ class LiveVoiceManager: NSObject, ObservableObject {
                 self.handleMessage(message)
                 self.listen() // Keep listening
             case .failure(let error):
-                print("WebSocket receive error: \(error)")
+                print("🎙️ [LiveVoice] ❌ WebSocket receive error: \(error)")
+                print("🎙️ [LiveVoice] Error details: \(error.localizedDescription)")
                 self.isConnected = false
                 // Only show error if we didn't intentionally disconnect
                 if self.webSocketTask?.state != .completed && self.webSocketTask?.state != .canceling {
@@ -124,12 +140,13 @@ class LiveVoiceManager: NSObject, ObservableObject {
     private func handleMessage(_ message: URLSessionWebSocketTask.Message) {
         switch message {
         case .data(let data):
-            // Binary data is usually audio PCM
+            print("🎙️ [LiveVoice] 📥 Received audio data: \(data.count) bytes")
             self.playAudioData(data)
         case .string(let text):
             // JSON control messages (tools, etc.)
-            print("Received text from Gemini: \(text)")
+            print("🎙️ [LiveVoice] 📥 Received text: \(text.prefix(200))...")
         @unknown default:
+            print("🎙️ [LiveVoice] ⚠️ Unknown message type received")
             break
         }
     }
@@ -304,7 +321,7 @@ class LiveVoiceManager: NSObject, ObservableObject {
 
 extension LiveVoiceManager: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-        print("WebSocket Connected")
+        print("🎙️ [LiveVoice] ✅ WebSocket CONNECTED! Protocol: \(`protocol` ?? "none")")
         DispatchQueue.main.async {
             self.isConnected = true
             self.startSession() // Start audio once connected
@@ -312,10 +329,23 @@ extension LiveVoiceManager: URLSessionWebSocketDelegate {
     }
     
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-        print("WebSocket Closed")
+        let reasonString = reason.flatMap { String(data: $0, encoding: .utf8) } ?? "no reason"
+        print("🎙️ [LiveVoice] ⚠️ WebSocket CLOSED. Code: \(closeCode.rawValue), Reason: \(reasonString)")
         DispatchQueue.main.async {
             self.isConnected = false
             self.stopAudioEngine()
+        }
+    }
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error {
+            print("🎙️ [LiveVoice] ❌ URLSession task failed: \(error)")
+            print("🎙️ [LiveVoice] Error domain: \((error as NSError).domain)")
+            print("🎙️ [LiveVoice] Error code: \((error as NSError).code)")
+            DispatchQueue.main.async {
+                self.errorMessage = "Connection failed: \(error.localizedDescription)"
+                self.isConnected = false
+            }
         }
     }
 }
