@@ -196,6 +196,8 @@ class LiveVoiceManager: NSObject, ObservableObject {
             try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
             try session.setActive(true)
             print("🎙️ [LiveVoice] ✅ Audio session activated")
+            print("🎙️ [LiveVoice] Input available: \(session.isInputAvailable)")
+            print("🎙️ [LiveVoice] Current route: \(session.currentRoute.inputs.first?.portName ?? "none")")
         } catch {
             print("🎙️ [LiveVoice] ❌ Audio session setup failed: \(error)")
             self.errorMessage = "Could not configure audio: \(error.localizedDescription)"
@@ -217,6 +219,18 @@ class LiveVoiceManager: NSObject, ObservableObject {
             playerNode?.play()
             isListening = true
             print("🎙️ [LiveVoice] ✅ Audio engine started successfully")
+            print("🎙️ [LiveVoice] Engine running: \(audioEngine.isRunning)")
+            
+            // Verify engine is actually running after a short delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self = self else { return }
+                if self.audioEngine.isRunning {
+                    print("🎙️ [LiveVoice] ✅ VERIFIED: Audio engine is running")
+                } else {
+                    print("🎙️ [LiveVoice] ❌ PROBLEM: Audio engine stopped unexpectedly")
+                    self.errorMessage = "Audio stopped unexpectedly"
+                }
+            }
         } catch {
             print("🎙️ [LiveVoice] ❌ Audio engine start error: \(error)")
             self.errorMessage = "Failed to start audio: \(error.localizedDescription)"
