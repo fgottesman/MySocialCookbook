@@ -25,7 +25,6 @@ const REQUIRED_SCHEMA: RequiredColumns = {
         'created_at',
         'chefs_note',
         'is_favorite',
-        'parent_recipe_id',
         'source_prompt',
         'source_url',
         'step_preparations',
