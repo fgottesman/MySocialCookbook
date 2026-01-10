@@ -187,66 +187,88 @@ class LiveVoiceManager: NSObject, ObservableObject {
     }
     
     private func startAudioEngineOrReport() {
-        setupAudioEngine()
+        print("🎙️ [LiveVoice] Starting audio engine...")
+        
+        // CRITICAL: Must configure audio session BEFORE accessing audioEngine.inputNode
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setActive(true)
+            print("🎙️ [LiveVoice] ✅ Audio session activated")
+        } catch {
+            print("🎙️ [LiveVoice] ❌ Audio session setup failed: \(error)")
+            self.errorMessage = "Could not configure audio: \(error.localizedDescription)"
+            self.disconnect()
+            return
+        }
+        
+        // Now setup the engine after session is active
+        let setupSuccess = setupAudioEngine()
+        guard setupSuccess else {
+            print("🎙️ [LiveVoice] ❌ Audio engine setup failed")
+            self.errorMessage = "Could not setup audio. Please try again."
+            self.disconnect()
+            return
+        }
+        
         do {
             try audioEngine.start()
             playerNode?.play()
             isListening = true
+            print("🎙️ [LiveVoice] ✅ Audio engine started successfully")
         } catch {
-            print("Audio Engine Start Error: \(error)")
-            self.errorMessage = "Failed to start audio engine: \(error.localizedDescription)"
+            print("🎙️ [LiveVoice] ❌ Audio engine start error: \(error)")
+            self.errorMessage = "Failed to start audio: \(error.localizedDescription)"
             self.disconnect()
         }
     }
     
-    private func setupAudioEngine() {
-        // Re-init engine components to be safe
+    private func setupAudioEngine() -> Bool {
+        print("🎙️ [LiveVoice] Setting up audio engine...")
+        
+        // Stop engine if running
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
+        
+        // Get input node (this can trigger format issues if session not configured)
         let inputNode = audioEngine.inputNode
-        let playerNode = AVAudioPlayerNode()
-        self.playerNode = playerNode
         self.inputNode = inputNode
         
-        // Ensure no existing tap causes a crash
+        // Remove any existing taps
         inputNode.removeTap(onBus: 0)
         
-        // Attach and Connect
-        if audioEngine.attachedNodes.contains(playerNode) {
-            audioEngine.detach(playerNode)
-        }
+        // Create and attach player node
+        let playerNode = AVAudioPlayerNode()
+        self.playerNode = playerNode
         audioEngine.attach(playerNode)
+        
+        // Connect player to output using output format
         audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: outputFormat)
         
-        // Prepare format conversion
+        // Get native input format
         let nativeFormat = inputNode.inputFormat(forBus: 0)
+        print("🎙️ [LiveVoice] Native input format: \(nativeFormat.sampleRate)Hz, \(nativeFormat.channelCount) channels")
         
-        // Prevent crash if sample rate is 0 (engine invalid state)
-        if nativeFormat.sampleRate == 0 {
-            print("Error: Input node has invalid sample rate (0)")
-            return
-        }
-
-        guard let formatConverter = AVAudioConverter(from: nativeFormat, to: inputFormat) else {
-            print("Could not create audio converter")
-            return
+        // Validate format
+        guard nativeFormat.sampleRate > 0 else {
+            print("🎙️ [LiveVoice] ❌ Invalid native sample rate: 0")
+            return false
         }
         
+        // Use native format for tap (simpler and more reliable)
+        // We'll send audio in native format and let the backend handle conversion
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: nativeFormat) { [weak self] buffer, time in
             guard let self = self else { return }
             
-            // Convert to 16kHz
-            let targetFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * (16000.0 / buffer.format.sampleRate))
-            if let outputBuffer = AVAudioPCMBuffer(pcmFormat: self.inputFormat, frameCapacity: targetFrameCapacity) {
-                var error: NSError? = nil
-                formatConverter.convert(to: outputBuffer, error: &error) { packetCount, status in
-                    status.pointee = .haveData
-                    return buffer
-                }
-                
-                if let data = self.toData(buffer: outputBuffer) {
-                    self.sendAudio(data)
-                }
+            // Convert buffer to Data and send
+            if let data = self.bufferToData(buffer: buffer) {
+                self.sendAudio(data)
             }
         }
+        
+        print("🎙️ [LiveVoice] ✅ Audio engine setup complete")
+        return true
     }
     
     private func stopAudioEngine() {
@@ -296,6 +318,22 @@ class LiveVoiceManager: NSObject, ObservableObject {
     }
     
     // Helpers
+    
+    // Convert native float buffer to Data (for sending to backend)
+    private func bufferToData(buffer: AVAudioPCMBuffer) -> Data? {
+        // Native iOS mic format is typically float32
+        if let floatData = buffer.floatChannelData {
+            let channelDataPointer = floatData.pointee
+            let byteCount = Int(buffer.frameLength) * MemoryLayout<Float>.size
+            return Data(bytes: channelDataPointer, count: byteCount)
+        }
+        // Fallback for int16 format
+        if let int16Data = buffer.int16ChannelData {
+            let channelDataPointer = int16Data.pointee
+            return Data(bytes: channelDataPointer, count: Int(buffer.frameLength) * 2)
+        }
+        return nil
+    }
     
     private func toData(buffer: AVAudioPCMBuffer) -> Data? {
         guard let channelData = buffer.int16ChannelData else { return nil }
