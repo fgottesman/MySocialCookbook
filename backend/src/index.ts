@@ -116,11 +116,7 @@ server.on('upgrade', async (request, socket, head) => {
 });
 
 // Error handler must be last
-app.use(errorHandler);
-
-server.listen(port, () => {
-    logger.info(`Server is running on port ${port}`);
-});
+// Note: server.listen() is called above after schema validation passes
 
 // Graceful shutdown
 const shutdown = () => {
