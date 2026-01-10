@@ -2,10 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDisplayName</key>
+	<string>ClipCook</string>
 	<key>CFBundleIdentifier</key>
 	<string></string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>ClipCook needs microphone access for the Voice Sous Chef feature.</string>
+	<key>CFBundleName</key>
+	<string>ClipCook</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -19,13 +21,12 @@
 			</array>
 		</dict>
 	</array>
-	<key>CFBundleDisplayName</key>
-	<string>ClipCook</string>
-	<key>CFBundleName</key>
-	<string>ClipCook</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ClipCook needs microphone access for the Voice Sous Chef feature.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>audio</string>
 	</array>
 </dict>
 </plist>

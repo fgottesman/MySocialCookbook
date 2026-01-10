@@ -250,6 +250,14 @@ class LiveVoiceManager: NSObject, ObservableObject {
         let inputNode = audioEngine.inputNode
         self.inputNode = inputNode
         
+        // Enable Voice Processing (AEC) - CRITICAL to keep AI from hearing itself
+        do {
+            try inputNode.setVoiceProcessingEnabled(true)
+            print("🎙️ [LiveVoice] ✅ Voice processing (AEC) enabled")
+        } catch {
+            print("🎙️ [LiveVoice] ⚠️ Could not enable voice processing: \(error)")
+        }
+        
         // Remove any existing taps
         inputNode.removeTap(onBus: 0)
         
