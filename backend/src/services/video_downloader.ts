@@ -3,6 +3,7 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import logger from '../utils/logger';
 
 export class VideoDownloader {
 
@@ -19,7 +20,7 @@ export class VideoDownloader {
             throw new Error("RAPIDAPI_KEY environment variable is not set");
         }
 
-        console.log("Fetching video metadata via Social Download All in One API:", url);
+        logger.info(`Fetching video metadata via Social Download All in One API: ${url}`);
 
         try {
             const response = await axios.post('https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink',
@@ -33,7 +34,7 @@ export class VideoDownloader {
                 }
             );
 
-            console.log("API response:", JSON.stringify(response.data, null, 2));
+            logger.debug("RapidAPI response received successfully");
 
             let downloadUrl: string | null = null;
             let thumbnailUrl: string | null = null;
@@ -80,13 +81,14 @@ export class VideoDownloader {
             }
 
             if (!downloadUrl) {
-                console.error("No download URL found in response:", response.data);
+                logger.error("No download URL found in response", { data: response.data });
                 throw new Error("Could not extract video download URL from API response");
             }
 
-            console.log("Media URL found:", downloadUrl);
-            console.log("Media type:", mediaType);
-            console.log("Description found:", description?.substring(0, 50) + "...");
+            logger.info("Media metadata found", {
+                mediaType,
+                description: description?.substring(0, 50)
+            });
 
             return {
                 downloadUrl,
@@ -97,7 +99,7 @@ export class VideoDownloader {
 
         } catch (error: any) {
             if (error.response) {
-                console.error("Video Metadata Fetch Failed", error.response.data);
+                logger.error("Video Metadata Fetch Failed", { error: error.response.data });
                 if (error.response.status === 403) {
                     throw new Error(
                         "RapidAPI subscription required. Please subscribe to 'Social Download All in One' API at: " +
@@ -133,16 +135,16 @@ export class VideoDownloader {
             fs.writeFileSync(filePath, videoResponse.data);
 
             const mimeType = mediaType === 'image' ? 'image/jpeg' : 'video/mp4';
-            console.log(`${mediaType} saved to:`, filePath);
+            logger.info(`${mediaType} saved successfully`, { filePath });
             return { filePath, thumbnailUrl, description, mimeType };
         } catch (error) {
-            console.error("Video File Download Failed", error);
+            logger.error("Video File Download Failed", { error });
             throw error;
         }
     }
 
     async downloadThumbnail(url: string, outputPath: string): Promise<string> {
-        console.log("Downloading thumbnail from:", url);
+        logger.info(`Downloading thumbnail from: ${url}`);
         try {
             const response = await axios.get(url, {
                 responseType: 'arraybuffer',
@@ -152,10 +154,10 @@ export class VideoDownloader {
             });
 
             fs.writeFileSync(outputPath, response.data);
-            console.log("Thumbnail saved to:", outputPath);
+            logger.info(`Thumbnail saved to: ${outputPath}`);
             return outputPath;
         } catch (error) {
-            console.error("Failed to download thumbnail:", error);
+            logger.error("Failed to download thumbnail", { error });
             throw error;
         }
     }

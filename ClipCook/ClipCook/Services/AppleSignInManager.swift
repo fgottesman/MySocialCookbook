@@ -60,7 +60,15 @@ class AppleSignInManager: NSObject, ASAuthorizationControllerDelegate, ASAuthori
             return window
         }
         
-        return UIWindow()
+        // Last resort: create window from any available scene
+        if let anyScene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first {
+            return UIWindow(windowScene: anyScene)
+        }
+        
+        // This should never happen on a properly configured app
+        fatalError("No window scene available for Apple Sign In")
     }
     
     // MARK: - Crypto Helpers

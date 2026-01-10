@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Combine
+import Supabase
 
 class LiveVoiceManager: NSObject, ObservableObject {
     static let shared = LiveVoiceManager()
@@ -109,18 +110,34 @@ class LiveVoiceManager: NSObject, ObservableObject {
     }
     
     private func checkMicrophonePermission(completion: @escaping (Bool) -> Void) {
-        let permission = AVAudioSession.sharedInstance().recordPermission
-        switch permission {
-        case .granted:
-            completion(true)
-        case .denied:
-            completion(false)
-        case .undetermined:
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                DispatchQueue.main.async { completion(granted) }
+        if #available(iOS 17.0, *) {
+            let permission = AVAudioApplication.shared.recordPermission
+            switch permission {
+            case .granted:
+                completion(true)
+            case .denied:
+                completion(false)
+            case .undetermined:
+                AVAudioApplication.requestRecordPermission { granted in
+                    DispatchQueue.main.async { completion(granted) }
+                }
+            @unknown default:
+                completion(false)
             }
-        @unknown default:
-            completion(false)
+        } else {
+            let permission = AVAudioSession.sharedInstance().recordPermission
+            switch permission {
+            case .granted:
+                completion(true)
+            case .denied:
+                completion(false)
+            case .undetermined:
+                AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                    DispatchQueue.main.async { completion(granted) }
+                }
+            @unknown default:
+                completion(false)
+            }
         }
     }
     
@@ -210,7 +227,7 @@ class LiveVoiceManager: NSObject, ObservableObject {
         // CRITICAL: Must configure audio session BEFORE accessing audioEngine.inputNode
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true)
             print("🎙️ [LiveVoice] ✅ Audio session activated")
             print("🎙️ [LiveVoice] Input available: \(session.isInputAvailable)")

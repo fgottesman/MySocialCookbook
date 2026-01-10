@@ -18,6 +18,7 @@ export class AiController {
             const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
             const embedding = await gemini.generateEmbedding(embeddingText);
 
+            // Handle Step 0 Audio
             let step0AudioUrl = null;
             if (recipeData.step0Summary) {
                 const audioBase64 = await ttsService.synthesize(recipeData.step0Summary);
@@ -29,6 +30,23 @@ export class AiController {
                 }
             }
 
+            // AI Image Generation
+            let thumbnailUrl = null;
+            try {
+                logger.info("AI: Generating food image");
+                const imageBase64 = await gemini.generateFoodImage(recipeData.title, recipeData.description);
+                if (imageBase64) {
+                    const imageName = `ai_recipe_${crypto.randomUUID()}.png`;
+                    const imageBuffer = Buffer.from(imageBase64, 'base64');
+                    const { error: uploadError } = await req.supabase.storage.from('recipe-thumbnails').upload(imageName, imageBuffer, { contentType: 'image/png', upsert: true });
+                    if (!uploadError) {
+                        thumbnailUrl = req.supabase.storage.from('recipe-thumbnails').getPublicUrl(imageName).data.publicUrl;
+                    }
+                }
+            } catch (e: any) {
+                logger.error(`AI: Image Generation Failed: ${e.message}`);
+            }
+
             const { data, error } = await req.supabase.from('recipes').insert({
                 user_id: userId,
                 title: recipeData.title,
@@ -36,6 +54,7 @@ export class AiController {
                 ingredients: recipeData.ingredients,
                 instructions: recipeData.instructions,
                 embedding: embedding,
+                thumbnail_url: thumbnailUrl,
                 step0_summary: recipeData.step0Summary,
                 step0_audio_url: step0AudioUrl,
                 difficulty: recipeData.difficulty,

@@ -3,13 +3,15 @@ import { RecipeController } from '../../controllers/RecipeController';
 import { authenticate } from '../../middleware/auth';
 import { aiLimiter } from '../../middleware/rateLimit';
 import { wrapAsync } from '../../middleware/error';
+import { validate } from '../../middleware/validate';
+import { ProcessRecipeSchema, ToggleFavoriteSchema } from '../../schemas';
 
 const router = express.Router();
 
-router.post('/process', authenticate, aiLimiter, wrapAsync(RecipeController.processRecipe));
+router.post('/process', authenticate, aiLimiter, validate(ProcessRecipeSchema), wrapAsync(RecipeController.processRecipe));
 router.get('/feed', authenticate, wrapAsync(RecipeController.getFeed));
 router.delete('/:id', authenticate, wrapAsync(RecipeController.deleteRecipe));
-router.post('/:id/favorite', authenticate, wrapAsync(RecipeController.toggleFavorite));
+router.post('/:id/favorite', authenticate, validate(ToggleFavoriteSchema), wrapAsync(RecipeController.toggleFavorite));
 router.get('/:recipeId/versions', authenticate, wrapAsync(RecipeController.getVersions));
 router.post('/:recipeId/versions', authenticate, wrapAsync(RecipeController.saveVersion));
 
