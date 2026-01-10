@@ -8,6 +8,7 @@ class LiveVoiceManager: NSObject, ObservableObject {
     
     // connection state
     @Published var isConnected = false
+    @Published var isConnecting = false
     @Published var isListening = false
     @Published var isSpeaking = false // AI is speaking
     @Published var errorMessage: String? // For UI alerts
@@ -66,12 +67,15 @@ class LiveVoiceManager: NSObject, ObservableObject {
         print("🎙️ [LiveVoice] Starting connection...")
         
         self.errorMessage = nil
+        self.isConnecting = true
+        self.isConnected = false
         
         // Basic permission check
         checkMicrophonePermission { [weak self] granted in
             guard let self = self else { return }
             if !granted {
                 self.errorMessage = "Please enable microphone access in Settings to talk to the Chef."
+                self.isConnecting = false
                 return
             }
             
@@ -84,13 +88,19 @@ class LiveVoiceManager: NSObject, ObservableObject {
     private func internalConnect(recipeId: String, stepIndex: Int) async {
         let wsUrlString = "\(AppConfig.wsEndpoint)/live-cooking?recipeId=\(recipeId)&stepIndex=\(stepIndex)"
         guard let url = URL(string: wsUrlString) else {
-            DispatchQueue.main.async { self.errorMessage = "We couldn't reach the Chef. Check your connection." }
+            DispatchQueue.main.async { 
+                self.errorMessage = "We couldn't reach the Chef. Check your connection."
+                self.isConnecting = false
+            }
             return
         }
         
         // Restore validation
         guard url.scheme == "wss" || url.scheme == "ws" else {
-            DispatchQueue.main.async { self.errorMessage = "Live Chef is temporarily resting. Try again in a bit!" }
+            DispatchQueue.main.async { 
+                self.errorMessage = "Live Chef is temporarily resting. Try again in a bit!"
+                self.isConnecting = false
+            }
             return
         }
         
@@ -145,6 +155,7 @@ class LiveVoiceManager: NSObject, ObservableObject {
         stopAudioEngine()
         webSocketTask?.cancel(with: .normalClosure, reason: nil)
         isConnected = false
+        isConnecting = false
         isListening = false
     }
     
@@ -155,11 +166,23 @@ class LiveVoiceManager: NSObject, ObservableObject {
             switch result {
             case .success(let message):
                 self.handleMessage(message)
+                
+                // If this is the first message, we are connected
+                if self.isConnecting {
+                    DispatchQueue.main.async {
+                        self.isConnecting = false
+                        self.isConnected = true
+                    }
+                }
+                
                 self.listen() // Keep listening
             case .failure(let error):
                 print("🎙️ [LiveVoice] ❌ WebSocket receive error: \(error)")
                 print("🎙️ [LiveVoice] Error details: \(error.localizedDescription)")
-                self.isConnected = false
+                DispatchQueue.main.async {
+                    self.isConnected = false
+                    self.isConnecting = false
+                }
                 // Only show error if we didn't intentionally disconnect
                 if self.webSocketTask?.state != .completed && self.webSocketTask?.state != .canceling {
                     DispatchQueue.main.async {

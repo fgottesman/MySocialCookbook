@@ -361,8 +361,8 @@ struct VoiceCompanionView: View {
                         Circle()
                             .fill(Color.red.opacity(0.2))
                             .frame(width: 100, height: 100)
-                            .scaleEffect(liveManager.isSpeaking ? 1.2 : 1.1)
-                            .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: liveManager.isSpeaking)
+                            .scaleEffect(liveManager.isSpeaking || liveManager.isConnecting ? 1.2 : 1.1)
+                            .animation(.easeInOut(duration: liveManager.isConnecting ? 1.0 : 0.6).repeatForever(autoreverses: true), value: liveManager.isSpeaking || liveManager.isConnecting)
                     }
                     
                     // Button Background
@@ -372,9 +372,23 @@ struct VoiceCompanionView: View {
                         .shadow(color: (isLiveMode ? Color.red : Color.clipCookSizzleStart).opacity(0.4), radius: 10, y: 5)
                     
                     // Icon
-                    Image(systemName: isLiveMode ? "phone.down.fill" : "phone.fill")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.white)
+                    if liveManager.isConnecting {
+                        Image(systemName: "phone.circle.fill") // Or a spinner
+                             .font(.system(size: 32, weight: .bold))
+                             .foregroundColor(.white)
+                             .overlay(
+                                 Circle()
+                                     .trim(from: 0, to: 0.7)
+                                     .stroke(Color.white, lineWidth: 3)
+                                     .rotationEffect(Angle(degrees: isLiveMode ? 360 : 0))
+                                     .animation(Animation.linear(duration: 1).repeatForever(autoreverses: false), value: isLiveMode)
+                                     .frame(width: 40, height: 40)
+                             )
+                    } else {
+                        Image(systemName: isLiveMode ? "phone.down.fill" : "phone.fill")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                    }
                 }
             }
             .padding(.bottom, 8)
@@ -382,9 +396,15 @@ struct VoiceCompanionView: View {
             // Status / Hint Text
             if isLiveMode {
                 VStack(spacing: 4) {
-                    Text(liveManager.isSpeaking ? "Chef is talking..." : "Listening...")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                    if liveManager.isConnecting {
+                        Text("Calling Chef...")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    } else {
+                        Text(liveManager.isSpeaking ? "Chef is talking..." : "Listening...")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
                     
                     // Audio Level Visualizer
                     HStack(spacing: 4) {
