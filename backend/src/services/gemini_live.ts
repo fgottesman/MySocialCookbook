@@ -8,27 +8,38 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_WEBSOCKET_URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`;
 
 export class GeminiLiveService {
+    constructor() {
+        console.log("[GeminiLive] Service initialized");
+        console.log("[GeminiLive] API Key present:", !!GEMINI_API_KEY);
+        console.log("[GeminiLive] API Key length:", GEMINI_API_KEY?.length || 0);
+    }
 
-    constructor() { }
-
-    /**
-     * Handle a new WebSocket connection from the client.
-     */
     async handleConnection(ws: WebSocket, req: IncomingMessage) {
-        console.log("New Live Mode connection initiated");
+        console.log("[GeminiLive] ======= NEW CONNECTION =======");
 
-        // 1. Parse Query Params for Context (Recipe ID, User ID)
+        // 1. Parse Query Params
         const url = new URL(req.url || '', `http://${req.headers.host}`);
         const recipeId = url.searchParams.get('recipeId');
         const stepIndex = parseInt(url.searchParams.get('stepIndex') || '0');
 
+        console.log("[GeminiLive] Recipe ID:", recipeId);
+        console.log("[GeminiLive] Step Index:", stepIndex);
+
         if (!recipeId) {
-            console.error("Missing recipeId for Live Session");
+            console.error("[GeminiLive] ❌ Missing recipeId");
             ws.close(1008, "Missing recipeId");
             return;
         }
 
+        // Check API key
+        if (!GEMINI_API_KEY) {
+            console.error("[GeminiLive] ❌ GEMINI_API_KEY not set!");
+            ws.close(1011, "Server configuration error");
+            return;
+        }
+
         // 2. Fetch Recipe Context
+        console.log("[GeminiLive] Fetching recipe from database...");
         const { data: recipe, error } = await supabase
             .from('recipes')
             .select('*')
@@ -36,21 +47,22 @@ export class GeminiLiveService {
             .single();
 
         if (error || !recipe) {
-            console.error("Recipe not found", error);
+            console.error("[GeminiLive] ❌ Recipe not found:", error?.message);
             ws.close(1008, "Recipe not found");
             return;
         }
 
-        console.log(`Starting Live Session for recipe: ${recipe.title}`);
+        console.log("[GeminiLive] ✅ Recipe found:", recipe.title);
 
         // 3. Connect to Gemini Live
+        console.log("[GeminiLive] Connecting to Gemini Live API...");
+        console.log("[GeminiLive] URL:", GEMINI_WEBSOCKET_URL.replace(GEMINI_API_KEY || '', '[REDACTED]'));
+
         const geminiWs = new WebSocket(GEMINI_WEBSOCKET_URL);
 
-        // 4. Setup Relay Logic
         geminiWs.on('open', () => {
-            console.log("Connected to Gemini Live API");
+            console.log("[GeminiLive] ✅ Connected to Gemini Live API!");
 
-            // Send Initial BidiGenerateContentSetup message (correct format per docs)
             const setupMessage = {
                 setup: {
                     model: "models/gemini-2.0-flash-live-001",
@@ -66,52 +78,53 @@ export class GeminiLiveService {
                     },
                     systemInstruction: {
                         parts: [
-                            { text: "You are a friendly, helpful, and concise professional Sous Chef named 'Chef'." },
-                            { text: "The user is currently cooking so keep responses brief for hands-free voice interaction." },
-                            { text: `You are guiding them through the recipe: "${recipe.title}".` },
-                            { text: `Ingredients: ${JSON.stringify(recipe.ingredients)}` },
-                            { text: `Instructions: ${JSON.stringify(recipe.instructions)}` },
-                            { text: "Start by greeting them and asking if they are ready for the current step." },
-                            { text: "If they ask for amounts, be precise. If they just chat, be friendly but brief." }
+                            { text: "You are a friendly, helpful Sous Chef named 'Chef'. Keep responses brief." },
+                            { text: `Recipe: "${recipe.title}"` },
+                            { text: `Ingredients: ${JSON.stringify(recipe.ingredients?.slice(0, 10))}` },
+                            { text: "Greet the user and ask if they're ready." }
                         ]
                     }
                 }
             };
 
+            console.log("[GeminiLive] Sending setup message...");
             geminiWs.send(JSON.stringify(setupMessage));
-            console.log("Sent setup message to Gemini");
+            console.log("[GeminiLive] ✅ Setup message sent");
         });
 
         geminiWs.on('message', (data: WebSocket.Data) => {
-            // Forward Gemini -> Client
+            const dataStr = data.toString();
+            if (dataStr.length < 500) {
+                console.log("[GeminiLive] 📥 Gemini message:", dataStr);
+            } else {
+                console.log("[GeminiLive] 📥 Gemini binary data:", (data as Buffer).length, "bytes");
+            }
+
             if (ws.readyState === WebSocket.OPEN) {
-                // Log first few chars for debugging
-                if (typeof data === 'string') {
-                    console.log("Gemini text response:", data.substring(0, 200));
-                } else {
-                    console.log("Gemini binary response:", (data as Buffer).length, "bytes");
-                }
                 ws.send(data);
             }
         });
 
         geminiWs.on('close', (code, reason) => {
-            console.log("Gemini connection closed:", code, reason?.toString());
-            if (ws.readyState === WebSocket.OPEN) ws.close();
+            console.log("[GeminiLive] ⚠️ Gemini connection closed");
+            console.log("[GeminiLive] Close code:", code);
+            console.log("[GeminiLive] Close reason:", reason?.toString() || "none");
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.close(code, reason?.toString());
+            }
         });
 
         geminiWs.on('error', (err) => {
-            console.error("Gemini WebSocket error:", err.message);
-            ws.close(1011, "Upstream error");
+            console.error("[GeminiLive] ❌ Gemini WebSocket error:", err.message);
+            console.error("[GeminiLive] Error details:", err);
+            ws.close(1011, "Upstream error: " + err.message);
         });
 
-        // 5. Setup Client -> Gemini Logic
+        // 5. Client -> Gemini
         ws.on('message', (data: WebSocket.Data) => {
-            // Forward Client -> Gemini
-            // Client sends raw audio bytes, we wrap them in realtimeInput format
             if (geminiWs.readyState === WebSocket.OPEN) {
                 if (Buffer.isBuffer(data)) {
-                    // Wrap audio in the correct format
+                    // Wrap audio in correct format for Gemini
                     const audioMessage = {
                         realtimeInput: {
                             mediaChunks: [{
@@ -122,15 +135,22 @@ export class GeminiLiveService {
                     };
                     geminiWs.send(JSON.stringify(audioMessage));
                 } else {
-                    // Text/JSON messages pass through
                     geminiWs.send(data);
                 }
+            } else {
+                console.log("[GeminiLive] ⚠️ Cannot send to Gemini - not connected. State:", geminiWs.readyState);
             }
         });
 
-        ws.on('close', () => {
-            console.log("Client connection closed");
-            if (geminiWs.readyState === WebSocket.OPEN) geminiWs.close();
+        ws.on('close', (code, reason) => {
+            console.log("[GeminiLive] Client disconnected. Code:", code);
+            if (geminiWs.readyState === WebSocket.OPEN) {
+                geminiWs.close();
+            }
+        });
+
+        ws.on('error', (err) => {
+            console.error("[GeminiLive] Client WebSocket error:", err.message);
         });
     }
 }
