@@ -76,13 +76,22 @@ class RecipeService {
     // Process recipe from URL
     func processRecipe(url: String, userId: String) async throws {
         isProcessingRecipe = true
-        guard let endpoint = URL(string: "\(backendBaseUrl)/recipes/process") else {
+        guard let endpoint = URL(string: "\(backendBaseUrl)/process-recipe") else {
             throw URLError(.badURL)
         }
         
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Add Auth header
+        do {
+            let session = try await SupabaseManager.shared.client.auth.session
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        } catch {
+            print("⚠️ RecipeService: Failed to get auth session: \(error)")
+            // Allow request to proceed for legacy compatibility
+        }
         
         let body: [String: String] = ["url": url, "userId": userId]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -96,13 +105,22 @@ class RecipeService {
     
     // Create recipe from prompt
     func createRecipeFromPrompt(prompt: String, userId: String) async throws -> Recipe {
-        guard let endpoint = URL(string: "\(backendBaseUrl)/ai/generate") else {
+        guard let endpoint = URL(string: "\(backendBaseUrl)/generate-recipe-from-prompt") else {
             throw URLError(.badURL)
         }
         
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Add Auth header
+        do {
+            let session = try await SupabaseManager.shared.client.auth.session
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        } catch {
+            print("⚠️ RecipeService: Failed to get auth session: \(error)")
+            // Allow request to proceed for legacy compatibility
+        }
         
         let body: [String: String] = ["prompt": prompt, "userId": userId]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)

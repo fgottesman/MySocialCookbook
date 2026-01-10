@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct AddRecipeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -77,8 +78,8 @@ struct AddRecipeView: View {
                 }
             }
             .onAppear {
-                // Setup for TextEditor background clearing on older iOS if needed
-                // UITextView.appearance().backgroundColor = .clear
+                // Check clipboard for URL and auto-populate
+                checkClipboardForURL()
             }
         }
     }
@@ -212,6 +213,29 @@ struct AddRecipeView: View {
                     errorMessage = "The chef couldn't understand that. Try again!"
                 }
             }
+        }
+    }
+    
+    private func checkClipboardForURL() {
+        guard let clipboardString = UIPasteboard.general.string else { return }
+        
+        // Check if it's a valid URL
+        guard let url = URL(string: clipboardString),
+              url.scheme == "http" || url.scheme == "https" else {
+            return
+        }
+        
+        // Check if it's from a supported platform
+        let supportedDomains = ["tiktok.com", "instagram.com", "youtube.com", "youtu.be", "pinterest.com"]
+        let host = url.host?.lowercased() ?? ""
+        
+        let isSupported = supportedDomains.contains { domain in
+            host.contains(domain)
+        }
+        
+        if isSupported {
+            urlString = clipboardString
+            selectedTab = 0 // Switch to Link tab
         }
     }
 }

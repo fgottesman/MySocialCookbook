@@ -520,7 +520,18 @@ struct RecipeView: View {
                          // Update the local model with the real ID once confirmed
                          await MainActor.run {
                              if let index = self.recipeVersions.firstIndex(where: { $0.title == newVersion.title }) {
-                                 self.recipeVersions[index].recipe.versionId = savedVersion.id
+                                 // Create updated recipe with versionId
+                                 var updatedRecipe = self.recipeVersions[index].recipe
+                                 updatedRecipe.versionId = savedVersion.id
+                                 
+                                 // Create new RecipeVersion with updated recipe
+                                 let updatedVersion = RecipeVersion(
+                                     title: self.recipeVersions[index].title,
+                                     recipe: updatedRecipe,
+                                     changedIngredients: self.recipeVersions[index].changedIngredients
+                                 )
+                                 self.recipeVersions[index] = updatedVersion
+                                 
                                  if self.currentVersionIndex == index {
                                      self.recipe.versionId = savedVersion.id
                                  }
