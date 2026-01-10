@@ -58,6 +58,14 @@ server.on('upgrade', async (request, socket, head) => {
     const url = new URL(request.url || '', `http://${request.headers.host}`);
 
     if (url.pathname === '/ws/live-cooking' || url.pathname === '/api/ws/live-cooking') {
+        // Validate Supabase config before attempting auth
+        if (!supabaseUrl || !supabaseAnonKey) {
+            logger.error('[WS Upgrade] Supabase environment variables not configured');
+            socket.write('HTTP/1.1 503 Service Unavailable\r\n\r\n');
+            socket.destroy();
+            return;
+        }
+
         // Authenticate before upgrading
         const authHeader = request.headers['authorization'];
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
