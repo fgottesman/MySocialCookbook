@@ -19,6 +19,7 @@ import {
     TranscribeAudioSchema,
     SynthesizeSchema
 } from '../schemas';
+import healthRouter from './health';
 
 /**
  * LEGACY ROUTER - DO NOT ADD NEW FEATURES HERE
@@ -27,6 +28,8 @@ import {
  */
 const router = express.Router();
 
+// Mount health check routes
+router.use('/health', healthRouter);
 router.use(apiLimiter);
 
 // Recipes

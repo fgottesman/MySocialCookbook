@@ -13,6 +13,7 @@ import { supabaseUrl, supabaseAnonKey } from './db/supabase';
 import logger from './utils/logger';
 import { errorHandler } from './middleware/error';
 import { randomUUID } from 'crypto';
+import { checkSchema } from './utils/schemaGuard';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -52,6 +53,24 @@ app.get('/health', (req, res) => {
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
+
+// Error handler must be last
+app.use(errorHandler);
+
+// Validate schema before starting server
+(async () => {
+    try {
+        await checkSchema();
+
+        server.listen(port, () => {
+            logger.info(`Server is running on port ${port}`);
+        });
+    } catch (error) {
+        logger.error('[FATAL] Schema validation failed. Server will not start.', error);
+        process.exit(1);
+    }
+})();
+
 const liveService = new GeminiLiveService();
 
 server.on('upgrade', async (request, socket, head) => {
