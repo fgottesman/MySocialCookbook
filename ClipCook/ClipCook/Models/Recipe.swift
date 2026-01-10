@@ -22,6 +22,7 @@ struct Recipe: Codable, Identifiable {
     let step0AudioUrl: String? // URL to Step 0 Audio
     var localStep0AudioUrl: URL? // Local path to downloaded audio (transient)
     
+    let difficulty: String? // Added for AI metrics
     let cookingTime: String? // Added for AI metrics
     
     // Transient property to track which version this recipe represents
