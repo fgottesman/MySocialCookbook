@@ -23,7 +23,7 @@ export const AI_MODELS = {
 };
 
 export const VOICE_CONFIG = {
-    DEFAULT_VOICE: "Gacrux",
+    DEFAULT_VOICE: "Aoede", // Female voice supported by gemini-2.0-flash-exp
     SAMPLE_RATE: 16000,
     MIME_TYPE: "audio/pcm;rate=16000"
 };
