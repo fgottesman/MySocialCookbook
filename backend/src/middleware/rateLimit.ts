@@ -15,7 +15,7 @@ export const apiLimiter = rateLimit({
         const authReq = req as AuthRequest;
         return authReq.user?.id || req.ip || 'anonymous';
     },
-    validate: { xForwardedForHeader: false }
+    validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
 });
 
 // Stricter rate limit for expensive AI endpoints (Gemini)
@@ -31,5 +31,5 @@ export const aiLimiter = rateLimit({
         const authReq = req as AuthRequest;
         return authReq.user?.id || req.ip || 'anonymous';
     },
-    validate: { xForwardedForHeader: false }
+    validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false }
 });
