@@ -34,12 +34,14 @@ export class RecipeController {
                     logger.info("Direct processing failed, falling back to download");
                     const media = await downloader.downloadMedia(url);
                     recipeData = await gemini.generateRecipe(media.filePath, media.mimeType, media.description);
+                    recipeData.thumbnailUrl = media.thumbnailUrl; // Capture thumbnail from media
                     finalDescription = media.description;
                     if (fs.existsSync(media.filePath)) fs.unlinkSync(media.filePath);
                 }
             } else {
                 const media = await downloader.downloadMedia(url);
                 recipeData = await gemini.generateRecipe(media.filePath, media.mimeType, media.description);
+                recipeData.thumbnailUrl = media.thumbnailUrl; // Capture thumbnail from media
                 if (fs.existsSync(media.filePath)) fs.unlinkSync(media.filePath);
             }
 
