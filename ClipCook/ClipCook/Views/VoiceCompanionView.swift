@@ -386,16 +386,16 @@ struct VoiceCompanionView: View {
                         .font(.headline)
                         .foregroundColor(.white)
                     
-                    // Visualizer (Simple dots)
+                    // Audio Level Visualizer
                     HStack(spacing: 4) {
-                        ForEach(0..<4) { i in
-                            Circle()
-                                .fill(Color.white.opacity(0.7))
-                                .frame(width: 6, height: 6)
-                                .scaleEffect(liveManager.isSpeaking ? 1.5 : 1.0)
-                                .animation(.easeInOut(duration: 0.2).repeatForever().delay(Double(i) * 0.1), value: liveManager.isSpeaking)
+                        ForEach(0..<5) { i in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.white.opacity(0.8))
+                                .frame(width: 4, height: 8 + CGFloat(liveManager.audioLevel) * 20 * CGFloat(i + 1) / 5)
+                                .animation(.easeOut(duration: 0.1), value: liveManager.audioLevel)
                         }
                     }
+                    .frame(height: 30)
                 }
             } else {
                 Text("Call Chef for help")
