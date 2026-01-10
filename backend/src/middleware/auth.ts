@@ -42,3 +42,30 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         res.status(500).json({ error: 'Internal Server Error during authentication' });
     }
 };
+
+// COMPATIBILITY: Legacy Share Extension sends userId in body, no token.
+import { supabase as adminSupabase } from '../db/supabase';
+
+export const authenticateOrLegacy = async (req: Request, res: Response, next: NextFunction) => {
+    // 1. Try Standard Auth
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+        return authenticate(req, res, next);
+    }
+
+    // 2. Fallback to Legacy Check
+    const { userId } = req.body;
+    if (userId) {
+        console.warn(`[AuthMiddleware] ⚠️ Allowing LEGACY request from user ${userId} without token.`);
+
+        // Mock the User object
+        // NOTE: This uses the SERVICE ROLE client, bypassing RLS.
+        // This is a calculated risk for the hotfix.
+        (req as AuthRequest).user = { id: userId } as User;
+        (req as AuthRequest).supabase = adminSupabase;
+
+        return next();
+    }
+
+    // 3. Fail
+    return res.status(401).json({ error: 'Unauthorized: Missing token or userId' });
+};

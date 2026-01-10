@@ -2,7 +2,7 @@ import express from 'express';
 import { RecipeController } from '../controllers/RecipeController';
 import { UserController } from '../controllers/UserController';
 import { AiController } from '../controllers/AiController';
-import { authenticate } from '../middleware/auth';
+import { authenticate, authenticateOrLegacy } from '../middleware/auth';
 import { aiLimiter, apiLimiter } from '../middleware/rateLimit';
 import { wrapAsync } from '../middleware/error';
 import { validate } from '../middleware/validate';
@@ -30,7 +30,7 @@ const router = express.Router();
 router.use(apiLimiter);
 
 // Recipes
-router.post('/process-recipe', authenticate, aiLimiter, validate(ProcessRecipeSchema), wrapAsync(RecipeController.processRecipe));
+router.post('/process-recipe', authenticateOrLegacy, aiLimiter, validate(ProcessRecipeSchema), wrapAsync(RecipeController.processRecipe));
 router.get('/recipes', authenticate, wrapAsync(RecipeController.getFeed));
 router.delete('/recipes/:id', authenticate, wrapAsync(RecipeController.deleteRecipe));
 router.patch('/recipes/:id/favorite', authenticate, validate(ToggleFavoriteSchema), wrapAsync(RecipeController.toggleFavorite));
