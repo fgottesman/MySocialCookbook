@@ -10,7 +10,7 @@ export const AI_MODELS = {
     RECIPE_ENGINE: "gemini-3-flash-preview",
 
     // Real-time voice interaction
-    VOICE_LIVE: "gemini-2.0-flash-exp",
+    VOICE_LIVE: "gemini-2.5-flash-native-audio-preview-12-2025",
 
     // High-quality text tasks
     TEXT_PRO: "gemini-2.5-pro",
@@ -23,7 +23,7 @@ export const AI_MODELS = {
 };
 
 export const VOICE_CONFIG = {
-    DEFAULT_VOICE: "Aoede", // Female voice compatible with gemini-2.0-flash-exp
+    DEFAULT_VOICE: "Gacrux", // Matches async TTS voice
     SAMPLE_RATE: 16000,
     MIME_TYPE: "audio/pcm;rate=16000"
 };
