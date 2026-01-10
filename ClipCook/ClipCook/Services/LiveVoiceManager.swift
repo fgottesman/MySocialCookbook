@@ -10,6 +10,7 @@ class LiveVoiceManager: NSObject, ObservableObject {
     @Published var isListening = false
     @Published var isSpeaking = false // AI is speaking
     @Published var errorMessage: String? // For UI alerts
+    @Published var audioLevel: Float = 0.0 // 0.0 to 1.0 for mic input visualization
     
     private var webSocketTask: URLSessionWebSocketTask?
     private let audioEngine = AVAudioEngine()
@@ -268,6 +269,22 @@ class LiveVoiceManager: NSObject, ObservableObject {
         
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: nativeFormat) { [weak self] buffer, time in
             guard let self = self else { return }
+            
+            // Calculate audio level from the raw buffer for UI visualization
+            if let floatData = buffer.floatChannelData {
+                let channelData = floatData[0]
+                let frameLength = Int(buffer.frameLength)
+                var sum: Float = 0
+                for i in 0..<frameLength {
+                    let sample = channelData[i]
+                    sum += sample * sample
+                }
+                let rms = sqrt(sum / Float(frameLength))
+                let level = min(1.0, rms * 5.0) // Scale up for visibility
+                DispatchQueue.main.async {
+                    self.audioLevel = level
+                }
+            }
             
             // Calculate output buffer size based on sample rate ratio
             let ratio = 16000.0 / nativeFormat.sampleRate
