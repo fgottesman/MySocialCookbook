@@ -4,24 +4,8 @@ import { supabaseUrl, supabaseServiceRoleKey, supabaseAnonKey } from '../db/supa
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 import logger from '../utils/logger';
-import rateLimit from 'express-rate-limit';
 
 const router = Router();
-
-// Rate limiting configuration for health checks
-const HEALTH_CHECK_WINDOW_MS = 60 * 1000; // 1 minute
-const HEALTH_CHECK_MAX_REQUESTS = 30; // Max requests per window
-
-const healthLimiter = rateLimit({
-    windowMs: HEALTH_CHECK_WINDOW_MS,
-    max: HEALTH_CHECK_MAX_REQUESTS,
-    message: 'Too many health check requests, please try again later',
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
-// Apply rate limiting to all health routes
-router.use(healthLimiter);
 
 interface HealthStatus {
     healthy: boolean;
