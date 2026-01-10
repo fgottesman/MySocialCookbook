@@ -420,7 +420,8 @@ struct RecipeView: View {
                             profile: recipe.profile,
                             isFavorite: recipe.isFavorite,
                             difficulty: saved.difficulty ?? recipe.difficulty,
-                            cookingTime: saved.cookingTime ?? recipe.cookingTime
+                            cookingTime: saved.cookingTime ?? recipe.cookingTime,
+                            versionId: saved.id
                         )
                         versions.append(RecipeVersion(
                             title: saved.title,
@@ -495,18 +496,10 @@ struct RecipeView: View {
                     changedIngredients: newChangedIngredients
                 )
                 
-                // Save version to database (fire and forget)
-                Task {
-                    do {
-                        _ = try await VersionService.shared.saveVersion(for: originalRecipeId, version: newVersion)
-                        print("Version saved to database")
-                    } catch {
-                        print("Failed to save version to database: \(error)")
-                    }
-                }
-                
+                // OPTIMISTIC UPDATE: Update UI immediately
+                // We assume success to make the UI feel instant
                 await MainActor.run {
-                    // Add to version history
+                    // Add to version history locally first
                     self.recipeVersions.append(newVersion)
                     self.currentVersionIndex = self.recipeVersions.count - 1
                     
@@ -516,6 +509,42 @@ struct RecipeView: View {
                     self.isRemixing = false // Hide loading overlay
                     // Reset checked state as ingredients changed
                     self.checkedIngredients.removeAll()
+                }
+                
+                // BACKGROUND SAVE: Persist to DB asynchronously
+                Task.detached(priority: .userInitiated) {
+                    do {
+                         let savedVersion = try await VersionService.shared.saveVersion(for: originalRecipeId, version: newVersion)
+                         print("✅ Version saved to database: \(savedVersion.id)")
+                         
+                         // Update the local model with the real ID once confirmed
+                         await MainActor.run {
+                             if let index = self.recipeVersions.firstIndex(where: { $0.title == newVersion.title }) {
+                                 self.recipeVersions[index].recipe.versionId = savedVersion.id
+                                 if self.currentVersionIndex == index {
+                                     self.recipe.versionId = savedVersion.id
+                                 }
+                             }
+                         }
+                    } catch {
+                         print("❌ Failed to save version to database: \(error)")
+                         
+                         // ROLLBACK UI on failure
+                         await MainActor.run {
+                             // Remove the optimistically added version
+                             if let index = self.recipeVersions.firstIndex(where: { $0.title == newVersion.title }) {
+                                 self.recipeVersions.remove(at: index)
+                                 // Revert to original if we were on the failed version
+                                 if self.currentVersionIndex == index {
+                                     self.currentVersionIndex = 0
+                                     self.recipe = currentRecipe
+                                     self.changedIngredients.removeAll()
+                                 }
+                                 // Show error alert (using a simple print for now, ideally an AlertItem)
+                                 print("Showing error for failed save")
+                             }
+                         }
+                    }
                 }
             } catch {
                 print("Remix error: \(error)")

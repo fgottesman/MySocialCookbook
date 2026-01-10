@@ -63,8 +63,8 @@ class LiveVoiceManager: NSObject, ObservableObject {
         }
     }
     
-    func connect(recipeId: String, initialStepIndex: Int) {
-        print("🎙️ [LiveVoice] Starting connection...")
+    func connect(recipeId: String, versionId: String? = nil, initialStepIndex: Int) {
+        print("🎙️ [LiveVoice] Starting connection... (Recipe: \(recipeId), Version: \(versionId ?? "original"))")
         
         self.errorMessage = nil
         self.isConnecting = true
@@ -80,13 +80,17 @@ class LiveVoiceManager: NSObject, ObservableObject {
             }
             
             Task {
-                await self.internalConnect(recipeId: recipeId, stepIndex: initialStepIndex)
+                await self.internalConnect(recipeId: recipeId, versionId: versionId, stepIndex: initialStepIndex)
             }
         }
     }
     
-    private func internalConnect(recipeId: String, stepIndex: Int) async {
-        let wsUrlString = "\(AppConfig.wsEndpoint)/live-cooking?recipeId=\(recipeId)&stepIndex=\(stepIndex)"
+    private func internalConnect(recipeId: String, versionId: String?, stepIndex: Int) async {
+        var wsUrlString = "\(AppConfig.wsEndpoint)/live-cooking?recipeId=\(recipeId)&stepIndex=\(stepIndex)"
+        if let vId = versionId {
+            wsUrlString += "&versionId=\(vId)"
+        }
+
         guard let url = URL(string: wsUrlString) else {
             DispatchQueue.main.async { 
                 self.errorMessage = "We couldn't reach the Chef. Check your connection."

@@ -1,4 +1,6 @@
 import Foundation
+import Supabase
+import Auth
 
 /// Service for managing recipe version persistence
 class VersionService {
@@ -13,7 +15,20 @@ class VersionService {
             throw URLError(.badURL)
         }
         
-        let (data, response) = try await URLSession.shared.data(from: url)
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        // Add Auth
+        // Add Auth
+        do {
+            let session = try await SupabaseManager.shared.client.auth.session
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        } catch {
+            print("⚠️ VersionService: Failed to get auth session for fetch: \(error)")
+            throw error // Enforce strict auth
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw URLError(.badServerResponse)
@@ -34,6 +49,18 @@ class VersionService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Add Auth
+        // Add Auth
+        do {
+            if let session = try await SupabaseManager.shared.client.auth.session {
+                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+            }
+        } catch {
+             print("⚠️ VersionService: Failed to get auth session: \(error)")
+             // We allow the request to proceed without token (consistent with original logic), 
+             // but now we log the reason why it's missing.
+        }
         
         let body = SaveVersionRequest(
             title: version.title,
