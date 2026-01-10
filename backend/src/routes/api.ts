@@ -2,7 +2,7 @@ import express from 'express';
 import { RecipeController } from '../controllers/RecipeController';
 import { UserController } from '../controllers/UserController';
 import { AiController } from '../controllers/AiController';
-import { authenticate, allowAnonymousWithAdminClient } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { aiLimiter, apiLimiter } from '../middleware/rateLimit';
 import { wrapAsync } from '../middleware/error';
 import { validate } from '../middleware/validate';
@@ -35,7 +35,7 @@ router.get('/recipes', authenticate, wrapAsync(RecipeController.getFeed));
 router.delete('/recipes/:id', authenticate, wrapAsync(RecipeController.deleteRecipe));
 router.patch('/recipes/:id/favorite', authenticate, validate(ToggleFavoriteSchema), wrapAsync(RecipeController.toggleFavorite));
 router.get('/recipes/:recipeId/versions', authenticate, wrapAsync(RecipeController.getVersions));
-router.post('/recipes/:recipeId/versions', allowAnonymousWithAdminClient, wrapAsync(RecipeController.saveVersion));
+router.post('/recipes/:recipeId/versions', authenticate, wrapAsync(RecipeController.saveVersion));
 
 // User
 router.post('/register-device', authenticate, validate(RegisterDeviceSchema), wrapAsync(UserController.registerDevice));
