@@ -22,8 +22,10 @@ struct Recipe: Codable, Identifiable {
     let step0AudioUrl: String? // URL to Step 0 Audio
     var localStep0AudioUrl: URL? // Local path to downloaded audio (transient)
     
-    let difficulty: String? // Added for AI metrics
     let cookingTime: String? // Added for AI metrics
+    
+    // Transient property to track which version this recipe represents
+    var versionId: UUID? = nil
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -47,7 +49,7 @@ struct Recipe: Codable, Identifiable {
         case cookingTime = "cooking_time"
     }
     
-    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil, step0Summary: String? = nil, step0AudioUrl: String? = nil, difficulty: String? = nil, cookingTime: String? = nil) {
+    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil, step0Summary: String? = nil, step0AudioUrl: String? = nil, difficulty: String? = nil, cookingTime: String? = nil, versionId: UUID? = nil) {
         self.id = id
         self.userId = userId
         self.title = title
@@ -67,6 +69,7 @@ struct Recipe: Codable, Identifiable {
         self.step0AudioUrl = step0AudioUrl
         self.difficulty = difficulty
         self.cookingTime = cookingTime
+        self.versionId = versionId
     }
 }
 

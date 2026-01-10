@@ -20,9 +20,11 @@ export class GeminiLiveService {
         // 1. Parse Query Params
         const url = new URL(req.url || '', `http://${req.headers.host}`);
         const recipeId = url.searchParams.get('recipeId');
+        const versionId = url.searchParams.get('versionId');
         const stepIndex = parseInt(url.searchParams.get('stepIndex') || '0');
 
         logger.info(`[GeminiLive] Recipe ID: ${recipeId}`);
+        logger.info(`[GeminiLive] Version ID: ${versionId}`);
         logger.info(`[GeminiLive] Step Index: ${stepIndex}`);
 
         // Generic UUID validation (handles v1, v4, v7 etc)
@@ -42,11 +44,48 @@ export class GeminiLiveService {
 
         // 2. Fetch Recipe Context
         logger.info("[GeminiLive] Fetching recipe from database...");
-        const { data: recipe, error } = await userSupabase
-            .from('recipes')
-            .select('*')
-            .eq('id', recipeId)
-            .single();
+
+        let recipe;
+        let error;
+
+        if (versionId) {
+            // Fetch specific version
+            logger.info("[GeminiLive] Fetching remixed version...");
+            const { data, error: err } = await userSupabase
+                .from('recipe_versions')
+                .select('*')
+                .eq('id', versionId)
+                .single();
+
+            error = err;
+            if (data) {
+                // Security check: Ensure version belongs to the requested recipe
+                if (data.recipe_id !== recipeId) {
+                    logger.error(`[GeminiLive] ❌ Security Alert: Version ${versionId} does not belong to recipe ${recipeId}`);
+                    ws.close(1008, "Security violation: Version mismatch");
+                    return;
+                }
+
+                // Map version data to standard recipe structure if needed
+                recipe = {
+                    ...data,
+                    // Ensure we have the base fields the AI expects
+                    title: data.title,
+                    ingredients: data.ingredients,
+                    instructions: data.instructions || []
+                };
+            }
+        } else {
+            // Fetch original
+            logger.info("[GeminiLive] Fetching original recipe...");
+            const { data, error: err } = await userSupabase
+                .from('recipes')
+                .select('*')
+                .eq('id', recipeId)
+                .single();
+            recipe = data;
+            error = err;
+        }
 
         if (error || !recipe) {
             logger.error(`[GeminiLive] ❌ Recipe not found: ${error?.message}`);

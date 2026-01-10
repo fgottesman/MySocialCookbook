@@ -348,7 +348,8 @@ struct VoiceCompanionView: View {
                     isLiveMode.toggle()
                     if isLiveMode {
                         let rId = recipe.id.uuidString
-                        liveManager.connect(recipeId: rId, initialStepIndex: currentStepIndex)
+                        let vId = recipe.versionId?.uuidString
+                        liveManager.connect(recipeId: rId, versionId: vId, initialStepIndex: currentStepIndex)
                         speechManager.stopSpeaking() // Stop standard TTS
                     } else {
                         liveManager.disconnect()
