@@ -188,10 +188,10 @@ struct RecipeCard: View {
                             ZStack {
                                 LinearGradient.sizzle.opacity(0.1)
                                 VStack(spacing: 8) {
-                                    Image(systemName: "sparkles")
+                                    Image(systemName: recipe.isAIRecipe ? "sparkles" : "fork.knife")
                                         .font(.largeTitle)
                                         .foregroundStyle(LinearGradient.sizzle)
-                                    Text("AI Recipe")
+                                    Text(recipe.isAIRecipe ? "AI Recipe" : "ClipCook")
                                         .font(.caption)
                                         .fontWeight(.bold)
                                         .foregroundColor(.clipCookSizzleStart)
