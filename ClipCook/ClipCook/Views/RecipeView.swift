@@ -89,6 +89,7 @@ struct RecipeView: View {
                     }
                     
                     // MARK: - Title
+                    Text(recipe.title)
                         .font(DesignTokens.Typography.headerFont(size: 28))
                         .foregroundColor(DesignTokens.Colors.textPrimary)
                         .premiumText()
