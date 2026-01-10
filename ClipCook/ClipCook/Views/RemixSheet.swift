@@ -40,7 +40,7 @@ struct RemixSheet: View {
     var body: some View {
         ZStack {
             // Background with subtle gradient overlay
-            Color.clipCookBackground
+            DesignTokens.Colors.background
                 .ignoresSafeArea()
             
             // Subtle radial glow at top
@@ -48,7 +48,7 @@ struct RemixSheet: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color.clipCookSizzleStart.opacity(0.15), Color.clear],
+                            colors: [DesignTokens.Colors.primary.opacity(0.15), Color.clear],
                             center: .center,
                             startRadius: 0,
                             endRadius: 200
@@ -127,8 +127,8 @@ struct RemixSheet: View {
                 .foregroundStyle(LinearGradient.sizzle)
             
             Text("Remix Chef")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .font(DesignTokens.Typography.headerFont(size: 20))
+                .foregroundColor(DesignTokens.Colors.textPrimary)
             
             Spacer()
             
@@ -140,14 +140,14 @@ struct RemixSheet: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.clipCookTextSecondary)
                     .padding(10)
-                    .background(Color.clipCookSurface)
+                    .background(DesignTokens.Colors.surface)
                     .clipShape(Circle())
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .background(
-            Color.clipCookBackground
+            DesignTokens.Colors.background
                 .shadow(color: Color.black.opacity(0.2), radius: 8, y: 4)
         )
     }
@@ -164,7 +164,7 @@ struct RemixSheet: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [Color.clipCookSizzleStart.opacity(0.3), Color.clear],
+                                colors: [DesignTokens.Colors.primary.opacity(0.3), Color.clear],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 80
@@ -173,7 +173,7 @@ struct RemixSheet: View {
                         .frame(width: 160, height: 160)
 
                     Circle()
-                        .fill(Color.clipCookSurface)
+                        .fill(DesignTokens.Colors.surface)
                         .frame(width: 100, height: 100)
 
                     Image(systemName: "wand.and.stars")
@@ -183,14 +183,16 @@ struct RemixSheet: View {
 
                 VStack(spacing: 12) {
                     Text("How would you like to\ntweak this recipe?")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(DesignTokens.Typography.headerFont(size: 26))
+                        .foregroundColor(DesignTokens.Colors.textPrimary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
+                        .premiumText()
 
                     Text("Pick a suggestion or type your own request")
-                        .font(.system(size: 16))
-                        .foregroundColor(.clipCookTextSecondary)
+                        .font(DesignTokens.Typography.bodyFont())
+                        .foregroundColor(DesignTokens.Colors.textSecondary)
+                        .premiumText()
                 }
             }
 
@@ -351,8 +353,8 @@ struct RemixSheet: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(Color.clipCookSurface)
-                .cornerRadius(24)
+                .background(DesignTokens.Colors.surface)
+                .cornerRadius(DesignTokens.Layout.cornerRadius)
                 
                 // Send button
                 Button(action: submitConsultation) {
@@ -376,7 +378,7 @@ struct RemixSheet: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color.clipCookBackground)
+            .background(DesignTokens.Colors.background)
         }
     }
     
@@ -510,17 +512,19 @@ struct SuggestionCard: View {
                 }
 
                 Text(text)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .font(DesignTokens.Typography.bodyFont(size: 18))
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30)
+                    .premiumText()
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 20)
             .padding(.horizontal, 12)
-            .background(Color.clipCookSurface)
-            .cornerRadius(16)
+            .background(DesignTokens.Colors.surface)
+            .cornerRadius(DesignTokens.Layout.cornerRadius)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(
@@ -611,9 +615,9 @@ struct ConsultationCard: View {
             }
         }
         .padding(20)
-        .background(Color.clipCookSurface)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.3), radius: 20, y: 8)
+        .background(DesignTokens.Colors.surface)
+        .cornerRadius(DesignTokens.Layout.cornerRadius)
+        .shadow(color: Color.black.opacity(0.3), radius: DesignTokens.Effects.softShadowRadius, y: 8)
         .padding(.horizontal, 20)
     }
     

@@ -9,6 +9,8 @@ struct AddRecipeView: View {
     @State private var errorMessage: String?
     @State private var showSuccessView = false
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -40,6 +42,8 @@ struct AddRecipeView: View {
                         
                         Spacer()
                     }
+                    .frame(maxWidth: horizontalSizeClass == .regular ? 600 : .infinity)
+                    .frame(maxWidth: .infinity)
                 }
                 
                 if isLoading {

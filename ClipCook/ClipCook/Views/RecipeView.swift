@@ -52,9 +52,11 @@ struct RecipeView: View {
         }
     }
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
     var body: some View {
         ZStack {
-            Color.clipCookBackground.ignoresSafeArea()
+            DesignTokens.Colors.background.ignoresSafeArea()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
@@ -87,8 +89,9 @@ struct RecipeView: View {
                     }
                     
                     // MARK: - Title
-                    Text(recipe.title)
-                        .modifier(UtilityHeadline())
+                        .font(DesignTokens.Typography.headerFont(size: 28))
+                        .foregroundColor(DesignTokens.Colors.textPrimary)
+                        .premiumText()
                         .padding(.horizontal)
                     
                     // MARK: - Chef's Note (Only if Remixed)
@@ -101,15 +104,15 @@ struct RecipeView: View {
                                     .font(.caption)
                                     .fontWeight(.bold)
                                     .foregroundStyle(LinearGradient.sizzle)
-                                Text(note)
-                                    .font(.body)
-                                    .foregroundColor(.white)
+                                    .font(DesignTokens.Typography.bodyFont())
+                                    .foregroundColor(DesignTokens.Colors.textPrimary)
                                     .italic()
+                                    .premiumText()
                             }
                         }
                         .padding()
-                        .background(Color.clipCookSurface)
-                        .cornerRadius(12)
+                        .background(DesignTokens.Colors.surface)
+                        .cornerRadius(DesignTokens.Layout.cornerRadius)
                         .padding(.horizontal)
                     }
                     
@@ -208,6 +211,8 @@ struct RecipeView: View {
                     Color.clear.frame(height: 100)
                 }
                 .padding(.top)
+                .frame(maxWidth: horizontalSizeClass == .regular ? 800 : .infinity)
+                .frame(maxWidth: .infinity)
             }
             
             // MARK: - Top-Right Action Buttons
@@ -742,8 +747,8 @@ struct IngredientRow: View {
                 Spacer()
             }
             .padding()
-            .background(Color.clipCookSurface)
-            .cornerRadius(8)
+            .background(DesignTokens.Colors.surface)
+            .cornerRadius(DesignTokens.Layout.cornerRadius / 2)
         }
     }
 }
@@ -760,13 +765,14 @@ struct StepCard: View {
                 .foregroundColor(.gray.opacity(0.3))
             
             Text(text)
-                .font(.body)
+                .font(DesignTokens.Typography.bodyFont())
                 .lineSpacing(4)
-                .foregroundColor(.clipCookTextPrimary)
+                .foregroundColor(DesignTokens.Colors.textPrimary)
+                .premiumText()
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.clipCookSurface)
-        .cornerRadius(12)
+        .background(DesignTokens.Colors.surface)
+        .cornerRadius(DesignTokens.Layout.cornerRadius)
     }
 }

@@ -1,77 +1,92 @@
-
 import WebSocket from 'ws';
 import { IncomingMessage } from 'http';
-import { supabase } from '../db/supabase';
+import { User, SupabaseClient } from '@supabase/supabase-js';
+import { AI_MODELS, VOICE_CONFIG } from '../config/ai_models';
+import logger from '../utils/logger';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// Use v1beta endpoint (the correct one for Live API)
-const GEMINI_WEBSOCKET_URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`;
+// Base URL without the key in query params
+const GEMINI_WEBSOCKET_URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent`;
 
 export class GeminiLiveService {
     constructor() {
-        console.log("[GeminiLive] Service initialized");
-        console.log("[GeminiLive] API Key present:", !!GEMINI_API_KEY);
-        console.log("[GeminiLive] API Key length:", GEMINI_API_KEY?.length || 0);
+        logger.info("[GeminiLive] Service initialized");
+        logger.info(`[GeminiLive] API Key present: ${!!GEMINI_API_KEY}`);
+        logger.info(`[GeminiLive] API Key length: ${GEMINI_API_KEY?.length || 0}`);
     }
-
-    async handleConnection(ws: WebSocket, req: IncomingMessage) {
-        console.log("[GeminiLive] ======= NEW CONNECTION =======");
+    async handleConnection(ws: WebSocket, req: IncomingMessage, user: User, userSupabase: SupabaseClient) {
+        logger.info(`[GeminiLive] ======= NEW CONNECTION: ${user.email} =======`);
 
         // 1. Parse Query Params
         const url = new URL(req.url || '', `http://${req.headers.host}`);
         const recipeId = url.searchParams.get('recipeId');
         const stepIndex = parseInt(url.searchParams.get('stepIndex') || '0');
 
-        console.log("[GeminiLive] Recipe ID:", recipeId);
-        console.log("[GeminiLive] Step Index:", stepIndex);
+        logger.info(`[GeminiLive] Recipe ID: ${recipeId}`);
+        logger.info(`[GeminiLive] Step Index: ${stepIndex}`);
 
-        if (!recipeId) {
-            console.error("[GeminiLive] ❌ Missing recipeId");
-            ws.close(1008, "Missing recipeId");
+        // Generic UUID validation (handles v1, v4, v7 etc)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!recipeId || !uuidRegex.test(recipeId)) {
+            logger.error("[GeminiLive] ❌ Invalid or missing recipeId");
+            ws.close(1008, "Invalid or missing recipeId");
             return;
         }
 
         // Check API key
         if (!GEMINI_API_KEY) {
-            console.error("[GeminiLive] ❌ GEMINI_API_KEY not set!");
+            logger.error("[GeminiLive] ❌ GEMINI_API_KEY not set!");
             ws.close(1011, "Server configuration error");
             return;
         }
 
         // 2. Fetch Recipe Context
-        console.log("[GeminiLive] Fetching recipe from database...");
-        const { data: recipe, error } = await supabase
+        logger.info("[GeminiLive] Fetching recipe from database...");
+        const { data: recipe, error } = await userSupabase
             .from('recipes')
             .select('*')
             .eq('id', recipeId)
             .single();
 
         if (error || !recipe) {
-            console.error("[GeminiLive] ❌ Recipe not found:", error?.message);
+            logger.error(`[GeminiLive] ❌ Recipe not found: ${error?.message}`);
             ws.close(1008, "Recipe not found");
             return;
         }
 
-        console.log("[GeminiLive] ✅ Recipe found:", recipe.title);
+        logger.info(`[GeminiLive] ✅ Recipe found: ${recipe.title}`);
 
         // 3. Connect to Gemini Live
-        console.log("[GeminiLive] Connecting to Gemini Live API...");
-        console.log("[GeminiLive] URL:", GEMINI_WEBSOCKET_URL.replace(GEMINI_API_KEY || '', '[REDACTED]'));
+        logger.info("[GeminiLive] Connecting to Gemini Live API...");
 
-        const geminiWs = new WebSocket(GEMINI_WEBSOCKET_URL);
+        let geminiWs: WebSocket;
+        try {
+            // Using x-goog-api-key header for maximum security. 
+            // If this fails, we do NOT fall back to query params as they are insecure.
+            geminiWs = new WebSocket(GEMINI_WEBSOCKET_URL, {
+                headers: {
+                    'x-goog-api-key': GEMINI_API_KEY || ''
+                }
+            });
+            console.log("[GeminiLive] ✅ Initialized WebSocket with header auth");
+        } catch (e) {
+            console.error("[GeminiLive] ❌ WebSocket initialization failed:", e);
+            ws.close(1011, "Internal server error connecting to AI");
+            return;
+        }
 
         geminiWs.on('open', () => {
             console.log("[GeminiLive] ✅ Connected to Gemini Live API!");
 
             const setupMessage = {
                 setup: {
-                    model: "models/gemini-2.0-flash-exp",
+                    model: `models/${AI_MODELS.VOICE_LIVE}`,
                     generationConfig: {
                         responseModalities: ["AUDIO"],
                         speechConfig: {
                             voiceConfig: {
                                 prebuiltVoiceConfig: {
-                                    voiceName: "Gacrux"
+                                    voiceName: VOICE_CONFIG.DEFAULT_VOICE
                                 }
                             }
                         }
@@ -130,8 +145,12 @@ export class GeminiLiveService {
             } catch (e) {
                 // If not valid JSON, it might be raw binary audio (shouldn't happen but handle gracefully)
                 console.log("[GeminiLive] ⚠️ Non-JSON message received, forwarding as-is");
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(data);
+                try {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(data);
+                    }
+                } catch (sendError) {
+                    console.error("[GeminiLive] ❌ Failed to forward binary data:", sendError);
                 }
             }
         });
@@ -159,7 +178,7 @@ export class GeminiLiveService {
                     const audioMessage = {
                         realtimeInput: {
                             mediaChunks: [{
-                                mimeType: "audio/pcm;rate=16000",
+                                mimeType: VOICE_CONFIG.MIME_TYPE,
                                 data: data.toString('base64')
                             }]
                         }
@@ -173,7 +192,17 @@ export class GeminiLiveService {
             }
         });
 
+        // 6. Heartbeat / Keep-alive
+        const heartbeatInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.ping();
+            } else {
+                clearInterval(heartbeatInterval);
+            }
+        }, 30000); // 30 seconds
+
         ws.on('close', (code, reason) => {
+            clearInterval(heartbeatInterval);
             console.log("[GeminiLive] Client disconnected. Code:", code);
             if (geminiWs.readyState === WebSocket.OPEN) {
                 geminiWs.close();

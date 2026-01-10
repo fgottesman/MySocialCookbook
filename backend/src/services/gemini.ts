@@ -2,6 +2,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import fs from 'fs';
+import { AI_MODELS } from '../config/ai_models';
+import { withRetry } from '../utils/retry';
+import logger from '../utils/logger';
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
@@ -177,12 +180,12 @@ export class GeminiService {
             displayName: "Social Recipe Media",
         });
 
-        console.log(`Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri} (${mimeType})`);
+        logger.info(`Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri} (${mimeType})`);
         return uploadResult.file;
     }
 
     async chatCompanion(recipe: any, currentStepIndex: number, chatHistory: any[], userMessage: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
         const historyContext = chatHistory.map(msg =>
             `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`
@@ -202,7 +205,7 @@ export class GeminiService {
         "${userMessage}"
         `;
 
-        const result = await model.generateContent(FULL_PROMPT);
+        const result = await withRetry(() => model.generateContent(FULL_PROMPT), {}, 'Gemini: chatCompanion');
         return result.response.text();
     }
 
@@ -212,7 +215,7 @@ export class GeminiService {
      * and provides measurement conversions.
      */
     async prepareStep(recipe: any, stepIndex: number, stepLabel: string = "1") {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
         const instructions = recipe.instructions || [];
         const currentStep = instructions[stepIndex] || "";
@@ -232,12 +235,12 @@ export class GeminiService {
         "${currentStep}"
         `;
 
-        const result = await model.generateContent(FULL_PROMPT);
+        const result = await withRetry(() => model.generateContent(FULL_PROMPT), {}, 'Gemini: prepareStep');
         return this.parseStepPreparation(result.response.text());
     }
 
     private parseStepPreparation(responseText: string) {
-        console.log("Raw step preparation response:", responseText);
+        logger.debug("Raw step preparation response received");
 
         const firstBrace = responseText.indexOf('{');
         const lastBrace = responseText.lastIndexOf('}');
@@ -255,7 +258,7 @@ export class GeminiService {
         try {
             return JSON.parse(jsonText);
         } catch (e) {
-            console.error("Failed to parse step preparation JSON:", e);
+            logger.error("Failed to parse step preparation JSON", e);
             return {
                 introduction: "Let's get started on this step.",
                 subSteps: null,
@@ -272,7 +275,7 @@ export class GeminiService {
         const instructions = recipe.instructions || [];
         if (instructions.length === 0) return [];
 
-        console.log(`Pre-computing ${instructions.length} step preparations for: ${recipe.title}`);
+        logger.info(`Pre-computing ${instructions.length} step preparations for: ${recipe.title}`);
 
         // Process all steps in parallel
         const preparations = await Promise.all(
@@ -280,7 +283,7 @@ export class GeminiService {
                 try {
                     return await this.prepareStep(recipe, index, String(index + 1));
                 } catch (error) {
-                    console.error(`Failed to prepare step ${index}:`, error);
+                    logger.error(`Failed to prepare step ${index}`, error);
                     return {
                         introduction: `Let's work on step ${index + 1}.`,
                         subSteps: null,
@@ -290,7 +293,7 @@ export class GeminiService {
             })
         );
 
-        console.log(`Pre-computed ${preparations.length} step preparations`);
+        logger.info(`Pre-computed ${preparations.length} step preparations`);
         return preparations;
     }
 
@@ -299,9 +302,9 @@ export class GeminiService {
      * Accepts base64 encoded audio data.
      */
     async transcribeAudio(audioBase64: string, mimeType: string = 'audio/webm') {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
-        const result = await model.generateContent([
+        const result = await withRetry(() => model.generateContent([
             {
                 inlineData: {
                     mimeType: mimeType,
@@ -309,7 +312,7 @@ export class GeminiService {
                 }
             },
             { text: "Transcribe this audio exactly. Return ONLY the transcribed text, nothing else. No quotes, no explanations." }
-        ]);
+        ]), {}, 'Gemini: transcribeAudio');
 
         return result.response.text().trim();
     }
@@ -321,19 +324,19 @@ export class GeminiService {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             file = await fileManager.getFile(fileName);
         }
-        console.log(`File state: ${file.state} `);
+        logger.debug(`File state: ${file.state}`);
         return file;
     }
 
     async generateRecipe(fileUri: string, mimeType: string = "video/mp4", description?: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
         let prompt = RECIPE_PROMPT;
         if (description) {
             prompt += `\n\nCONTEXT FROM POST CAPTION/DESCRIPTION:\n${description}\n\nUse this context to ensure ingredient amounts and names are accurate.`;
         }
 
-        const result = await model.generateContent([
+        const result = await withRetry(() => model.generateContent([
             {
                 fileData: {
                     mimeType: mimeType,
@@ -341,7 +344,7 @@ export class GeminiService {
                 },
             },
             { text: prompt },
-        ]);
+        ]), {}, 'Gemini: generateRecipe');
 
         return this.parseRecipeResponse(result.response.text());
     }
@@ -351,12 +354,12 @@ export class GeminiService {
      * The Gemini API supports YouTube URLs as file_uri for multimodal analysis.
      */
     async generateRecipeFromYouTube(youtubeUrl: string) {
-        console.log("Processing YouTube video directly:", youtubeUrl);
+        logger.info(`Processing YouTube video directly: ${youtubeUrl}`);
 
         // Use gemini-3-flash which has better YouTube support
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
-        const result = await model.generateContent([
+        const result = await withRetry(() => model.generateContent([
             {
                 fileData: {
                     mimeType: "video/mp4",
@@ -364,7 +367,7 @@ export class GeminiService {
                 },
             },
             { text: RECIPE_PROMPT },
-        ]);
+        ]), {}, 'Gemini: generateRecipeFromYouTube');
 
         return this.parseRecipeResponse(result.response.text());
     }
@@ -375,11 +378,11 @@ export class GeminiService {
      * If this fails, caller should fall back to download approach.
      */
     async generateRecipeFromURL(url: string) {
-        console.log("Attempting direct URL processing:", url);
+        logger.info(`Attempting direct URL processing: ${url}`);
 
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
-        const result = await model.generateContent([
+        const result = await withRetry(() => model.generateContent([
             {
                 fileData: {
                     mimeType: "video/mp4",
@@ -387,14 +390,14 @@ export class GeminiService {
                 },
             },
             { text: RECIPE_PROMPT },
-        ]);
+        ]), {}, 'Gemini: generateRecipeFromURL');
 
         return this.parseRecipeResponse(result.response.text());
 
     }
 
     async remixRecipe(originalRecipe: any, userPrompt: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" })
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE })
 
         const REMIX_PROMPT = `
         ${REMIX_SYSTEM_PROMPT}
@@ -403,15 +406,15 @@ export class GeminiService {
         ${JSON.stringify(originalRecipe)}
 
         USER REQUEST:
-"${userPrompt}"
+        "${userPrompt}"
     `
 
-        const result = await model.generateContent(REMIX_PROMPT);
+        const result = await withRetry(() => model.generateContent(REMIX_PROMPT), {}, 'Gemini: remixRecipe');
         return this.parseRecipeResponse(result.response.text());
     }
 
     async remixConsult(originalRecipe: any, chatHistory: any[], userPrompt: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
         const historyContext = chatHistory.map(msg =>
             `${msg.role === 'user' ? 'User' : 'Chef'}: ${msg.content}`
@@ -430,14 +433,14 @@ export class GeminiService {
         "${userPrompt}"
         `;
 
-        const result = await model.generateContent(CONSULT_PROMPT);
+        const result = await withRetry(() => model.generateContent(CONSULT_PROMPT), {}, 'Gemini: remixConsult');
         return this.parseStepPreparation(result.response.text()); // Re-using JSON parser since it's robust enough
     }
 
     async generateRecipeFromPrompt(userPrompt: string) {
         try {
-            console.log("Generating recipe with gemini-3-flash-preview...");
-            const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+            logger.debug(`Generating recipe with ${AI_MODELS.RECIPE_ENGINE}...`);
+            const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
             const FULL_PROMPT = `
             ${PROMPT_TO_RECIPE_SYSTEM_PROMPT}
@@ -446,23 +449,18 @@ export class GeminiService {
             "${userPrompt}"
             `;
 
-            const result = await model.generateContent(FULL_PROMPT);
+            const result = await withRetry(() => model.generateContent(FULL_PROMPT), {}, 'Gemini: generateRecipeFromPrompt');
             const responseText = result.response.text();
-            console.log("Gemini 3 Flash response received:", responseText.substring(0, 100) + "...");
+            logger.debug(`${AI_MODELS.RECIPE_ENGINE} response received`);
             return this.parseRecipeResponse(responseText);
         } catch (error: any) {
-            console.error("Gemini 3 Flash Error (generateRecipeFromPrompt):", {
-                message: error.message,
-                status: error.status,
-                statusText: error.statusText,
-                details: error.response?.data || error
-            });
+            logger.error(`${AI_MODELS.RECIPE_ENGINE} Error (generateRecipeFromPrompt)`, error);
             throw error;
         }
     }
 
     private parseRecipeResponse(responseText: string) {
-        console.log("Raw Gemini response:", responseText);
+        logger.debug("Raw Gemini response received");
 
         // Find the first '{' and the last '}'
         const firstBrace = responseText.indexOf('{');
@@ -477,8 +475,8 @@ export class GeminiService {
     }
 
     async generateEmbedding(text: string) {
-        const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
-        const result = await model.embedContent(text);
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.EMBEDDING });
+        const result = await withRetry(() => model.embedContent(text), {}, 'Gemini: generateEmbedding');
         return result.embedding.values;
     }
 
@@ -488,9 +486,9 @@ export class GeminiService {
      */
     async generateFoodImage(recipeTitle: string, description?: string): Promise<string | null> {
         try {
-            // Use Gemini 2.5 Flash for image generation (Nano Banana)
+            // Use Gemini for image generation (Nano Banana)
             const model = genAI.getGenerativeModel({
-                model: "gemini-2.5-flash-preview-native-image"
+                model: AI_MODELS.IMAGE_GEN
             });
 
             const imagePrompt = `Generate a stunning, appetizing food photograph of: "${recipeTitle}"
@@ -507,25 +505,25 @@ ${description ? `\nDish description: ${description}` : ''}
 Make it look absolutely delicious and instagram-worthy.`;
 
             // Use simple text prompt - the model will generate image content
-            const result = await model.generateContent(imagePrompt);
+            const result = model.generateContent(imagePrompt);
 
             // Extract image from response
-            const response = result.response;
+            const response = (await result).response;
             const parts = response.candidates?.[0]?.content?.parts || [];
 
             for (const part of parts) {
                 // Check for inline image data
                 const partAny = part as any;
                 if (partAny.inlineData?.data) {
-                    console.log("Generated food image successfully");
+                    logger.info("Generated food image successfully");
                     return partAny.inlineData.data; // base64 encoded image
                 }
             }
 
-            console.log("No image data in response - model may not support image generation");
+            logger.warn("No image data in response - model may not support image generation");
             return null;
         } catch (error: any) {
-            console.error("Error generating food image:", error.message);
+            logger.error(`Error generating food image: ${error.message}`);
             return null;
         }
     }

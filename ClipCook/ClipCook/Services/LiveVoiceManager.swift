@@ -16,6 +16,7 @@ class LiveVoiceManager: NSObject, ObservableObject {
     private let audioEngine = AVAudioEngine()
     private var inputNode: AVAudioInputNode?
     private var playerNode: AVAudioPlayerNode?
+    private let audioQueue = DispatchQueue(label: "com.clipcook.audioQueue")
     
     // Audio formats
     // Gemini Live defaults: Input 16kHz, Output 24kHz
@@ -24,7 +25,20 @@ class LiveVoiceManager: NSObject, ObservableObject {
     
     override init() {
         super.init()
+        setupNotifications()
         setupAudioSession()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func setupNotifications() {
+        // Handle audio interruptions (phone calls, etc.)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleInterruption), name: AVAudioSession.interruptionNotification, object: nil)
+        
+        // Handle route changes (headphones plugged/unplugged)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleRouteChange), name: AVAudioSession.routeChangeNotification, object: nil)
     }
     
     private func setupAudioSession() {
@@ -49,64 +63,65 @@ class LiveVoiceManager: NSObject, ObservableObject {
     
     func connect(recipeId: String, initialStepIndex: Int) {
         print("🎙️ [LiveVoice] Starting connection...")
-        print("🎙️ [LiveVoice] Recipe ID: \(recipeId), Step: \(initialStepIndex)")
         
-        self.errorMessage = nil // Clear previous errors
+        self.errorMessage = nil
         
         // Basic permission check
-        var isPermissionDenied = false
-        if #available(iOS 17.0, *) {
-            let permission = AVAudioApplication.shared.recordPermission
-            print("🎙️ [LiveVoice] Mic permission (iOS 17+): \(permission.rawValue)")
-            if permission == .denied {
-                isPermissionDenied = true
+        checkMicrophonePermission { [weak self] granted in
+            guard let self = self else { return }
+            if !granted {
+                self.errorMessage = "Please enable microphone access in Settings to talk to the Chef."
+                return
             }
-        } else {
-            let permission = AVAudioSession.sharedInstance().recordPermission
-            print("🎙️ [LiveVoice] Mic permission: \(permission.rawValue)")
-            if permission == .denied {
-                 isPermissionDenied = true
+            
+            Task {
+                await self.internalConnect(recipeId: recipeId, stepIndex: initialStepIndex)
             }
         }
-        
-        if isPermissionDenied {
-            print("🎙️ [LiveVoice] ❌ Microphone permission DENIED")
-            self.errorMessage = "Microphone access is denied. Please enable it in Settings."
-            return
-        }
-        
-        // Build WebSocket URL - MUST use wss:// scheme, not https://
-        let wsUrlString = "\(AppConfig.wsEndpoint)/live-cooking?recipeId=\(recipeId)&stepIndex=\(initialStepIndex)"
-        print("🎙️ [LiveVoice] WebSocket URL: \(wsUrlString)")
-        
+    }
+    
+    private func internalConnect(recipeId: String, stepIndex: Int) async {
+        let wsUrlString = "\(AppConfig.wsEndpoint)/live-cooking?recipeId=\(recipeId)&stepIndex=\(stepIndex)"
         guard let url = URL(string: wsUrlString) else {
-            print("🎙️ [LiveVoice] ❌ Failed to create URL from string")
-            self.errorMessage = "Invalid connection URL"
+            DispatchQueue.main.async { self.errorMessage = "We couldn't reach the Chef. Check your connection." }
             return
         }
         
-        // Validate the URL has a WebSocket scheme
-        print("🎙️ [LiveVoice] URL scheme: \(url.scheme ?? "nil")")
+        // Restore validation
         guard url.scheme == "wss" || url.scheme == "ws" else {
-            self.errorMessage = "Live Chef is not available right now. Please try again later."
-            print("🎙️ [LiveVoice] ❌ Invalid scheme '\(url.scheme ?? "nil")'. Expected 'wss' or 'ws'.")
+            DispatchQueue.main.async { self.errorMessage = "Live Chef is temporarily resting. Try again in a bit!" }
             return
         }
         
-        print("🎙️ [LiveVoice] ✅ URL validation passed, creating WebSocket task...")
+        var request = URLRequest(url: url)
+        // Add auth header if we have a session
+        if let session = try? await SupabaseManager.shared.client.auth.session {
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        }
         
-        // Create WebSocket connection
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue.main)
+        let session = URLSession(configuration: config, delegate: self, delegateQueue: .main)
         
-        webSocketTask = session.webSocketTask(with: url)
-        print("🎙️ [LiveVoice] WebSocket task created, resuming...")
+        webSocketTask = session.webSocketTask(with: request)
         webSocketTask?.resume()
         
         listen()
-        print("🎙️ [LiveVoice] Now listening for messages...")
+    }
+    
+    private func checkMicrophonePermission(completion: @escaping (Bool) -> Void) {
+        let permission = AVAudioSession.sharedInstance().recordPermission
+        switch permission {
+        case .granted:
+            completion(true)
+        case .denied:
+            completion(false)
+        case .undetermined:
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                DispatchQueue.main.async { completion(granted) }
+            }
+        @unknown default:
+            completion(false)
+        }
     }
     
     func disconnect() {
@@ -184,7 +199,9 @@ class LiveVoiceManager: NSObject, ObservableObject {
     }
     
     private func dispatchStartEngine() {
-        DispatchQueue.main.async { self.startAudioEngineOrReport() }
+        audioQueue.async { [weak self] in
+            self?.startAudioEngineOrReport()
+        }
     }
     
     private func startAudioEngineOrReport() {
@@ -352,14 +369,19 @@ class LiveVoiceManager: NSObject, ObservableObject {
     }
     
     private func stopAudioEngine() {
-        if audioEngine.isRunning {
-             audioEngine.stop()
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
+            if self.audioEngine.isRunning {
+                 self.audioEngine.stop()
+            }
+            // Safely remove tap
+            self.inputNode?.removeTap(onBus: 0)
+            
+            self.audioEngine.reset()
+            DispatchQueue.main.async {
+                self.isListening = false
+            }
         }
-        // Safely remove tap
-        inputNode?.removeTap(onBus: 0)
-        
-        audioEngine.reset()
-        isListening = false
     }
     
     // MARK: - audio data handling
@@ -377,13 +399,14 @@ class LiveVoiceManager: NSObject, ObservableObject {
         // simple PCM playback
         guard let pcmBuffer = toPCMBuffer(data: data) else { return }
         
-        if !(playerNode?.isPlaying ?? false) {
-             playerNode?.play()
-        }
-        
         // Schedule buffer
-        // Note: For real low latency we might need more advanced handling, but this is a start
-        playerNode?.scheduleBuffer(pcmBuffer, completionHandler: nil)
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
+            if !(self.playerNode?.isPlaying ?? false) {
+                 self.playerNode?.play()
+            }
+            self.playerNode?.scheduleBuffer(pcmBuffer, completionHandler: nil)
+        }
         
         DispatchQueue.main.async {
             self.isSpeaking = true
@@ -397,29 +420,45 @@ class LiveVoiceManager: NSObject, ObservableObject {
         }
     }
     
+    @objc private func handleInterruption(notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+        
+        if type == .began {
+            print("🎙️ [LiveVoice] Audio interruption began")
+            stopAudioEngine()
+        } else if type == .ended {
+            audioQueue.async { [weak self] in
+                guard let self = self else { return }
+                if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+                    let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                    if options.contains(.shouldResume) {
+                        print("🎙️ [LiveVoice] Audio interruption ended, resuming...")
+                        self.startAudioEngineOrReport()
+                    }
+                }
+            }
+        }
+    }
+    
+    @objc private func handleRouteChange(notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else { return }
+        
+        switch reason {
+        case .newDeviceAvailable:
+            print("🎙️ [LiveVoice] New audio device available")
+        case .oldDeviceUnavailable:
+            print("🎙️ [LiveVoice] Audio device unavailable, stopping...")
+            stopAudioEngine()
+        default:
+            break
+        }
+    }
+    
     // Helpers
-    
-    // Convert native float buffer to Data (for sending to backend)
-    private func bufferToData(buffer: AVAudioPCMBuffer) -> Data? {
-        // Native iOS mic format is typically float32
-        if let floatData = buffer.floatChannelData {
-            let channelDataPointer = floatData.pointee
-            let byteCount = Int(buffer.frameLength) * MemoryLayout<Float>.size
-            return Data(bytes: channelDataPointer, count: byteCount)
-        }
-        // Fallback for int16 format
-        if let int16Data = buffer.int16ChannelData {
-            let channelDataPointer = int16Data.pointee
-            return Data(bytes: channelDataPointer, count: Int(buffer.frameLength) * 2)
-        }
-        return nil
-    }
-    
-    private func toData(buffer: AVAudioPCMBuffer) -> Data? {
-        guard let channelData = buffer.int16ChannelData else { return nil }
-        let channelDataPointer = channelData.pointee
-        return Data(bytes: channelDataPointer, count: Int(buffer.frameLength) * 2)
-    }
     
     private func toPCMBuffer(data: Data) -> AVAudioPCMBuffer? {
         let frameCount = UInt32(data.count) / 2

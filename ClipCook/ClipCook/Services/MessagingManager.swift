@@ -10,7 +10,7 @@ class MessagingManager: NSObject, ObservableObject {
     @Published var isRegistered = false
     @Published var deviceToken: String?
     
-    private let backendUrl = "https://mysocialcookbook-production.up.railway.app/api/register-device"
+    private let backendUrl = "\(AppConfig.apiEndpoint)/users/register-device"
     
     override init() {
         super.init()

@@ -11,8 +11,8 @@ class SpeechManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
     private let synthesizer = AVSpeechSynthesizer()
     private var audioPlayer: AVAudioPlayer?
     
-    private let backendUrl = "https://mysocialcookbook-production.up.railway.app/api/transcribe-audio"
-    private let ttsUrl = "https://mysocialcookbook-production.up.railway.app/api/synthesize"
+    private let backendUrl = "\(AppConfig.apiEndpoint)/ai/transcribe"
+    private let ttsUrl = "\(AppConfig.apiEndpoint)/ai/synthesize"
     
     @Published var isRecording = false
     @Published var transcript = ""

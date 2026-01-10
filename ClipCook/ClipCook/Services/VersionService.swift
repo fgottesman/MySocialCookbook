@@ -5,7 +5,7 @@ class VersionService {
     static let shared = VersionService()
     private init() {}
     
-    private let backendBaseUrl = "https://mysocialcookbook-production.up.railway.app/api"
+    private let backendBaseUrl = AppConfig.apiEndpoint
     
     /// Fetch all saved versions for a recipe
     func fetchVersions(for recipeId: UUID) async throws -> [SavedRecipeVersion] {

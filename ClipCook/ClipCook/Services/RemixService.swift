@@ -25,7 +25,7 @@ struct RemixResponse: Codable {
 class RemixService {
     static let shared = RemixService()
     
-    private let backendUrl = "https://mysocialcookbook-production.up.railway.app/api/remix-recipe"
+    private let backendUrl = "\(AppConfig.apiEndpoint)/ai/remix"
     
     func remixRecipe(originalRecipe: Recipe, prompt: String) async throws -> RemixedRecipe {
         guard let url = URL(string: backendUrl) else {
@@ -77,7 +77,7 @@ class RemixService {
     }
     
     func remixConsult(originalRecipe: Recipe, chatHistory: [ChatMessage], prompt: String) async throws -> RemixConsultation {
-        guard let url = URL(string: "https://mysocialcookbook-production.up.railway.app/api/remix-chat") else {
+        guard let url = URL(string: "\(AppConfig.apiEndpoint)/ai/remix-chat") else {
             throw URLError(.badURL)
         }
         

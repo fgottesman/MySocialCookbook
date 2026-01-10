@@ -7,6 +7,8 @@ struct ProfileView: View {
     @State private var isLoading = true
     @State private var showingSignOutAlert = false
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -85,6 +87,8 @@ struct ProfileView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 20)
             }
+            .frame(maxWidth: horizontalSizeClass == .regular ? 600 : .infinity)
+            .frame(maxWidth: .infinity)
             .navigationTitle("Profile")
             .alert("Sign Out", isPresented: $showingSignOutAlert) {
                 Button("Cancel", role: .cancel) { }

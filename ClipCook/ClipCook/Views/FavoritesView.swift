@@ -3,6 +3,16 @@ import SwiftUI
 struct FavoritesView: View {
     @StateObject private var viewModel = FavoritesViewModel()
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
+    private var columns: [GridItem] {
+        if horizontalSizeClass == .regular {
+            return [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+        } else {
+            return [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+        }
+    }
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -34,7 +44,7 @@ struct FavoritesView: View {
                         EmptyFavoritesView()
                     } else {
                         ScrollView {
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                            LazyVGrid(columns: columns, spacing: 20) {
                                 ForEach(viewModel.favorites) { recipe in
                                     NavigationLink(destination: RecipeView(recipe: recipe)) {
                                         RecipeCard(recipe: recipe)
