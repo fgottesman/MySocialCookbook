@@ -93,15 +93,46 @@ export class GeminiLiveService {
         });
 
         geminiWs.on('message', (data: WebSocket.Data) => {
-            const dataStr = data.toString();
-            if (dataStr.length < 500) {
-                console.log("[GeminiLive] 📥 Gemini message:", dataStr);
-            } else {
-                console.log("[GeminiLive] 📥 Gemini binary data:", (data as Buffer).length, "bytes");
-            }
+            try {
+                const dataStr = data.toString();
+                const response = JSON.parse(dataStr);
 
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(data);
+                // Check for audio data in the response
+                if (response.serverContent?.modelTurn?.parts) {
+                    for (const part of response.serverContent.modelTurn.parts) {
+                        if (part.inlineData?.mimeType?.startsWith('audio/')) {
+                            // Decode base64 audio and send as raw binary to client
+                            const audioData = Buffer.from(part.inlineData.data, 'base64');
+                            console.log("[GeminiLive] 🔊 Sending audio to client:", audioData.length, "bytes");
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(audioData);
+                            }
+                        } else if (part.text) {
+                            // Text response - send as JSON
+                            console.log("[GeminiLive] 💬 Text response:", part.text.substring(0, 100));
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({ type: 'text', text: part.text }));
+                            }
+                        }
+                    }
+                }
+
+                // Handle setup complete
+                if (response.setupComplete) {
+                    console.log("[GeminiLive] ✅ Setup complete acknowledged by Gemini");
+                }
+
+                // Handle turn complete
+                if (response.serverContent?.turnComplete) {
+                    console.log("[GeminiLive] ✅ Turn complete");
+                }
+
+            } catch (e) {
+                // If not valid JSON, it might be raw binary audio (shouldn't happen but handle gracefully)
+                console.log("[GeminiLive] ⚠️ Non-JSON message received, forwarding as-is");
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(data);
+                }
             }
         });
 
