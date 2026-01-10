@@ -68,7 +68,8 @@ export class RecipeController {
                     ingredients: recipeData.ingredients,
                     instructions: recipeData.instructions,
                     thumbnail_url: recipeData.thumbnailUrl,
-                    source_url: url,
+                    video_url: url, // FIX: Map specifically to video_url for iOS attribution
+                    source_url: url, // Keep this for redundancy since we added the column
                     embedding: embedding,
                     step0_summary: recipeData.step0Summary,
                     step0_audio_url: step0AudioUrl,
