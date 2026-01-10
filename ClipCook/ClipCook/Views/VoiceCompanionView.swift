@@ -300,7 +300,7 @@ struct VoiceCompanionView: View {
     // MARK: - Response Overlay View
     @ViewBuilder
     private var responseOverlayView: some View {
-        if isLiveMode {
+        if isLiveMode && !liveManager.isConnecting {
             // Live Mode Status
             VStack {
                 Text(liveManager.isSpeaking ? "Chef is speaking..." : "Chef is listening...")
