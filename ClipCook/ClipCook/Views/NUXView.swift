@@ -7,7 +7,7 @@ struct NUXView: View {
     
     var body: some View {
         ZStack {
-            Color.clipCookBackground.ignoresSafeArea()
+            DesignTokens.Colors.background.ignoresSafeArea()
             
             TabView(selection: $selection) {
                 // Step 1: Branding
@@ -121,10 +121,10 @@ struct NUXView: View {
                                 .foregroundColor(.white)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(Color.clipCookSurface)
-                                .cornerRadius(12)
+                                .background(DesignTokens.Colors.surface)
+                                .cornerRadius(DesignTokens.Layout.cornerRadius / 2)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
+                                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius / 2)
                                         .stroke(LinearGradient.sizzle, lineWidth: 1)
                                 )
                         }
@@ -227,15 +227,16 @@ struct NUXCard<Content: View>: View {
             
             VStack(spacing: 12) {
                 Text(title)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(.clipCookTextPrimary)
+                    .font(DesignTokens.Typography.headerFont(size: 32))
+                    .foregroundColor(DesignTokens.Colors.textPrimary)
+                    .premiumText()
                 
                 Text(subtitle)
-                    .font(.system(size: 18, weight: .medium, design: .default))
-                    .foregroundColor(.clipCookTextSecondary)
+                    .font(DesignTokens.Typography.bodyFont(size: 18))
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 30)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .premiumText()
             }
             
             content
@@ -244,6 +245,7 @@ struct NUXCard<Content: View>: View {
             Spacer()
         }
         .padding()
+        .frame(maxWidth: 500)
     }
 }
 

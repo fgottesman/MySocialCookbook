@@ -5,6 +5,8 @@ import { VideoDownloader } from '../services/video_downloader';
 import { GeminiService } from '../services/gemini';
 import { ttsService } from '../services/tts';
 import { apnsService } from '../services/apns';
+import { authenticate, AuthRequest } from '../middleware/auth';
+import { apiLimiter, aiLimiter } from '../middleware/rateLimit';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -13,7 +15,10 @@ const router = express.Router();
 const downloader = new VideoDownloader();
 const gemini = new GeminiService();
 
-// Helper to detect social media URLs that Gemini might process directly
+// Apply general rate limit to all routes in this router
+router.use(apiLimiter);
+
+// Helper to detect social media URLs
 function isDirectProcessableUrl(url: string): boolean {
     return url.includes('youtube.com') ||
         url.includes('youtu.be') ||
@@ -52,8 +57,9 @@ router.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'ClipCook Backend' });
 });
 
-router.post('/process-recipe', async (req, res) => {
-    const { url, userId } = req.body;
+router.post('/process-recipe', authenticate, aiLimiter, async (req: AuthRequest, res) => {
+    const { url } = req.body;
+    const userId = req.user.id;
 
     // Send immediate response for fire-and-forget from Share Extension
     res.json({ success: true, message: 'Processing started' });
@@ -127,7 +133,7 @@ router.post('/process-recipe', async (req, res) => {
 
                 await downloader.downloadThumbnail(recipeData.thumbnailUrl, thumbPath);
 
-                const { data: uploadData, error: uploadError } = await supabase.storage
+                const { data: uploadData, error: uploadError } = await req.supabase.storage
                     .from('recipe-thumbnails')
                     .upload(thumbName, fs.readFileSync(thumbPath), {
                         contentType: 'image/jpeg',
@@ -137,7 +143,7 @@ router.post('/process-recipe', async (req, res) => {
                 if (uploadError) {
                     console.error("Supabase Storage Upload Error:", uploadError);
                 } else {
-                    const { data: publicUrlData } = supabase.storage
+                    const { data: publicUrlData } = req.supabase.storage
                         .from('recipe-thumbnails')
                         .getPublicUrl(thumbName);
 
@@ -158,7 +164,7 @@ router.post('/process-recipe', async (req, res) => {
         console.log("Recipe extracted:", recipeData.title);
 
         // Generate Embedding for Search
-        const embeddingText = `${recipeData.title} ${recipeData.description} ${finalDescription || ''} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
+        const embeddingText = `${recipeData.title} ${recipeData.description} ${finalDescription || ''} ${recipeData.ingredients.map((i: { name: string }) => i.name).join(' ')}`;
         const embedding = await gemini.generateEmbedding(embeddingText);
 
         // --- Handle Step 0 Audio ---
@@ -172,7 +178,7 @@ router.post('/process-recipe', async (req, res) => {
 
                 // Upload to Supabase (using recipe-thumbnails bucket for now, or ensure recipe-audio exists)
                 // We'll use 'recipe-thumbnails' since we know it works, but ideally separate bucket
-                const { error: uploadError } = await supabase.storage
+                const { error: uploadError } = await req.supabase.storage
                     .from('recipe-thumbnails')
                     .upload(audioName, audioBuffer, {
                         contentType: 'audio/mpeg',
@@ -182,7 +188,7 @@ router.post('/process-recipe', async (req, res) => {
                 if (uploadError) {
                     console.error("Step 0 Audio Upload Error:", uploadError);
                 } else {
-                    const { data: publicUrlData } = supabase.storage
+                    const { data: publicUrlData } = req.supabase.storage
                         .from('recipe-thumbnails')
                         .getPublicUrl(audioName);
 
@@ -197,7 +203,7 @@ router.post('/process-recipe', async (req, res) => {
         }
 
         // Save to Supabase
-        const { data, error } = await supabase
+        const { data, error } = await req.supabase
             .from('recipes')
             .insert({
                 user_id: userId,
@@ -270,9 +276,10 @@ router.post('/process-recipe', async (req, res) => {
     }
 });
 
-router.post('/generate-recipe-from-prompt', async (req, res) => {
+router.post('/generate-recipe-from-prompt', authenticate, aiLimiter, async (req: AuthRequest, res) => {
     try {
-        const { prompt, userId } = req.body;
+        const { prompt } = req.body;
+        const userId = req.user.id;
 
         if (!prompt || !userId) {
             return res.status(400).json({ error: 'Missing prompt or userId' });
@@ -285,7 +292,7 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
         console.log("Recipe generated:", recipeData.title);
 
         // Generate Embedding for Search
-        const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
+        const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: { name: string }) => i.name).join(' ')}`;
         const embedding = await gemini.generateEmbedding(embeddingText);
 
         // --- Handle Step 0 Audio ---
@@ -297,7 +304,7 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
                 const audioName = `audio_${crypto.randomUUID()}.mp3`;
                 const audioBuffer = Buffer.from(audioBase64, 'base64');
 
-                const { error: uploadError } = await supabase.storage
+                const { error: uploadError } = await req.supabase.storage
                     .from('recipe-thumbnails')
                     .upload(audioName, audioBuffer, {
                         contentType: 'audio/mpeg',
@@ -307,7 +314,7 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
                 if (uploadError) {
                     console.error("Step 0 Audio Upload Error:", uploadError);
                 } else {
-                    const { data: publicUrlData } = supabase.storage
+                    const { data: publicUrlData } = req.supabase.storage
                         .from('recipe-thumbnails')
                         .getPublicUrl(audioName);
 
@@ -358,7 +365,7 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
         }
 
         // Save to Supabase
-        const { data, error } = await supabase
+        const { data, error } = await req.supabase
             .from('recipes')
             .insert({
                 user_id: userId,
@@ -412,16 +419,17 @@ router.post('/generate-recipe-from-prompt', async (req, res) => {
     }
 });
 
-router.post('/register-device', async (req, res) => {
+router.post('/register-device', authenticate, async (req: AuthRequest, res) => {
     try {
-        const { userId, deviceToken, platform } = req.body;
+        const { deviceToken, platform } = req.body;
+        const userId = req.user.id;
 
         if (!userId || !deviceToken || !platform) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
         // Upsert device token
-        const { data, error } = await supabase
+        const { data, error } = await req.supabase
             .from('user_devices')
             .upsert({
                 user_id: userId,
@@ -441,15 +449,16 @@ router.post('/register-device', async (req, res) => {
     }
 });
 
-router.post('/remix-recipe', async (req, res) => {
+router.post('/remix-recipe', authenticate, aiLimiter, async (req: AuthRequest, res) => {
     try {
         const { originalRecipe, userPrompt } = req.body;
+        const userId = req.user.id;
 
         if (!originalRecipe || !userPrompt) {
             return res.status(400).json({ error: 'Missing originalRecipe or userPrompt' });
         }
 
-        console.log(`Remixing recipe with prompt: "${userPrompt}"`);
+        console.log(`[Remix] User ${userId} remixing recipe: "${userPrompt}"`);
 
         const remixedRecipe = await gemini.remixRecipe(originalRecipe, userPrompt);
 
@@ -463,7 +472,7 @@ router.post('/remix-recipe', async (req, res) => {
                 const audioName = `audio_remix_${crypto.randomUUID()}.mp3`;
                 const audioBuffer = Buffer.from(audioBase64, 'base64');
 
-                const { error: uploadError } = await supabase.storage
+                const { error: uploadError } = await req.supabase.storage
                     .from('recipe-thumbnails')
                     .upload(audioName, audioBuffer, {
                         contentType: 'audio/mpeg',
@@ -471,7 +480,7 @@ router.post('/remix-recipe', async (req, res) => {
                     });
 
                 if (!uploadError) {
-                    const { data: publicUrlData } = supabase.storage
+                    const { data: publicUrlData } = req.supabase.storage
                         .from('recipe-thumbnails')
                         .getPublicUrl(audioName);
 
@@ -492,7 +501,7 @@ router.post('/remix-recipe', async (req, res) => {
     }
 });
 
-router.post('/remix-chat', async (req, res) => {
+router.post('/remix-chat', authenticate, aiLimiter, async (req: AuthRequest, res) => {
     try {
         const { originalRecipe, chatHistory, userPrompt } = req.body;
 
@@ -500,7 +509,7 @@ router.post('/remix-chat', async (req, res) => {
             return res.status(400).json({ error: 'Missing originalRecipe or userPrompt' });
         }
 
-        console.log(`Remix Consultation: "${userPrompt}"`);
+        console.log(`Remix Consultation for user ${req.user.id}: "${userPrompt}"`);
 
         const consultation = await gemini.remixConsult(originalRecipe, chatHistory || [], userPrompt);
 
@@ -514,7 +523,7 @@ router.post('/remix-chat', async (req, res) => {
     }
 });
 
-router.post('/chat-companion', async (req, res) => {
+router.post('/chat-companion', authenticate, aiLimiter, async (req: AuthRequest, res) => {
     try {
         const { recipe, currentStepIndex, chatHistory, userMessage } = req.body;
 
@@ -522,7 +531,7 @@ router.post('/chat-companion', async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        console.log(`Voice Companion Chat: "${userMessage}" (Step ${currentStepIndex})`);
+        console.log(`Voice Companion Chat (User ${req.user.id}): "${userMessage}" (Step ${currentStepIndex})`);
 
         const reply = await gemini.chatCompanion(
             recipe,
@@ -542,7 +551,7 @@ router.post('/chat-companion', async (req, res) => {
 });
 
 // Prepare a step for cooking mode - analyzes step, breaks down, provides conversions
-router.post('/prepare-step', async (req, res) => {
+router.post('/prepare-step', authenticate, aiLimiter, async (req: AuthRequest, res) => {
     try {
         const { recipe, stepIndex, stepLabel } = req.body;
 
@@ -565,11 +574,16 @@ router.post('/prepare-step', async (req, res) => {
 });
 
 // Get user preferences
-router.get('/user-preferences/:userId', async (req, res) => {
+router.get('/user-preferences/:userId', authenticate, async (req: AuthRequest, res) => {
     try {
         const { userId } = req.params;
 
-        const { data, error } = await supabase
+        // Force user to only see their own preferences
+        if (userId !== req.user.id) {
+            return res.status(403).json({ error: 'Forbidden: You can only access your own preferences' });
+        }
+
+        const { data, error } = await req.supabase
             .from('user_preferences')
             .select('*')
             .eq('user_id', userId)
@@ -596,13 +610,18 @@ router.get('/user-preferences/:userId', async (req, res) => {
 });
 
 // Update user preferences
-router.put('/user-preferences/:userId', async (req, res) => {
+router.put('/user-preferences/:userId', authenticate, async (req: AuthRequest, res) => {
     try {
         const { userId } = req.params;
+
+        // Force user to only update their own preferences
+        if (userId !== req.user.id) {
+            return res.status(403).json({ error: 'Forbidden: You can only update your own preferences' });
+        }
         const updates = req.body;
 
         // Upsert preferences
-        const { data, error } = await supabase
+        const { data, error } = await req.supabase
             .from('user_preferences')
             .upsert({
                 user_id: userId,
@@ -622,7 +641,7 @@ router.put('/user-preferences/:userId', async (req, res) => {
     }
 });
 
-router.post('/transcribe-audio', async (req, res) => {
+router.post('/transcribe-audio', authenticate, aiLimiter, async (req: AuthRequest, res) => {
     try {
         const { audioBase64, mimeType } = req.body;
 
@@ -645,11 +664,11 @@ router.post('/transcribe-audio', async (req, res) => {
 });
 
 // Toggle favorite status
-router.patch('/recipes/:id/favorite', async (req, res) => {
+router.patch('/recipes/:id/favorite', authenticate, async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
         const { isFavorite } = req.body;
-        const userId = req.headers['x-user-id'] as string;
+        const userId = req.user.id;
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized - missing user ID' });
@@ -659,7 +678,7 @@ router.patch('/recipes/:id/favorite', async (req, res) => {
             return res.status(400).json({ error: 'isFavorite must be a boolean' });
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await req.supabase
             .from('recipes')
             .update({ is_favorite: isFavorite })
             .eq('id', id)
@@ -677,16 +696,16 @@ router.patch('/recipes/:id/favorite', async (req, res) => {
 });
 
 // Delete recipe
-router.delete('/recipes/:id', async (req, res) => {
+router.delete('/recipes/:id', authenticate, async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        const userId = req.headers['x-user-id'] as string;
+        const userId = req.user.id;
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized - missing user ID' });
         }
 
-        const { error } = await supabase
+        const { error } = await req.supabase
             .from('recipes')
             .delete()
             .eq('id', id)
@@ -702,8 +721,8 @@ router.delete('/recipes/:id', async (req, res) => {
 });
 
 // For feed (utility endpoint)
-router.get('/recipes', async (req, res) => {
-    const { data, error } = await supabase
+router.get('/recipes', authenticate, async (req: AuthRequest, res) => {
+    const { data, error } = await req.supabase
         .from('recipes')
         .select('*, profiles(*)')
         .order('created_at', { ascending: false });
@@ -712,7 +731,7 @@ router.get('/recipes', async (req, res) => {
     res.json(data);
 });
 
-router.post('/synthesize', async (req, res) => {
+router.post('/synthesize', authenticate, async (req: AuthRequest, res) => {
     try {
         const { text } = req.body;
 
@@ -733,15 +752,15 @@ router.post('/synthesize', async (req, res) => {
 });
 
 // Get versions for a recipe
-router.get('/recipes/:recipeId/versions', async (req, res) => {
+router.get('/recipes/:recipeId/versions', authenticate, async (req: AuthRequest, res) => {
     try {
         const { recipeId } = req.params;
 
-        const { data, error } = await supabase
+        const { data, error } = await req.supabase
             .from('recipe_versions')
             .select('*')
             .eq('recipe_id', recipeId)
-            .order('version_number', { ascending: true });
+            .order('version_number', { ascending: false });
 
         if (error) throw error;
 
@@ -753,44 +772,65 @@ router.get('/recipes/:recipeId/versions', async (req, res) => {
 });
 
 // Save a new version
-router.post('/recipes/:recipeId/versions', async (req, res) => {
+router.post('/recipes/:recipeId/versions', authenticate, async (req: AuthRequest, res) => {
     try {
         const { recipeId } = req.params;
         const { title, description, ingredients, instructions, chefsNote, changedIngredients, step0Summary, step0AudioUrl, difficulty, cookingTime } = req.body;
 
-        // Get next version number
-        const { data: existingVersions } = await supabase
+        // 1. Get current max version
+        const { data: versions, error: vError } = await req.supabase
             .from('recipe_versions')
             .select('version_number')
             .eq('recipe_id', recipeId)
             .order('version_number', { ascending: false })
             .limit(1);
 
-        const nextVersionNumber = (existingVersions?.[0]?.version_number || 0) + 1;
+        if (vError) throw vError;
+        const nextVersion = (versions && versions.length > 0) ? (versions[0].version_number + 1) : 1;
 
-        const { data, error } = await supabase
+        // 2. Insert new version
+        const { data: vData, error: insertError } = await req.supabase
             .from('recipe_versions')
             .insert({
                 recipe_id: recipeId,
-                version_number: nextVersionNumber,
+                version_number: nextVersion,
                 title,
                 description,
                 ingredients,
                 instructions,
                 chefs_note: chefsNote,
-                changed_ingredients: changedIngredients,
+                changed_ingredients: JSON.stringify(changedIngredients), // Store as string if JSONB not using types correctly
                 step0_summary: step0Summary,
                 step0_audio_url: step0AudioUrl,
-                difficulty: difficulty,
+                difficulty,
                 cooking_time: cookingTime
             })
             .select()
             .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
 
-        console.log(`Saved version ${nextVersionNumber} for recipe ${recipeId}`);
-        res.json({ success: true, version: data });
+        // 3. Update main recipe record with latest version info
+        const { error: updateError } = await req.supabase
+            .from('recipes')
+            .update({
+                title,
+                description,
+                ingredients,
+                instructions,
+                chefs_note: chefsNote,
+                step0_summary: step0Summary,
+                step0_audio_url: step0AudioUrl,
+                difficulty,
+                cooking_time: cookingTime,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', recipeId);
+
+        if (updateError) throw updateError;
+
+        console.log(`Saved version ${nextVersion} for recipe ${recipeId}`);
+        res.json({ success: true, version: vData });
     } catch (error: any) {
         console.error("Error saving version:", error);
         res.status(500).json({ error: error.message });

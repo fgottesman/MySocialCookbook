@@ -5,16 +5,25 @@ struct FeedView: View {
     @State private var isSearching = false
     @State private var showingAddRecipe = false
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
+    private var columns: [GridItem] {
+        if horizontalSizeClass == .regular {
+            return [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+        } else {
+            return [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+        }
+    }
     
     var body: some View {
         NavigationView {
             ZStack {
-                Color.clipCookBackground.ignoresSafeArea()
+                DesignTokens.Colors.background.ignoresSafeArea()
                 
                 Group {
                     if viewModel.isLoading && viewModel.recipes.isEmpty {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
+                            .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Colors.primary))
                     } else if viewModel.errorMessage != nil && viewModel.recipes.isEmpty {
                         VStack(spacing: 16) {
                             Image(systemName: "flame")
@@ -37,11 +46,12 @@ struct FeedView: View {
                         NUXView(showingAddRecipe: $showingAddRecipe)
                     } else {
                         ScrollView {
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                            LazyVGrid(columns: columns, spacing: 20) {
                                 ForEach(viewModel.filteredRecipes) { recipe in
                                     NavigationLink(destination: RecipeView(recipe: recipe)) {
                                         RecipeCard(recipe: recipe)
                                     }
+                                    .buttonStyle(PremiumButtonStyle())
                                 }
                             }
                             .padding()
@@ -161,8 +171,8 @@ struct RecipeCard: View {
             // Video Thumbnail
             Color.clear
                 .aspectRatio(9/16, contentMode: .fit)
-                .background(Color.clipCookBackground)
-                .cornerRadius(12)
+                .background(DesignTokens.Colors.background)
+                .cornerRadius(DesignTokens.Layout.cornerRadius / 2)
                 .overlay(
                     Group {
                         if let thumbnailUrl = recipe.thumbnailUrl, let url = URL(string: thumbnailUrl) {
@@ -207,9 +217,9 @@ struct RecipeCard: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(recipe.title)
-                    .font(.headline)
-                    .foregroundColor(.clipCookTextPrimary)
-                    .fixedSize(horizontal: false, vertical: true) // Allow full expansion
+                    .font(DesignTokens.Typography.headerFont(size: 18))
+                    .foregroundColor(DesignTokens.Colors.textPrimary)
+                    .premiumText()
                     .multilineTextAlignment(.leading)
                 
                 HStack(spacing: 4) {
@@ -246,11 +256,11 @@ struct RecipeCard: View {
                 }
             }
         }
-        .padding(12)
-        .background(Color.clipCookSurface)
-        .cornerRadius(16)
-        .shadow(color: Color.clipCookSizzleStart.opacity(0.1), radius: 10, x: 0, y: 0) // Very subtle glow
-        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+        .padding(DesignTokens.Layout.cardPadding)
+        .background(DesignTokens.Colors.surface)
+        .cornerRadius(DesignTokens.Layout.cornerRadius)
+        .shadow(color: DesignTokens.Colors.primary.opacity(0.1), radius: 10)
+        .shadow(color: DesignTokens.Effects.softShadowColor, radius: DesignTokens.Effects.softShadowRadius, y: 4)
     }
 }
 

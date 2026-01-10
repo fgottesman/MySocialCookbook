@@ -4,6 +4,8 @@ struct AuthView: View {
     @StateObject private var viewModel = AuthViewModel()
     @State private var isSignUp = false
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
     var body: some View {
         VStack(spacing: 20) {
             Text(isSignUp ? "Create Account" : "Welcome Back")
@@ -60,7 +62,7 @@ struct AuthView: View {
             }) {
                 HStack {
                     Image(systemName: "globe") // Placeholder for Google Logo
-                    Text("Sign in with Google")
+                     Text("Sign in with Google")
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
@@ -91,5 +93,7 @@ struct AuthView: View {
             }
         }
         .padding()
+        .frame(maxWidth: horizontalSizeClass == .regular ? 400 : .infinity)
+        .frame(maxWidth: .infinity)
     }
 }

@@ -81,7 +81,7 @@ class VoiceCompanionService {
     
     // MARK: - Chat Companion
     func chat(recipe: Recipe, currentStepIndex: Int, history: [ChatMessage], message: String) async throws -> String {
-        guard let url = URL(string: "\(baseUrl)/chat-companion") else {
+        guard let url = URL(string: "\(baseUrl)/ai/chat-companion") else {
             throw URLError(.badURL)
         }
         
@@ -110,7 +110,7 @@ class VoiceCompanionService {
     
     // MARK: - Prepare Step (new)
     func prepareStep(recipe: Recipe, stepIndex: Int, stepLabel: String) async throws -> StepPreparation {
-        guard let url = URL(string: "\(baseUrl)/prepare-step") else {
+        guard let url = URL(string: "\(baseUrl)/ai/prepare-step") else {
             throw URLError(.badURL)
         }
         
@@ -138,7 +138,7 @@ class VoiceCompanionService {
     
     // MARK: - User Preferences
     func getPreferences(userId: String) async throws -> UserPreferences {
-        guard let url = URL(string: "\(baseUrl)/user-preferences/\(userId)") else {
+        guard let url = URL(string: "\(baseUrl)/users/preferences/\(userId)") else {
             throw URLError(.badURL)
         }
         
@@ -156,7 +156,7 @@ class VoiceCompanionService {
     }
     
     func updatePreferences(userId: String, preferences: UserPreferences) async throws -> UserPreferences {
-        guard let url = URL(string: "\(baseUrl)/user-preferences/\(userId)") else {
+        guard let url = URL(string: "\(baseUrl)/users/preferences/\(userId)") else {
             throw URLError(.badURL)
         }
         

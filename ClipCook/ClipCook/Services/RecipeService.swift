@@ -5,7 +5,7 @@ class RecipeService {
     static let shared = RecipeService()
     private init() {}
     
-    private let backendBaseUrl = "https://mysocialcookbook-production.up.railway.app/api"
+    private let backendBaseUrl = AppConfig.apiEndpoint
     
     private var client: SupabaseClient {
         SupabaseManager.shared.client
@@ -76,7 +76,7 @@ class RecipeService {
     // Process recipe from URL
     func processRecipe(url: String, userId: String) async throws {
         isProcessingRecipe = true
-        guard let endpoint = URL(string: "\(backendBaseUrl)/process-recipe") else {
+        guard let endpoint = URL(string: "\(backendBaseUrl)/recipes/process") else {
             throw URLError(.badURL)
         }
         
@@ -96,7 +96,7 @@ class RecipeService {
     
     // Create recipe from prompt
     func createRecipeFromPrompt(prompt: String, userId: String) async throws -> Recipe {
-        guard let endpoint = URL(string: "\(backendBaseUrl)/generate-recipe-from-prompt") else {
+        guard let endpoint = URL(string: "\(backendBaseUrl)/ai/generate") else {
             throw URLError(.badURL)
         }
         
