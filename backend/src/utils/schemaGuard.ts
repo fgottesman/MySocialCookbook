@@ -56,8 +56,21 @@ export async function checkSchema(): Promise<void> {
     // Emergency bypass: allows server to start even if schema validation fails
     // Use only in emergency situations (e.g., false positive blocking deployment)
     if (process.env.SKIP_SCHEMA_CHECK === 'true') {
-        logger.warn('[SchemaGuard] ⚠️  SCHEMA VALIDATION SKIPPED (SKIP_SCHEMA_CHECK=true)');
-        logger.warn('[SchemaGuard] ⚠️  This is an emergency bypass. Remove SKIP_SCHEMA_CHECK ASAP.');
+        const bypassMessage = `[SchemaGuard] ⚠️  SCHEMA VALIDATION BYPASSED at ${new Date().toISOString()}`;
+        logger.warn(bypassMessage);
+        logger.warn('[SchemaGuard] ⚠️  SKIP_SCHEMA_CHECK=true detected. Remove this ASAP.');
+
+        // Audit trail: Log bypass to file for security tracking
+        try {
+            const fs = await import('fs');
+            const path = await import('path');
+            const auditPath = path.join(__dirname, '../../logs/schema_bypass_audit.log');
+            const auditEntry = `${new Date().toISOString()} - BYPASS USED - ENV: ${process.env.NODE_ENV}\n`;
+            fs.appendFileSync(auditPath, auditEntry);
+        } catch (e) {
+            logger.error('[SchemaGuard] Failed to write audit log:', e);
+        }
+
         return;
     }
 
