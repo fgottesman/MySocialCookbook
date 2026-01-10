@@ -2,6 +2,7 @@
 import http2 from 'http2';
 import crypto from 'crypto';
 import { supabase } from '../db/supabase';
+import logger from '../utils/logger';
 
 const APNS_KEY = process.env.APNS_KEY;
 const APNS_KEY_ID = process.env.APNS_KEY_ID;
@@ -23,23 +24,12 @@ interface PushPayload {
 
 // Debug configuration on startup
 if (process.env.NODE_ENV !== 'test') {
-    console.log('--- APNs Configuration Check ---');
-    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-    console.log(`Server Time: ${new Date().toISOString()}`);
-    console.log(`APPLE_TEAM_ID: ${APPLE_TEAM_ID ? APPLE_TEAM_ID.substring(0, 3) + '...' : 'MISSING'}`);
-    console.log(`APNS_KEY_ID: ${APNS_KEY_ID ? APNS_KEY_ID.substring(0, 3) + '...' : 'MISSING'}`);
-    console.log(`APNS_KEY Present: ${!!APNS_KEY}`);
-    if (APNS_KEY) {
-        const keyContent = APNS_KEY.trim().replace(/\\n/g, '\n');
-        console.log(`APNS_KEY Length: ${keyContent.length}`);
-        console.log(`APNS_KEY Prefix: ${keyContent.substring(0, 15)}...`);
-        console.log(`APNS_KEY Suffix: ...${keyContent.substring(keyContent.length - 15)}`);
-
-        // Count newlines to verify format
-        const newlineCount = (keyContent.match(/\n/g) || []).length;
-        console.log(`APNS_KEY Newlines: ${newlineCount}`);
-    }
-    console.log('--------------------------------');
+    logger.info('APNs Configuration Check', {
+        env: process.env.NODE_ENV,
+        teamIdPresent: !!APPLE_TEAM_ID,
+        keyIdPresent: !!APNS_KEY_ID,
+        keyPresent: !!APNS_KEY
+    });
 }
 
 export class APNsService {
@@ -61,20 +51,6 @@ export class APNsService {
         const teamId = APPLE_TEAM_ID.trim();
         const keyId = APNS_KEY_ID.trim();
         const key = APNS_KEY.trim().replace(/\\n/g, '\n');
-
-        // Diagnostic logging during generation
-        console.log('--- APNs Key Diagnostic ---');
-        console.log(`Key ID: ${keyId}`);
-        console.log(`Team ID: ${teamId}`);
-        console.log(`Key Length: ${key.length}`);
-        console.log(`Key Prefix: ${key.substring(0, 30).replace(/\n/g, '\\n')}...`);
-        console.log(`Key Suffix: ...${key.substring(key.length - 20).replace(/\n/g, '\\n')}`);
-        const hasStart = key.includes('BEGIN PRIVATE KEY');
-        const hasEnd = key.includes('END PRIVATE KEY');
-        console.log(`Has Headers: Start=${hasStart}, End=${hasEnd}`);
-        const newlineCount = (key.match(/\n/g) || []).length;
-        console.log(`Newline Count: ${newlineCount}`);
-        console.log('---------------------------');
 
         // 1. Manually construct Header
         const header = {
@@ -110,11 +86,7 @@ export class APNsService {
         const signaturePart = base64url(signature);
         const token = `${signContent}.${signaturePart}`;
 
-        console.log('--- APNs Manual Token Generated ---');
-        console.log(`Header (No typ): ${JSON.stringify(header)}`);
-        console.log(`Payload: ${JSON.stringify(payload)}`);
-        console.log(`Server Time Now: ${now}`);
-        console.log('---------------------------');
+        logger.debug('APNs Token Generated successfully');
 
         this.cachedToken = token;
         this.tokenExpiry = now + 3600; // 1 hour
@@ -140,9 +112,7 @@ export class APNsService {
 
                 const body = JSON.stringify(apnsPayload);
 
-                // Determine APNs environment:
-                // 1. Check strict APNS_ENV override (sandbox/production)
-                // 2. Fallback to NODE_ENV (production -> production, else -> sandbox)
+                // Determine APNs environment
                 const isProduction = process.env.APNS_ENV
                     ? process.env.APNS_ENV === 'production'
                     : process.env.NODE_ENV === 'production';
@@ -151,12 +121,12 @@ export class APNsService {
                     ? 'https://api.push.apple.com'
                     : 'https://api.sandbox.push.apple.com';
 
-                console.log(`Using APNs Server: ${host} (Env: ${process.env.APNS_ENV || 'auto'}, Mode: ${isProduction ? 'Production' : 'Sandbox'})`);
+                logger.debug(`Connecting to APNs: ${host}`);
 
                 const client = http2.connect(host);
 
                 client.on('error', (err) => {
-                    console.error('APNs client error:', err);
+                    logger.error('APNs client connection error', { error: err });
                     resolve(false);
                 });
 
@@ -172,34 +142,27 @@ export class APNsService {
 
                 req.on('response', (headers, flags) => {
                     const status = headers[':status'];
-                    console.log(`APNs response status: ${status}`);
 
                     if (status === 200) {
+                        logger.info(`APNs notification delivered successfully to ${deviceToken.substring(0, 8)}...`);
                         resolve(true);
                     } else {
-                        // Consume response data to log error details
                         let data = '';
                         req.on('data', (chunk) => { data += chunk; });
                         req.on('end', async () => {
-                            console.error(`APNs error response: ${data}`);
+                            logger.error(`APNs delivery failed with status ${status}`, { data });
 
                             // 410 = Unregistered (Token no longer valid)
                             // 400 = BadDeviceToken (Token invalid)
                             if (status === 410 || status === 400) {
-                                console.log(`Removing invalid device token: ${deviceToken} (Status: ${status})`);
+                                logger.info(`Removing invalid device token: ${deviceToken.substring(0, 8)}...`);
                                 try {
-                                    const { error } = await supabase
+                                    await supabase
                                         .from('user_devices')
                                         .delete()
                                         .eq('device_token', deviceToken);
-
-                                    if (error) {
-                                        console.error('Error removing invalid token from DB:', error);
-                                    } else {
-                                        console.log('Successfully removed invalid token from DB.');
-                                    }
                                 } catch (dbError) {
-                                    console.error('Exception removing invalid token:', dbError);
+                                    logger.error('Failed to remove invalid token from DB', { error: dbError });
                                 }
                             }
 
@@ -211,7 +174,7 @@ export class APNsService {
                 });
 
                 req.on('error', (err) => {
-                    console.error('APNs request error:', err);
+                    logger.error('APNs request stream error', { error: err });
                     client.close();
                     resolve(false);
                 });
@@ -220,7 +183,7 @@ export class APNsService {
                 req.end();
 
             } catch (error) {
-                console.error('APNs send error:', error);
+                logger.error('APNs Service unexpected error', { error });
                 resolve(false);
             }
         });

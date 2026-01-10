@@ -5,9 +5,15 @@
     "scripts": {
         "postinstall": "cd backend && npm install",
         "build": "cd backend && npm run build",
-        "start": "cd backend && npm start"
+        "start": "cd backend && npm start",
+        "sheriff": "npx tsx .agent/scripts/sheriff_agent.ts",
+        "sheriff:patrol": ".agent/scripts/sheriff_loop.sh"
     },
     "engines": {
         "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "dotenv": "^17.2.3"
     }
 }

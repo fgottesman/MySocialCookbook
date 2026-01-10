@@ -255,7 +255,23 @@ export class RecipeController {
     }
 
     private static async preComputeSteps(req: AuthRequest, recipeId: string, recipeData: any) {
-        logger.info(`Starting background pre-computation for recipe ${recipeId}`);
-        // This is a placeholder for background task logic if needed
+        try {
+            logger.info(`Starting background pre-computation for recipe ${recipeId}`);
+            const stepPreparations = await gemini.prepareAllSteps({
+                title: recipeData.title,
+                ingredients: recipeData.ingredients,
+                instructions: recipeData.instructions
+            });
+
+            const { error } = await req.supabase
+                .from('recipes')
+                .update({ step_preparations: stepPreparations })
+                .eq('id', recipeId);
+
+            if (error) logger.error(`Error saving pre-computed steps for ${recipeId}: ${error.message}`);
+            else logger.info(`Step preparations saved for recipe ${recipeId}`);
+        } catch (prepError: any) {
+            logger.error(`Error pre-computing step preparations for ${recipeId}: ${prepError.message}`);
+        }
     }
 }

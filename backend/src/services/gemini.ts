@@ -1,4 +1,3 @@
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import fs from 'fs';
@@ -239,34 +238,31 @@ export class GeminiService {
         return this.parseStepPreparation(result.response.text());
     }
 
-    private parseStepPreparation(responseText: string) {
-        logger.debug("Raw step preparation response received");
-
+    private parseJsonFromResponse(responseText: string) {
         const firstBrace = responseText.indexOf('{');
         const lastBrace = responseText.lastIndexOf('}');
 
         if (firstBrace === -1 || lastBrace === -1) {
-            // Fallback if no JSON found - return minimal response
-            return {
-                introduction: "Let's get started on this step.",
-                subSteps: null,
-                conversions: null
-            };
+            return null;
         }
 
         const jsonText = responseText.substring(firstBrace, lastBrace + 1);
         try {
             return JSON.parse(jsonText);
         } catch (e) {
-            logger.error("Failed to parse step preparation JSON", e);
-            return {
-                introduction: "Let's get started on this step.",
-                subSteps: null,
-                conversions: null
-            };
+            logger.error("Failed to parse JSON from response", { error: e, text: jsonText.substring(0, 100) });
+            return null;
         }
     }
 
+    private parseStepPreparation(responseText: string) {
+        const data = this.parseJsonFromResponse(responseText);
+        return data || {
+            introduction: "Let's get started on this step.",
+            subSteps: null,
+            conversions: null
+        };
+    }
     /**
      * Pre-compute step preparations for all steps in a recipe.
      * Called at recipe creation time for instant loading in cooking mode.
@@ -350,35 +346,12 @@ export class GeminiService {
     }
 
     /**
-     * Process a YouTube video directly via URL using file_uri format.
-     * The Gemini API supports YouTube URLs as file_uri for multimodal analysis.
-     */
-    async generateRecipeFromYouTube(youtubeUrl: string) {
-        logger.info(`Processing YouTube video directly: ${youtubeUrl}`);
-
-        // Use gemini-3-flash which has better YouTube support
-        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
-
-        const result = await withRetry(() => model.generateContent([
-            {
-                fileData: {
-                    mimeType: "video/mp4",
-                    fileUri: youtubeUrl,  // YouTube URLs work as file_uri
-                },
-            },
-            { text: RECIPE_PROMPT },
-        ]), {}, 'Gemini: generateRecipeFromYouTube');
-
-        return this.parseRecipeResponse(result.response.text());
-    }
-
-    /**
      * Attempt to process any social media URL directly via Gemini.
-     * Works for YouTube, may work for other platforms.
+     * Works for YouTube, and sometimes other platforms.
      * If this fails, caller should fall back to download approach.
      */
     async generateRecipeFromURL(url: string) {
-        logger.info(`Attempting direct URL processing: ${url}`);
+        logger.info(`Processing URL directly via Gemini: ${url}`);
 
         const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
@@ -434,7 +407,11 @@ export class GeminiService {
         `;
 
         const result = await withRetry(() => model.generateContent(CONSULT_PROMPT), {}, 'Gemini: remixConsult');
-        return this.parseStepPreparation(result.response.text()); // Re-using JSON parser since it's robust enough
+        const data = this.parseJsonFromResponse(result.response.text());
+        if (!data) {
+            throw new Error("No valid JSON object found in Gemini remix consult response");
+        }
+        return data;
     }
 
     async generateRecipeFromPrompt(userPrompt: string) {
@@ -460,20 +437,12 @@ export class GeminiService {
     }
 
     private parseRecipeResponse(responseText: string) {
-        logger.debug("Raw Gemini response received");
-
-        // Find the first '{' and the last '}'
-        const firstBrace = responseText.indexOf('{');
-        const lastBrace = responseText.lastIndexOf('}');
-
-        if (firstBrace === -1 || lastBrace === -1) {
-            throw new Error("No JSON object found in Gemini response");
+        const data = this.parseJsonFromResponse(responseText);
+        if (!data) {
+            throw new Error("No valid JSON object found in Gemini response");
         }
-
-        const jsonText = responseText.substring(firstBrace, lastBrace + 1);
-        return JSON.parse(jsonText);
+        return data;
     }
-
     async generateEmbedding(text: string) {
         const model = genAI.getGenerativeModel({ model: AI_MODELS.EMBEDDING });
         const result = await withRetry(() => model.embedContent(text), {}, 'Gemini: generateEmbedding');
