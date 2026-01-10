@@ -211,7 +211,7 @@ struct RemixSheet: View {
                     .shadow(color: Color.clipCookSizzleStart.opacity(0.3), radius: 20)
                 
                 // Chef icon
-                Image(systemName: "chef.hat.fill")
+                Image(systemName: "wand.and.stars")
                     .font(.system(size: 32))
                     .foregroundStyle(LinearGradient.sizzle)
             }

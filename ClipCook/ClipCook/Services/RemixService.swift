@@ -1,5 +1,7 @@
 
 import Foundation
+import Supabase
+import Auth
 
 struct RemixRequest: Codable {
     let originalRecipe: Recipe
@@ -15,6 +17,10 @@ struct RemixedRecipe: Codable {
     let changedIngredients: [String]? // Names of changed/added ingredients
     let difficulty: String?
     let cookingTime: String?
+    
+    // Add missing step0 properties
+    let step0Summary: String?
+    let step0AudioUrl: String?
 }
 
 struct RemixResponse: Codable {
@@ -38,6 +44,11 @@ class RemixService {
         
         let body = RemixRequest(originalRecipe: originalRecipe, userPrompt: prompt)
         request.httpBody = try JSONEncoder().encode(body)
+        
+        // Add Auth
+        if let session = try? await SupabaseManager.shared.client.auth.session {
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        }
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
@@ -88,13 +99,34 @@ class RemixService {
         let body = RemixChatRequest(originalRecipe: originalRecipe, chatHistory: chatHistory, userPrompt: prompt)
         request.httpBody = try JSONEncoder().encode(body)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw URLError(.badServerResponse)
+        // Add Auth
+        if let session = try? await SupabaseManager.shared.client.auth.session {
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
         }
         
-        let decodedResponse = try JSONDecoder().decode(RemixConsultResponse.self, from: data)
-        return decodedResponse.consultation
+        print("🧑‍🍳 [RemixService] Sending consult request to: \(url.absoluteString)")
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("🧑‍🍳 [RemixService] ❌ Invalid response type")
+                throw URLError(.badServerResponse)
+            }
+            
+            print("🧑‍🍳 [RemixService] Response Status: \(httpResponse.statusCode)")
+            
+            if httpResponse.statusCode != 200 {
+                let errorBody = String(data: data, encoding: .utf8) ?? "No error body"
+                print("🧑‍🍳 [RemixService] ❌ Server Error Body: \(errorBody)")
+                throw URLError(.badServerResponse)
+            }
+            
+            let decodedResponse = try JSONDecoder().decode(RemixConsultResponse.self, from: data)
+            return decodedResponse.consultation
+        } catch {
+            print("🧑‍🍳 [RemixService] ❌ Network/Decoding Error: \(error)")
+            throw error
+        }
     }
 }
