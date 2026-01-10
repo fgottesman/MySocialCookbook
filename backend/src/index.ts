@@ -12,9 +12,10 @@ import { createClient } from '@supabase/supabase-js';
 import { supabaseUrl, supabaseAnonKey } from './db/supabase';
 import logger from './utils/logger';
 import { errorHandler } from './middleware/error';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 const app = express();
+app.set('trust proxy', 1);
 const port = process.env.PORT || 8080;
 
 app.use(cors());
@@ -22,7 +23,7 @@ app.use(express.json({ limit: '50mb' }));
 
 // Request ID middleware
 app.use((req, res, next) => {
-    const requestId = uuidv4();
+    const requestId = randomUUID();
     req.headers['x-request-id'] = requestId;
     res.setHeader('X-Request-Id', requestId);
     next();
@@ -37,6 +38,16 @@ app.use('/api', apiRouter);
 
 app.get('/', (req, res) => {
     res.send('ClipCook Backend is running!');
+});
+
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        version: process.env.npm_package_version || '1.0.0',
+        env: process.env.NODE_ENV || 'development'
+    });
 });
 
 const server = http.createServer(app);
@@ -83,3 +94,24 @@ app.use(errorHandler);
 server.listen(port, () => {
     logger.info(`Server is running on port ${port}`);
 });
+
+// Graceful shutdown
+const shutdown = () => {
+    logger.info('Shutting down gracefully...');
+    server.close(() => {
+        logger.info('HTTP server closed.');
+        wss.close(() => {
+            logger.info('WebSocket server closed.');
+            process.exit(0);
+        });
+    });
+
+    // Force exit after 10s
+    setTimeout(() => {
+        logger.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
