@@ -73,7 +73,7 @@ export class AiController {
             const { originalRecipe, userPrompt } = req.body;
             const userId = req.user.id;
             const remixedData = await gemini.remixRecipe(originalRecipe, userPrompt);
-            res.json(remixedData);
+            res.json({ success: true, recipe: remixedData });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
@@ -83,7 +83,7 @@ export class AiController {
         try {
             const { originalRecipe, chatHistory, userPrompt } = req.body;
             const response = await gemini.remixConsult(originalRecipe, chatHistory, userPrompt);
-            res.json(response);
+            res.json({ success: true, consultation: response });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }

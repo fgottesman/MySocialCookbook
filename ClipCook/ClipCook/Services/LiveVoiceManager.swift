@@ -274,7 +274,11 @@ class LiveVoiceManager: NSObject, ObservableObject {
         do {
             try audioEngine.start()
             playerNode?.play()
-            isListening = true
+            
+            DispatchQueue.main.async {
+                self.isListening = true
+            }
+            
             print("🎙️ [LiveVoice] ✅ Audio engine started successfully")
             print("🎙️ [LiveVoice] Engine running: \(audioEngine.isRunning)")
             
