@@ -53,46 +53,49 @@ const REQUIRED_SCHEMA: RequiredColumns = {
 };
 
 export async function checkSchema(): Promise<void> {
+    // Emergency bypass: allows server to start even if schema validation fails
+    // Use only in emergency situations (e.g., false positive blocking deployment)
+    if (process.env.SKIP_SCHEMA_CHECK === 'true') {
+        logger.warn('[SchemaGuard] ⚠️  SCHEMA VALIDATION SKIPPED (SKIP_SCHEMA_CHECK=true)');
+        logger.warn('[SchemaGuard] ⚠️  This is an emergency bypass. Remove SKIP_SCHEMA_CHECK ASAP.');
+        return;
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     logger.info('[SchemaGuard] 🛡️  Validating database schema...');
 
     for (const [tableName, requiredColumns] of Object.entries(REQUIRED_SCHEMA)) {
         try {
-            // Query information_schema to get all columns for this table
+            // Probe-based validation: Select with explicit column names
+            // If any column doesn't exist, Supabase will return an error
+            // This is more reliable than querying information_schema (which isn't accessible via PostgREST)
+            const selectColumns = requiredColumns.join(',');
+
             const { data, error } = await supabase
-                .from('information_schema.columns' as any)
-                .select('column_name')
-                .eq('table_schema', 'public')
-                .eq('table_name', tableName);
+                .from(tableName)
+                .select(selectColumns)
+                .limit(1);
 
             if (error) {
-                logger.error(`[SchemaGuard] ❌ Failed to query schema for table '${tableName}':`, error);
-                throw new Error(`Schema validation failed: Could not query table '${tableName}'`);
+                // Parse the error to identify missing columns
+                const errorMessage = error.message || '';
+
+                // Supabase returns specific errors for missing columns
+                if (errorMessage.includes('column') || errorMessage.includes('does not exist')) {
+                    logger.error(`[SchemaGuard] ❌ Schema validation failed for table '${tableName}':`, error.message);
+                    throw new Error(
+                        `Schema validation failed: Table '${tableName}' has schema issues: ${error.message}\n` +
+                        `This usually means migrations were not run. Please run the latest migrations before starting the server.`
+                    );
+                }
+
+                // For other errors (e.g., table doesn't exist), also fail
+                logger.error(`[SchemaGuard] ❌ Failed to validate table '${tableName}':`, error);
+                throw new Error(`Schema validation failed: Could not query table '${tableName}': ${error.message}`);
             }
 
-            if (!data || data.length === 0) {
-                logger.error(`[SchemaGuard] ❌ Table '${tableName}' does not exist or has no columns`);
-                throw new Error(`Schema validation failed: Table '${tableName}' not found`);
-            }
-
-            // Extract column names from the result
-            const existingColumns = new Set(data.map((row: any) => row.column_name));
-
-            // Check for missing required columns
-            const missingColumns = requiredColumns.filter(col => !existingColumns.has(col));
-
-            if (missingColumns.length > 0) {
-                logger.error(
-                    `[SchemaGuard] ❌ Table '${tableName}' is missing required columns:`,
-                    missingColumns
-                );
-                throw new Error(
-                    `Schema validation failed: Table '${tableName}' is missing columns: ${missingColumns.join(', ')}\n` +
-                    `This usually means migrations were not run. Please run the latest migrations before starting the server.`
-                );
-            }
-
+            // If we get here, all columns exist (query succeeded)
             logger.info(`[SchemaGuard] ✅ Table '${tableName}' schema valid (${requiredColumns.length} columns)`);
         } catch (err) {
             // Re-throw to crash the server
