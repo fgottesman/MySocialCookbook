@@ -53,9 +53,8 @@ class VersionService {
         // Add Auth
         // Add Auth
         do {
-            if let session = try await SupabaseManager.shared.client.auth.session {
-                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            let session = try await SupabaseManager.shared.client.auth.session
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
         } catch {
              print("⚠️ VersionService: Failed to get auth session: \(error)")
              // We allow the request to proceed without token (consistent with original logic), 
