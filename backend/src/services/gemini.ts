@@ -324,8 +324,17 @@ export class GeminiService {
         return file;
     }
 
-    async generateRecipe(fileUri: string, mimeType: string = "video/mp4", description?: string) {
+    async generateRecipe(localPath: string, mimeType: string = "video/mp4", description?: string) {
         const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
+
+        logger.info(`Uploading file to Gemini: ${localPath} (${mimeType})`);
+        // 1. Upload to Google File API
+        const uploadedFile = await this.uploadMedia(localPath, mimeType);
+
+        // 2. Wait for processing to complete
+        await this.waitForProcessing(uploadedFile.name);
+
+        logger.info(`File processed. Generating recipe from: ${uploadedFile.uri}`);
 
         let prompt = RECIPE_PROMPT;
         if (description) {
@@ -336,7 +345,7 @@ export class GeminiService {
             {
                 fileData: {
                     mimeType: mimeType,
-                    fileUri: fileUri,
+                    fileUri: uploadedFile.uri, // Use the Remote URI
                 },
             },
             { text: prompt },
@@ -351,22 +360,10 @@ export class GeminiService {
      * If this fails, caller should fall back to download approach.
      */
     async generateRecipeFromURL(url: string) {
-        logger.info(`Processing URL directly via Gemini: ${url}`);
-
-        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
-
-        const result = await withRetry(() => model.generateContent([
-            {
-                fileData: {
-                    mimeType: "video/mp4",
-                    fileUri: url,
-                },
-            },
-            { text: RECIPE_PROMPT },
-        ]), {}, 'Gemini: generateRecipeFromURL');
-
-        return this.parseRecipeResponse(result.response.text());
-
+        // Gemini Flash 1.5/2.0 does not support direct URL scraping for video.
+        // We forces the controller to fall back to the "Download -> Upload -> Generate" flow.
+        logger.warn(`Direct URL processing deprecated/unsupported for ${url}. Throwing error to trigger fallback.`);
+        throw new Error("Direct URL processing not supported. Use fallback.");
     }
 
     async remixRecipe(originalRecipe: any, userPrompt: string) {
