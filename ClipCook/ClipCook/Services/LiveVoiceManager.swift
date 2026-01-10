@@ -231,7 +231,7 @@ class LiveVoiceManager: NSObject, ObservableObject {
             audioEngine.stop()
         }
         
-        // Get input node (this can trigger format issues if session not configured)
+        // Get input node
         let inputNode = audioEngine.inputNode
         self.inputNode = inputNode
         
@@ -243,12 +243,12 @@ class LiveVoiceManager: NSObject, ObservableObject {
         self.playerNode = playerNode
         audioEngine.attach(playerNode)
         
-        // Connect player to output using output format
+        // Connect player to output using output format (24kHz for Gemini output)
         audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: outputFormat)
         
         // Get native input format
         let nativeFormat = inputNode.inputFormat(forBus: 0)
-        print("🎙️ [LiveVoice] Native input format: \(nativeFormat.sampleRate)Hz, \(nativeFormat.channelCount) channels")
+        print("🎙️ [LiveVoice] Native input format: \(nativeFormat.sampleRate)Hz, \(nativeFormat.channelCount) channels, \(nativeFormat.commonFormat.rawValue)")
         
         // Validate format
         guard nativeFormat.sampleRate > 0 else {
@@ -256,19 +256,60 @@ class LiveVoiceManager: NSObject, ObservableObject {
             return false
         }
         
-        // Use native format for tap (simpler and more reliable)
-        // We'll send audio in native format and let the backend handle conversion
+        // Create converter from native format to Gemini's expected format (16kHz, 16-bit PCM, mono)
+        guard let converter = AVAudioConverter(from: nativeFormat, to: inputFormat) else {
+            print("🎙️ [LiveVoice] ❌ Could not create audio converter")
+            return false
+        }
+        
+        print("🎙️ [LiveVoice] Created converter: \(nativeFormat.sampleRate)Hz -> 16000Hz")
+        
+        var audioSendCount = 0
+        
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: nativeFormat) { [weak self] buffer, time in
             guard let self = self else { return }
             
-            // Convert buffer to Data and send
-            if let data = self.bufferToData(buffer: buffer) {
+            // Calculate output buffer size based on sample rate ratio
+            let ratio = 16000.0 / nativeFormat.sampleRate
+            let outputFrameCount = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+            
+            guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: self.inputFormat, frameCapacity: outputFrameCount) else {
+                return
+            }
+            
+            var error: NSError?
+            let status = converter.convert(to: outputBuffer, error: &error) { inNumPackets, outStatus in
+                outStatus.pointee = .haveData
+                return buffer
+            }
+            
+            if status == .error {
+                if audioSendCount == 0 {
+                    print("🎙️ [LiveVoice] ❌ Conversion error: \(error?.localizedDescription ?? "unknown")")
+                }
+                return
+            }
+            
+            // Convert to Data and send
+            if let data = self.pcmBufferToData(buffer: outputBuffer) {
+                audioSendCount += 1
+                if audioSendCount == 1 || audioSendCount % 50 == 0 {
+                    print("🎙️ [LiveVoice] 📤 Sending audio chunk #\(audioSendCount): \(data.count) bytes")
+                }
                 self.sendAudio(data)
             }
         }
         
         print("🎙️ [LiveVoice] ✅ Audio engine setup complete")
         return true
+    }
+    
+    // Convert 16-bit PCM buffer to Data
+    private func pcmBufferToData(buffer: AVAudioPCMBuffer) -> Data? {
+        guard let channelData = buffer.int16ChannelData else { return nil }
+        let frameLength = Int(buffer.frameLength)
+        guard frameLength > 0 else { return nil }
+        return Data(bytes: channelData.pointee, count: frameLength * 2)
     }
     
     private func stopAudioEngine() {
