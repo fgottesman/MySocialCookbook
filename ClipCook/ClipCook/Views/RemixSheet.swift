@@ -154,47 +154,21 @@ struct RemixSheet: View {
     
     // MARK: - Suggestions View
     private var suggestionsView: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        VStack(spacing: 24) {
+            // Header text
+            VStack(spacing: 8) {
+                Text("How would you like to tweak this recipe?")
+                    .font(DesignTokens.Typography.headerFont(size: 22))
+                    .foregroundColor(DesignTokens.Colors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .premiumText()
 
-            // Hero section
-            VStack(spacing: 20) {
-                // Chef icon with glow
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [DesignTokens.Colors.primary.opacity(0.3), Color.clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 80
-                            )
-                        )
-                        .frame(width: 160, height: 160)
-
-                    Circle()
-                        .fill(DesignTokens.Colors.surface)
-                        .frame(width: 100, height: 100)
-
-                    Image(systemName: "wand.and.stars")
-                        .font(.system(size: 40))
-                        .foregroundStyle(LinearGradient.sizzle)
-                }
-
-                VStack(spacing: 12) {
-                    Text("How would you like to\ntweak this recipe?")
-                        .font(DesignTokens.Typography.headerFont(size: 26))
-                        .foregroundColor(DesignTokens.Colors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(4)
-                        .premiumText()
-
-                    Text("Pick a suggestion or type your own request")
-                        .font(DesignTokens.Typography.bodyFont())
-                        .foregroundColor(DesignTokens.Colors.textSecondary)
-                        .premiumText()
-                }
+                Text("Pick a suggestion or type your own")
+                    .font(DesignTokens.Typography.bodyFont())
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
+                    .premiumText()
             }
+            .padding(.top, 8)
 
             // Suggestions grid
             LazyVGrid(columns: [
@@ -213,7 +187,6 @@ struct RemixSheet: View {
             }
             .padding(.horizontal, 20)
 
-            Spacer()
             Spacer()
         }
         .frame(maxWidth: .infinity)
