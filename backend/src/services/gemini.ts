@@ -182,7 +182,7 @@ export class GeminiService {
     }
 
     async chatCompanion(recipe: any, currentStepIndex: number, chatHistory: any[], userMessage: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const historyContext = chatHistory.map(msg =>
             `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`
@@ -212,7 +212,7 @@ export class GeminiService {
      * and provides measurement conversions.
      */
     async prepareStep(recipe: any, stepIndex: number, stepLabel: string = "1") {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const instructions = recipe.instructions || [];
         const currentStep = instructions[stepIndex] || "";
@@ -299,7 +299,7 @@ export class GeminiService {
      * Accepts base64 encoded audio data.
      */
     async transcribeAudio(audioBase64: string, mimeType: string = 'audio/webm') {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const result = await model.generateContent([
             {
@@ -326,7 +326,7 @@ export class GeminiService {
     }
 
     async generateRecipe(fileUri: string, mimeType: string = "video/mp4", description?: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         let prompt = RECIPE_PROMPT;
         if (description) {
@@ -354,7 +354,7 @@ export class GeminiService {
         console.log("Processing YouTube video directly:", youtubeUrl);
 
         // Use gemini-3-flash which has better YouTube support
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const result = await model.generateContent([
             {
@@ -377,7 +377,7 @@ export class GeminiService {
     async generateRecipeFromURL(url: string) {
         console.log("Attempting direct URL processing:", url);
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const result = await model.generateContent([
             {
@@ -394,7 +394,7 @@ export class GeminiService {
     }
 
     async remixRecipe(originalRecipe: any, userPrompt: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" })
 
         const REMIX_PROMPT = `
         ${REMIX_SYSTEM_PROMPT}
@@ -411,7 +411,7 @@ export class GeminiService {
     }
 
     async remixConsult(originalRecipe: any, chatHistory: any[], userPrompt: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const historyContext = chatHistory.map(msg =>
             `${msg.role === 'user' ? 'User' : 'Chef'}: ${msg.content}`
@@ -435,17 +435,30 @@ export class GeminiService {
     }
 
     async generateRecipeFromPrompt(userPrompt: string) {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        try {
+            console.log("Generating recipe with gemini-3-flash-preview...");
+            const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
-        const FULL_PROMPT = `
-        ${PROMPT_TO_RECIPE_SYSTEM_PROMPT}
+            const FULL_PROMPT = `
+            ${PROMPT_TO_RECIPE_SYSTEM_PROMPT}
 
-        USER DESCRIPTION:
-        "${userPrompt}"
-        `;
+            USER DESCRIPTION:
+            "${userPrompt}"
+            `;
 
-        const result = await model.generateContent(FULL_PROMPT);
-        return this.parseRecipeResponse(result.response.text());
+            const result = await model.generateContent(FULL_PROMPT);
+            const responseText = result.response.text();
+            console.log("Gemini 3 Flash response received:", responseText.substring(0, 100) + "...");
+            return this.parseRecipeResponse(responseText);
+        } catch (error: any) {
+            console.error("Gemini 3 Flash Error (generateRecipeFromPrompt):", {
+                message: error.message,
+                status: error.status,
+                statusText: error.statusText,
+                details: error.response?.data || error
+            });
+            throw error;
+        }
     }
 
     private parseRecipeResponse(responseText: string) {
