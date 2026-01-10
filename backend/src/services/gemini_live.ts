@@ -135,6 +135,22 @@ export class GeminiLiveService {
                 // Handle setup complete
                 if (response.setupComplete) {
                     console.log("[GeminiLive] ✅ Setup complete acknowledged by Gemini");
+
+                    // Proactive Welcome Message
+                    const welcomeMessage = {
+                        client_content: {
+                            turns: [
+                                {
+                                    role: "user",
+                                    parts: [{ text: "Say exactly: 'Hey chef, how can I help you with this recipe today?'" }]
+                                }
+                            ],
+                            turn_complete: true
+                        }
+                    };
+
+                    console.log("[GeminiLive] 🗣️ Sending welcome prompt to AI");
+                    geminiWs.send(JSON.stringify(welcomeMessage));
                 }
 
                 // Handle turn complete
