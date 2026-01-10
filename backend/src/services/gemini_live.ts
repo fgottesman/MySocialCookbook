@@ -65,7 +65,7 @@ export class GeminiLiveService {
 
             const setupMessage = {
                 setup: {
-                    model: "models/gemini-2.0-flash-live-001",
+                    model: "models/gemini-live-2.5-flash-native-audio",
                     generationConfig: {
                         responseModalities: ["AUDIO"],
                         speechConfig: {
