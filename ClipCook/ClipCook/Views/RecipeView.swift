@@ -100,11 +100,13 @@ struct RecipeView: View {
                         HStack(alignment: .top) {
                             Image(systemName: "sparkles")
                             .foregroundStyle(LinearGradient.sizzle)
-                            VStack(alignment: .leading) {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text("Chef's Note")
                                     .font(.caption)
                                     .fontWeight(.bold)
                                     .foregroundStyle(LinearGradient.sizzle)
+                                
+                                Text(note)
                                     .font(DesignTokens.Typography.bodyFont())
                                     .foregroundColor(DesignTokens.Colors.textPrimary)
                                     .italic()
@@ -273,9 +275,32 @@ struct RecipeView: View {
             if isSavingRemix {
                 Color.black.opacity(0.4).ignoresSafeArea()
                 ProgressView("Saving Remix...")
-                .padding()
-                .background(Color.clipCookSurface)
-                .cornerRadius(12)
+                    .padding()
+                    .background(Color.clipCookSurface)
+                    .cornerRadius(12)
+            }
+            
+            // Loading Overlay for Remixing Generation
+            if isRemixing {
+                Color.black.opacity(0.6).ignoresSafeArea()
+                VStack(spacing: 20) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 40))
+                        .foregroundStyle(LinearGradient.sizzle)
+                        .symbolEffect(.bounce.up.byLayer, options: .repeating)
+                    
+                    Text("Chef is Remixing...")
+                        .font(DesignTokens.Typography.headerFont(size: 20))
+                        .foregroundColor(.white)
+                    
+                    Text("Writing new instructions for you")
+                        .font(.caption)
+                        .foregroundColor(.clipCookTextSecondary)
+                }
+                .padding(30)
+                .background(DesignTokens.Colors.surface)
+                .cornerRadius(20)
+                .shadow(radius: 20)
             }
             
             // MARK: - Floating Action Buttons
@@ -429,7 +454,10 @@ struct RecipeView: View {
     
     private func performRemix() {
         guard !remixPrompt.isEmpty else { return }
-        isRemixing = true
+        
+        // 1. Immediate UI Feedback
+        showingRemix = false // Dismiss sheet instantly
+        isRemixing = true    // Show loading overlay on RecipeView
         
         let currentRecipe = recipe
         let originalRecipeId = recipeVersions.first?.recipe.id ?? recipe.id
@@ -485,8 +513,7 @@ struct RecipeView: View {
                     self.recipe = newRecipe
                     self.changedIngredients = newChangedIngredients
                     self.remixPrompt = "" // Clear prompt
-                    self.showingRemix = false // Dismiss sheet
-                    self.isRemixing = false
+                    self.isRemixing = false // Hide loading overlay
                     // Reset checked state as ingredients changed
                     self.checkedIngredients.removeAll()
                 }
