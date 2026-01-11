@@ -1,0 +1,153 @@
+name: Tier Deployment Pipeline
+
+# This workflow validates builds and monitors deployment health.
+# It does NOT control Railway deployment (Railway auto-deploys from GitHub).
+# It adds validation gates and tagging for audit trail.
+#
+# NOTE: This is INFORMATIONAL. If staging health fails, Railway still deploys.
+# The failure is recorded for visibility and debugging.
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  # ============================================
+  # Stage 1: Local Tests (always runs)
+  # ============================================
+  local-validation:
+    name: 🧪 Local Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      
+      - name: Build TypeScript
+        working-directory: backend
+        run: npm run build
+      
+      - name: Run linting
+        working-directory: backend
+        run: npm run lint
+        continue-on-error: true  # Log but don't block on lint
+      
+      - name: Local validation passed
+        run: echo "✅ Local tier validation complete"
+
+  # ============================================
+  # Stage 2: Poll Staging Health (after Railway deploys)
+  # ============================================
+  staging-health:
+    name: 🏥 Verify Staging Health
+    needs: local-validation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Railway deployment
+        run: |
+          echo "⏳ Waiting 90s for Railway to deploy..."
+          sleep 90
+      
+      - name: Poll Staging Health (max 3 minutes)
+        id: health_check
+        run: |
+          STAGING_URL="${{ vars.STAGING_URL }}"
+          
+          # If no staging URL configured, skip this check
+          if [ -z "$STAGING_URL" ]; then
+            echo "⚠️ STAGING_URL not configured in GitHub vars - skipping staging check"
+            echo "To enable: Add STAGING_URL to repository variables"
+            echo "staging_configured=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "staging_configured=true" >> $GITHUB_OUTPUT
+          MAX_ATTEMPTS=18
+          SLEEP_SECONDS=10
+          
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            echo "Attempt $i/$MAX_ATTEMPTS: Checking $STAGING_URL/health"
+            
+            # Fetch response with timeout
+            RESPONSE=$(curl -sf --max-time 10 "$STAGING_URL/health" 2>/dev/null || echo '{"status":"error"}')
+            echo "Response: $RESPONSE"
+            
+            # Use jq for proper JSON parsing
+            STATUS=$(echo "$RESPONSE" | jq -r '.status' 2>/dev/null || echo "error")
+            
+            if [ "$STATUS" = "healthy" ]; then
+              echo "✅ Staging is healthy!"
+              echo "staging_healthy=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            
+            echo "⏳ Status: $STATUS. Waiting ${SLEEP_SECONDS}s..."
+            sleep $SLEEP_SECONDS
+          done
+          
+          echo "❌ Staging health check failed after $MAX_ATTEMPTS attempts"
+          echo "staging_healthy=false" >> $GITHUB_OUTPUT
+          exit 1  # Fail the job to signal unhealthy staging
+      
+      - name: Staging Health Summary
+        if: always()
+        run: |
+          if [ "${{ steps.health_check.outputs.staging_configured }}" = "false" ]; then
+            echo "ℹ️ Staging URL not configured - check skipped"
+          elif [ "${{ steps.health_check.outputs.staging_healthy }}" = "true" ]; then
+            echo "✅ Staging validation passed"
+          else
+            echo "⚠️ Staging validation failed - Railway still deployed (this is informational)"
+          fi
+
+  # ============================================
+  # Stage 3: Tag Commit for Audit Trail
+  # ============================================
+  tag-validated:
+    name: 🏷️ Tag as Validated
+    needs: staging-health
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Determine tag type
+        id: tag_type
+        run: |
+          if [ "${{ needs.staging-health.result }}" = "success" ]; then
+            echo "prefix=validated" >> $GITHUB_OUTPUT
+          else
+            echo "prefix=deployed-unvalidated" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Tag commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          TAG_NAME="${{ steps.tag_type.outputs.prefix }}-${SHORT_SHA}-${TIMESTAMP}"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME" || echo "⚠️ Tag push failed - may need permissions"
+          echo "✅ Commit tagged: $TAG_NAME"
