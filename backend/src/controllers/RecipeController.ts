@@ -210,7 +210,7 @@ export class RecipeController {
                     ingredients,
                     instructions,
                     chefs_note: chefsNote,
-                    changed_ingredients: JSON.stringify(changedIngredients),
+                    changed_ingredients: changedIngredients,
                     step0_summary: step0Summary,
                     step0_audio_url: step0AudioUrl,
                     difficulty,
