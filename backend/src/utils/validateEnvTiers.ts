@@ -58,3 +58,4 @@ export function getTierMetadata(): { tier: EnvTier; tierIndex: number; isProduct
         isProduction: tier === 'production'
     };
 }
+// Trigger tier validation test
