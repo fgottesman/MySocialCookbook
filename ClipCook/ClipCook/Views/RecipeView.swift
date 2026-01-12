@@ -473,6 +473,18 @@ struct RecipeView: View {
                     }
                     
                     self.recipeVersions = versions
+                    
+                    // Auto-select the latest (most recent) version so returning to the recipe shows the remix
+                    let latestIndex = versions.count - 1
+                    self.currentVersionIndex = latestIndex
+                    
+                    // Update the displayed recipe to the latest version
+                    let latestVersion = versions[latestIndex]
+                    self.recipe = latestVersion.recipe
+                    self.changedIngredients = latestVersion.changedIngredients
+                    
+                    // Reset checked ingredients since we're viewing a different version
+                    self.checkedIngredients.removeAll()
                 }
             }
         } catch {
