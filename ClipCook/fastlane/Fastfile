@@ -1,0 +1,156 @@
+# Customise this file, documentation can be found here:
+# https://docs.fastlane.tools/actions
+# 
+# ClipCook Fastlane Configuration
+# ================================
+
+default_platform(:ios)
+
+platform :ios do
+  # ============================================
+  # TESTING LANES
+  # ============================================
+  
+  desc "Run all tests (unit + UI)"
+  lane :test do
+    run_tests(
+      project: "ClipCook.xcodeproj",
+      scheme: "ClipCook",
+      devices: ["iPhone 15"],
+      clean: true,
+      code_coverage: true,
+      result_bundle: true
+    )
+  end
+
+  desc "Run unit tests only"
+  lane :unit_test do
+    run_tests(
+      project: "ClipCook.xcodeproj",
+      scheme: "ClipCook",
+      devices: ["iPhone 15"],
+      only_testing: ["ClipCookTests"],
+      clean: true
+    )
+  end
+
+  desc "Run UI tests only"
+  lane :ui_test do
+    run_tests(
+      project: "ClipCook.xcodeproj",
+      scheme: "ClipCook",
+      devices: ["iPhone 15"],
+      only_testing: ["ClipCookUITests"],
+      clean: true
+    )
+  end
+
+  desc "Run tests on multiple devices (iPhone + iPad)"
+  lane :test_all_devices do
+    run_tests(
+      project: "ClipCook.xcodeproj",
+      scheme: "ClipCook",
+      devices: ["iPhone 15", "iPhone SE (3rd generation)", "iPad Pro 13-inch (M4)"],
+      clean: true
+    )
+  end
+
+  # ============================================
+  # BUILD LANES
+  # ============================================
+
+  desc "Build the app for testing (no signing)"
+  lane :build do
+    gym(
+      project: "ClipCook.xcodeproj",
+      scheme: "ClipCook",
+      configuration: "Debug",
+      skip_codesigning: true,
+      skip_archive: true,
+      destination: "generic/platform=iOS Simulator"
+    )
+  end
+
+  # ============================================
+  # BETA (TESTFLIGHT) LANES
+  # ============================================
+
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    # Ensure we're on a clean git state
+    ensure_git_status_clean
+    
+    # Increment build number
+    increment_build_number(
+      xcodeproj: "ClipCook.xcodeproj"
+    )
+    
+    # Get the new build number for the commit message
+    build_number = get_build_number(xcodeproj: "ClipCook.xcodeproj")
+    
+    # Build for App Store
+    gym(
+      project: "ClipCook.xcodeproj",
+      scheme: "ClipCook",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "ClipCook.ipa"
+    )
+    
+    # Upload to TestFlight
+    pilot(
+      skip_waiting_for_build_processing: true
+    )
+    
+    # Commit the version bump
+    commit_version_bump(
+      xcodeproj: "ClipCook.xcodeproj",
+      message: "chore: Bump build number to #{build_number} for TestFlight"
+    )
+    
+    # Push to git
+    push_to_git_remote
+    
+    UI.success("🚀 Build #{build_number} uploaded to TestFlight!")
+  end
+
+  desc "Increment build number only (no upload)"
+  lane :bump do
+    increment_build_number(
+      xcodeproj: "ClipCook.xcodeproj"
+    )
+    build_number = get_build_number(xcodeproj: "ClipCook.xcodeproj")
+    UI.success("📈 Build number is now #{build_number}")
+  end
+
+  # ============================================
+  # UTILITY LANES
+  # ============================================
+
+  desc "Check code signing"
+  lane :certs do
+    match(type: "appstore", readonly: true)
+  end
+
+  desc "Sync development certificates"
+  lane :dev_certs do
+    match(type: "development", readonly: true)
+  end
+
+  # ============================================
+  # HOOKS
+  # ============================================
+
+  before_all do |lane|
+    UI.message("🚀 Starting lane: #{lane}")
+  end
+
+  after_all do |lane|
+    UI.success("✅ Lane #{lane} completed successfully!")
+  end
+
+  error do |lane, exception|
+    UI.error("❌ Lane #{lane} failed with error: #{exception.message}")
+  end
+end

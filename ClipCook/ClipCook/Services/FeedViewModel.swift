@@ -31,11 +31,10 @@ class FeedViewModel: ObservableObject {
             let client = SupabaseManager.shared.client
             let previousCount = recipes.count
             
-            // Fetch recipes without profile join for now
-            // (Profile join fails if user_id doesn't exist in profiles table)
+            // Fetch recipes with profile join for creator attribution
             let newRecipes: [Recipe] = try await client
                 .from("recipes")
-                .select("*")
+                .select("*, profiles:user_id(id, username, full_name, avatar_url, created_at)")
                 .order("created_at", ascending: false)
                 .execute()
                 .value
