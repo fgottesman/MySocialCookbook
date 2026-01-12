@@ -14,11 +14,13 @@ on:
       - staging
     paths:
       - 'backend/**'
+      - '.github/workflows/tier-deploy.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'backend/**'
+      - '.github/workflows/tier-deploy.yml'
 
 jobs:
   # ============================================
