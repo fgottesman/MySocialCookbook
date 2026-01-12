@@ -1,0 +1,158 @@
+name: iOS Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ClipCook/**'
+      - '.github/workflows/ios-tests.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'ClipCook/**'
+      - '.github/workflows/ios-tests.yml'
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================
+  # Unit Tests
+  # ============================================
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      
+      - name: Show Xcode Version
+        run: xcodebuild -version
+      
+      - name: List Available Simulators
+        run: xcrun simctl list devices available
+      
+      - name: Build and Test (Unit)
+        working-directory: ClipCook
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ClipCook.xcodeproj \
+            -scheme ClipCook \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -only-testing:ClipCookTests \
+            -resultBundlePath TestResults/UnitTests \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty --color
+      
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: unit-test-results
+          path: ClipCook/TestResults/UnitTests
+          retention-days: 7
+
+  # ============================================
+  # UI Tests
+  # ============================================
+  ui-tests:
+    name: 📱 UI Tests
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      
+      - name: Build and Test (UI)
+        working-directory: ClipCook
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ClipCook.xcodeproj \
+            -scheme ClipCook \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -only-testing:ClipCookUITests \
+            -resultBundlePath TestResults/UITests \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty --color
+      
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ui-test-results
+          path: ClipCook/TestResults/UITests
+          retention-days: 7
+
+  # ============================================
+  # iPad Compatibility Check
+  # ============================================
+  ipad-tests:
+    name: 📱 iPad Compatibility
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      
+      - name: Build for iPad
+        working-directory: ClipCook
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project ClipCook.xcodeproj \
+            -scheme ClipCook \
+            -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4),OS=latest' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty --color
+      
+      - name: Run Unit Tests on iPad
+        working-directory: ClipCook
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ClipCook.xcodeproj \
+            -scheme ClipCook \
+            -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4),OS=latest' \
+            -only-testing:ClipCookTests \
+            -resultBundlePath TestResults/iPadTests \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty --color
+
+  # ============================================
+  # Summary Job
+  # ============================================
+  test-summary:
+    name: ✅ Test Summary
+    needs: [unit-tests, ui-tests, ipad-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check Test Results
+        run: |
+          if [[ "${{ needs.unit-tests.result }}" == "failure" ]]; then
+            echo "❌ Unit tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.ui-tests.result }}" == "failure" ]]; then
+            echo "❌ UI tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.ipad-tests.result }}" == "failure" ]]; then
+            echo "❌ iPad tests failed"
+            exit 1
+          fi
+          echo "✅ All iOS tests passed!"

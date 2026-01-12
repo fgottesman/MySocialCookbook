@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AC54C5422F157677007C63C2 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = AC54C5412F157677007C63C2 /* InlineSnapshotTesting */; };
+		AC54C5442F157677007C63C2 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = AC54C5432F157677007C63C2 /* SnapshotTesting */; };
+		AC54C5462F157677007C63C2 /* SnapshotTestingCustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = AC54C5452F157677007C63C2 /* SnapshotTestingCustomDump */; };
 		AC8768D72F0B2F2D009D1E74 /* ShareRecipe.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AC8768CD2F0B2F2D009D1E74 /* ShareRecipe.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AC8768E32F0B343C009D1E74 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = AC8768E22F0B343C009D1E74 /* Auth */; };
 		AC8768E52F0B343C009D1E74 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = AC8768E42F0B343C009D1E74 /* Functions */; };
@@ -133,6 +136,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AC54C5462F157677007C63C2 /* SnapshotTestingCustomDump in Frameworks */,
+				AC54C5422F157677007C63C2 /* InlineSnapshotTesting in Frameworks */,
+				AC54C5442F157677007C63C2 /* SnapshotTesting in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,6 +232,9 @@
 			);
 			name = ClipCookTests;
 			packageProductDependencies = (
+				AC54C5412F157677007C63C2 /* InlineSnapshotTesting */,
+				AC54C5432F157677007C63C2 /* SnapshotTesting */,
+				AC54C5452F157677007C63C2 /* SnapshotTestingCustomDump */,
 			);
 			productName = ClipCookTests;
 			productReference = AC87689F2F0B2A38009D1E74 /* ClipCookTests.xctest */;
@@ -313,6 +322,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AC8768E12F0B343C009D1E74 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				AC54C5402F157677007C63C2 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AC8768932F0B2A37009D1E74 /* Products */;
@@ -790,6 +800,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		AC54C5402F157677007C63C2 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.18.7;
+			};
+		};
 		AC8768E12F0B343C009D1E74 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
@@ -801,6 +819,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AC54C5412F157677007C63C2 /* InlineSnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC54C5402F157677007C63C2 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = InlineSnapshotTesting;
+		};
+		AC54C5432F157677007C63C2 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC54C5402F157677007C63C2 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
+		};
+		AC54C5452F157677007C63C2 /* SnapshotTestingCustomDump */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC54C5402F157677007C63C2 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTestingCustomDump;
+		};
 		AC8768E22F0B343C009D1E74 /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AC8768E12F0B343C009D1E74 /* XCRemoteSwiftPackageReference "supabase-swift" */;
