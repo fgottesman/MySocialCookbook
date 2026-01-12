@@ -120,34 +120,54 @@ jobs:
           fi
 
   # ============================================
-  # Stage 3: Tag Commit for Audit Trail
+  # Stage 3: Tag for Production Deploy (ONLY if staging passes)
   # ============================================
-  tag-validated:
-    name: 🏷️ Tag as Validated
+  # PHASE 2: Production only deploys on 'deploy-prod-*' tags
+  # Configure Railway Production to: Deploy on tag matching 'deploy-prod-*'
+  tag-for-production:
+    name: 🚀 Create Production Deploy Tag
     needs: staging-health
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: needs.staging-health.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
       
-      - name: Determine tag type
-        id: tag_type
-        run: |
-          if [ "${{ needs.staging-health.result }}" = "success" ]; then
-            echo "prefix=validated" >> $GITHUB_OUTPUT
-          else
-            echo "prefix=deployed-unvalidated" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Tag commit
+      - name: Create production deploy tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           SHORT_SHA=$(git rev-parse --short HEAD)
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          TAG_NAME="${{ steps.tag_type.outputs.prefix }}-${SHORT_SHA}-${TIMESTAMP}"
+          TAG_NAME="deploy-prod-${SHORT_SHA}-${TIMESTAMP}"
           git tag "$TAG_NAME"
-          git push origin "$TAG_NAME" || echo "⚠️ Tag push failed - may need permissions"
-          echo "✅ Commit tagged: $TAG_NAME"
+          git push origin "$TAG_NAME"
+          echo "✅ Production deploy tag created: $TAG_NAME"
+          echo "🚂 Railway will now deploy to production"
+
+  # ============================================
+  # Stage 4: Record Failed Staging (for audit trail)
+  # ============================================
+  record-staging-failure:
+    name: ⚠️ Record Staging Failure
+    needs: staging-health
+    if: needs.staging-health.result == 'failure' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create failure audit tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          TAG_NAME="staging-failed-${SHORT_SHA}-${TIMESTAMP}"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME" || echo "Tag push failed"
+          echo "⚠️ Staging failed - Production deploy BLOCKED"
+          echo "🏷️ Audit tag: $TAG_NAME"
+
