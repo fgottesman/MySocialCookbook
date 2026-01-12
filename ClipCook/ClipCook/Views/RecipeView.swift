@@ -38,6 +38,9 @@ struct RecipeView: View {
     // Toast for pending save warning
     @State private var showRemixSaveToast = false
     
+    // Alert for errors
+    @State private var alertItem: AlertItem?
+    
     /// Original recipe for detecting if in remix mode
     private var originalRecipe: Recipe? {
         guard recipeVersions.count > 1 else { return nil }
@@ -401,6 +404,9 @@ struct RecipeView: View {
                 }
             }
         }
+        .alert(item: $alertItem) { item in
+            Alert(title: Text("Error"), message: Text(item.message), dismissButton: .default(Text("OK")))
+        }
     }
     
     // Download Step 0 Audio if available
@@ -444,6 +450,14 @@ struct RecipeView: View {
             
             if !savedVersions.isEmpty {
                 await MainActor.run {
+                    // Check if we should even process these versions.
+                    // If a remix save is in progress OR we have local optimistic updates (>1 version),
+                    // DO NOT overwrite with stale DB data.
+                    if self.hasPendingRemixSave || self.recipeVersions.count > 1 {
+                        print("⚠️ loadSavedVersions: Skipping DB overwrite due to pending save or local mods")
+                        return
+                    }
+
                     // Create RecipeVersion objects from saved versions
                     var versions: [RecipeVersion] = [RecipeVersion(title: "Original", recipe: recipe)]
                     
@@ -474,20 +488,17 @@ struct RecipeView: View {
                     
                     self.recipeVersions = versions
                     
-                    // Only auto-select latest version if no remix is in progress
-                    // This prevents the DB load from overwriting optimistic updates during remix
-                    if !self.hasPendingRemixSave {
-                        let latestIndex = versions.count - 1
-                        self.currentVersionIndex = latestIndex
-                        
-                        // Update the displayed recipe to the latest version
-                        let latestVersion = versions[latestIndex]
-                        self.recipe = latestVersion.recipe
-                        self.changedIngredients = latestVersion.changedIngredients
-                        
-                        // Reset checked ingredients since we're viewing a different version
-                        self.checkedIngredients.removeAll()
-                    }
+                    // Auto-select the latest (most recent) version
+                    let latestIndex = versions.count - 1
+                    self.currentVersionIndex = latestIndex
+                    
+                    // Update the displayed recipe to the latest version
+                    let latestVersion = versions[latestIndex]
+                    self.recipe = latestVersion.recipe
+                    self.changedIngredients = latestVersion.changedIngredients
+                    
+                    // Reset checked ingredients since we're viewing a different version
+                    self.checkedIngredients.removeAll()
                 }
             }
         } catch {
@@ -612,8 +623,8 @@ struct RecipeView: View {
                                      self.recipe = currentRecipe
                                      self.changedIngredients.removeAll()
                                  }
-                                 // Show error alert (using a simple print for now, ideally an AlertItem)
-                                 print("Showing error for failed save")
+                                 // Show error alert
+                                 self.alertItem = AlertItem(message: "Failed to save remix. Please try again.")
                              }
                              self.hasPendingRemixSave = false
                          }
