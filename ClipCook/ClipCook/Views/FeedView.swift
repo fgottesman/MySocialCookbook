@@ -233,9 +233,7 @@ struct RecipeCard: View {
                             .foregroundStyle(LinearGradient.sizzle)
                     } else {
                         // Show creator name if available, otherwise just show platform
-                        if let profile = recipe.profile,
-                           let name = profile.username ?? profile.fullName,
-                           !name.isEmpty {
+                        if let name = recipe.displayCreatorName, !name.isEmpty {
                             Text(name)
                                 .font(.caption)
                                 .fontWeight(.medium)

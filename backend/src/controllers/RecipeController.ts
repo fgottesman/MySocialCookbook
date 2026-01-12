@@ -26,6 +26,7 @@ export class RecipeController {
 
             let recipeData;
             let finalDescription: string | undefined;
+            let creatorUsername: string | undefined;
 
             if (RecipeController.isDirectProcessableUrl(url)) {
                 try {
@@ -36,12 +37,14 @@ export class RecipeController {
                     recipeData = await gemini.generateRecipe(media.filePath, media.mimeType, media.description);
                     recipeData.thumbnailUrl = media.thumbnailUrl; // Capture thumbnail from media
                     finalDescription = media.description;
+                    creatorUsername = media.creatorUsername;
                     if (fs.existsSync(media.filePath)) fs.unlinkSync(media.filePath);
                 }
             } else {
                 const media = await downloader.downloadMedia(url);
                 recipeData = await gemini.generateRecipe(media.filePath, media.mimeType, media.description);
                 recipeData.thumbnailUrl = media.thumbnailUrl; // Capture thumbnail from media
+                creatorUsername = media.creatorUsername;
                 if (fs.existsSync(media.filePath)) fs.unlinkSync(media.filePath);
             }
 
@@ -76,7 +79,8 @@ export class RecipeController {
                     step0_summary: recipeData.step0Summary,
                     step0_audio_url: step0AudioUrl,
                     difficulty: recipeData.difficulty,
-                    cooking_time: recipeData.cookingTime
+                    cooking_time: recipeData.cookingTime,
+                    creator_username: creatorUsername
                 })
                 .select()
                 .single();

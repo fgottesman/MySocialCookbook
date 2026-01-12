@@ -24,6 +24,7 @@ struct Recipe: Codable, Identifiable {
     
     let difficulty: String? // Added for AI metrics
     let cookingTime: String? // Added for AI metrics
+    let creatorUsername: String? // Original video creator's username
     
     // Transient property to track which version this recipe represents
     var versionId: UUID? = nil
@@ -48,9 +49,10 @@ struct Recipe: Codable, Identifiable {
         case step0AudioUrl = "step0_audio_url"
         case difficulty
         case cookingTime = "cooking_time"
+        case creatorUsername = "creator_username"
     }
     
-    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil, step0Summary: String? = nil, step0AudioUrl: String? = nil, difficulty: String? = nil, cookingTime: String? = nil, versionId: UUID? = nil) {
+    init(id: UUID, userId: UUID, title: String, description: String?, videoUrl: String?, thumbnailUrl: String?, ingredients: [Ingredient]?, instructions: [String]?, createdAt: Date, chefsNote: String?, profile: Profile?, isFavorite: Bool?, parentRecipeId: UUID? = nil, sourcePrompt: String? = nil, stepPreparations: [StepPreparation]? = nil, step0Summary: String? = nil, step0AudioUrl: String? = nil, difficulty: String? = nil, cookingTime: String? = nil, creatorUsername: String? = nil, versionId: UUID? = nil) {
         self.id = id
         self.userId = userId
         self.title = title
@@ -70,6 +72,7 @@ struct Recipe: Codable, Identifiable {
         self.step0AudioUrl = step0AudioUrl
         self.difficulty = difficulty
         self.cookingTime = cookingTime
+        self.creatorUsername = creatorUsername
         self.versionId = versionId
     }
 }
@@ -96,6 +99,7 @@ extension Recipe {
         step0AudioUrl = try container.decodeIfPresent(String.self, forKey: .step0AudioUrl)
         difficulty = try container.decodeIfPresent(String.self, forKey: .difficulty)
         cookingTime = try container.decodeIfPresent(String.self, forKey: .cookingTime)
+        creatorUsername = try container.decodeIfPresent(String.self, forKey: .creatorUsername)
     }
     
     // Manual encoder to support updates/remixes if needed
@@ -120,6 +124,7 @@ extension Recipe {
         try container.encodeIfPresent(step0AudioUrl, forKey: .step0AudioUrl)
         try container.encodeIfPresent(difficulty, forKey: .difficulty)
         try container.encodeIfPresent(cookingTime, forKey: .cookingTime)
+        try container.encodeIfPresent(creatorUsername, forKey: .creatorUsername)
     }
 }
 
@@ -141,5 +146,16 @@ extension Recipe {
         if videoUrl.contains("youtube") || videoUrl.contains("youtu.be") { return "YouTube" }
         if videoUrl.contains("pinterest") { return "Pinterest" }
         return "Video"
+    }
+    
+    /// The display name for the recipe creator, prioritizing original video creator over current user profile
+    var displayCreatorName: String? {
+        if let creator = creatorUsername, !creator.isEmpty {
+            return creator
+        }
+        if let profile = profile {
+            return profile.username ?? profile.fullName
+        }
+        return nil
     }
 }
