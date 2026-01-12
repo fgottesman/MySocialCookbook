@@ -800,14 +800,17 @@ struct SourceCardHeader: View {
                 } else {
                     // Video-based recipe attribution
                     VStack(alignment: .leading, spacing: 2) {
-                        if let profile = recipe.profile {
-                            Text(profile.username ?? "Unknown Chef")
+                        // Only show creator name if available
+                        if let profile = recipe.profile,
+                           let name = profile.username ?? profile.fullName,
+                           !name.isEmpty {
+                            Text(name)
                                 .font(.headline)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                         }
                         
-                        Text("on \(recipe.sourcePlatform)")
+                        Text("via \(recipe.sourcePlatform)")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.clipCookSizzleStart)
