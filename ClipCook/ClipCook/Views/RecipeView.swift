@@ -30,9 +30,13 @@ struct RecipeView: View {
     @State private var showingShareSheet = false
     @State private var shareItems: [Any] = []
     @State private var isSavingRemix = false
+    @State private var hasPendingRemixSave = false  // Track if a remix version is being saved to DB
     
     // State for Measurement Conversion
     @State private var measurementSystem: MeasurementSystem = .us
+    
+    // Toast for pending save warning
+    @State private var showRemixSaveToast = false
     
     /// Original recipe for detecting if in remix mode
     private var originalRecipe: Recipe? {
@@ -303,6 +307,29 @@ struct RecipeView: View {
                 .shadow(radius: 20)
             }
             
+            // Toast for pending remix save
+            if showRemixSaveToast {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .foregroundColor(.white)
+                        Text("Saving your remix in the background...")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(Color.clipCookSizzleStart.opacity(0.95))
+                    .cornerRadius(25)
+                    .shadow(radius: 8)
+                    .padding(.bottom, 80)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showRemixSaveToast)
+            }
+            
             // MARK: - Floating Action Buttons
             VStack {
                 Spacer()
@@ -325,16 +352,17 @@ struct RecipeView: View {
                     Button(action: { showingVoiceCompanion = true }) {
                         HStack {
                             Image(systemName: "mic.fill")
-                            Text("Start Cooking")
+                            Text(hasPendingRemixSave ? "Saving..." : "Start Cooking")
                                 .fontWeight(.bold)
                         }
                         .padding()
                         .padding(.horizontal, 4)
-                        .background(LinearGradient.sizzle)
+                        .background(hasPendingRemixSave ? AnyView(Color.gray) : AnyView(LinearGradient.sizzle))
                         .foregroundColor(.white)
                         .cornerRadius(30)
                         .shadow(radius: 10)
                     }
+                    .disabled(hasPendingRemixSave)
                 }
                 .padding(.bottom, 20)
             }
@@ -357,6 +385,20 @@ struct RecipeView: View {
             await withTaskGroup(of: Void.self) { group in
                 group.addTask { await self.loadSavedVersions() }
                 group.addTask { await self.downloadStep0Audio() }
+            }
+        }
+        .onDisappear {
+            // Show toast if navigating away with pending save
+            if hasPendingRemixSave {
+                withAnimation {
+                    showRemixSaveToast = true
+                }
+                // Auto-hide after 3 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    withAnimation {
+                        showRemixSaveToast = false
+                    }
+                }
             }
         }
     }
@@ -511,6 +553,9 @@ struct RecipeView: View {
                     self.checkedIngredients.removeAll()
                 }
                 
+                // Set pending flag before background save
+                await MainActor.run { self.hasPendingRemixSave = true }
+                
                 // BACKGROUND SAVE: Persist to DB asynchronously
                 Task.detached(priority: .userInitiated) {
                     do {
@@ -535,6 +580,7 @@ struct RecipeView: View {
                                  if self.currentVersionIndex == index {
                                      self.recipe.versionId = savedVersion.id
                                  }
+                                 self.hasPendingRemixSave = false
                              }
                          }
                     } catch {
@@ -554,6 +600,7 @@ struct RecipeView: View {
                                  // Show error alert (using a simple print for now, ideally an AlertItem)
                                  print("Showing error for failed save")
                              }
+                             self.hasPendingRemixSave = false
                          }
                     }
                 }
