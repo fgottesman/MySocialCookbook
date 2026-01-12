@@ -474,17 +474,20 @@ struct RecipeView: View {
                     
                     self.recipeVersions = versions
                     
-                    // Auto-select the latest (most recent) version so returning to the recipe shows the remix
-                    let latestIndex = versions.count - 1
-                    self.currentVersionIndex = latestIndex
-                    
-                    // Update the displayed recipe to the latest version
-                    let latestVersion = versions[latestIndex]
-                    self.recipe = latestVersion.recipe
-                    self.changedIngredients = latestVersion.changedIngredients
-                    
-                    // Reset checked ingredients since we're viewing a different version
-                    self.checkedIngredients.removeAll()
+                    // Only auto-select latest version if no remix is in progress
+                    // This prevents the DB load from overwriting optimistic updates during remix
+                    if !self.hasPendingRemixSave {
+                        let latestIndex = versions.count - 1
+                        self.currentVersionIndex = latestIndex
+                        
+                        // Update the displayed recipe to the latest version
+                        let latestVersion = versions[latestIndex]
+                        self.recipe = latestVersion.recipe
+                        self.changedIngredients = latestVersion.changedIngredients
+                        
+                        // Reset checked ingredients since we're viewing a different version
+                        self.checkedIngredients.removeAll()
+                    }
                 }
             }
         } catch {
@@ -553,6 +556,9 @@ struct RecipeView: View {
                 // OPTIMISTIC UPDATE: Update UI immediately
                 // We assume success to make the UI feel instant
                 await MainActor.run {
+                    // Set pending flag FIRST to protect from concurrent loadSavedVersions
+                    self.hasPendingRemixSave = true
+                    
                     // Add to version history locally first
                     self.recipeVersions.append(newVersion)
                     self.currentVersionIndex = self.recipeVersions.count - 1
@@ -564,9 +570,6 @@ struct RecipeView: View {
                     // Reset checked state as ingredients changed
                     self.checkedIngredients.removeAll()
                 }
-                
-                // Set pending flag before background save
-                await MainActor.run { self.hasPendingRemixSave = true }
                 
                 // BACKGROUND SAVE: Persist to DB asynchronously
                 Task.detached(priority: .userInitiated) {
@@ -800,10 +803,7 @@ struct SourceCardHeader: View {
                 } else {
                     // Video-based recipe attribution
                     VStack(alignment: .leading, spacing: 2) {
-                        // Only show creator name if available
-                        if let profile = recipe.profile,
-                           let name = profile.username ?? profile.fullName,
-                           !name.isEmpty {
+                        if let name = recipe.displayCreatorName, !name.isEmpty {
                             Text(name)
                                 .font(.headline)
                                 .fontWeight(.bold)
