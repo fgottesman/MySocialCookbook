@@ -231,15 +231,12 @@ struct RecipeCard: View {
                             .font(.caption)
                             .fontWeight(.bold)
                             .foregroundStyle(LinearGradient.sizzle)
-                        
-                        if let profile = recipe.profile {
-                            Text("by \(profile.username ?? "You")")
-                                .font(.caption)
-                                .foregroundColor(.clipCookTextSecondary)
-                        }
                     } else {
-                        if let profile = recipe.profile {
-                            Text(profile.username ?? profile.fullName ?? "Unknown Chef")
+                        // Show creator name if available, otherwise just show platform
+                        if let profile = recipe.profile,
+                           let name = profile.username ?? profile.fullName,
+                           !name.isEmpty {
+                            Text(name)
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
@@ -249,7 +246,7 @@ struct RecipeCard: View {
                                 .foregroundColor(.clipCookTextSecondary)
                         }
                         
-                        Text("on \(recipe.sourcePlatform)")
+                        Text("via \(recipe.sourcePlatform)")
                             .font(.caption)
                             .foregroundColor(.clipCookTextSecondary)
                     }
