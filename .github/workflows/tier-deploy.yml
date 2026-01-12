@@ -158,6 +158,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - uses: actions/checkout@v4
       
@@ -172,4 +173,13 @@ jobs:
           git push origin "$TAG_NAME" || echo "Tag push failed"
           echo "⚠️ Staging failed - Production deploy BLOCKED"
           echo "🏷️ Audit tag: $TAG_NAME"
+          
+      - name: Notify via Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "⚠️ Production Deploy BLOCKED: Staging Health Check Failed" \
+            --body "The deployment pipeline for commit $(git rev-parse --short HEAD) was blocked because the Staging environment did not report healthy status within the timeout period.\n\n**Action Required:**\n1. Check Railway staging logs.\n2. Fix the issue.\n3. Redeploy." \
+            --label "deployment-failure"
 
