@@ -459,9 +459,19 @@ struct RecipeView: View {
                     }
 
                     // Create RecipeVersion objects from saved versions
-                    var versions: [RecipeVersion] = [RecipeVersion(title: "Original", recipe: recipe)]
+                    var versions: [RecipeVersion] = []
                     
-                    for saved in savedVersions {
+                    // Check if we already have the Original (v1) in the saved set
+                    let hasOriginalSaved = savedVersions.contains { $0.versionNumber == 1 }
+                    
+                    if !hasOriginalSaved {
+                        versions.append(RecipeVersion(title: "Original", recipe: recipe))
+                    }
+                    
+                    // Sort by version number to be safe
+                    let sortedSaved = savedVersions.sorted { $0.versionNumber < $1.versionNumber }
+                    
+                    for saved in sortedSaved {
                         let versionRecipe = Recipe(
                             id: recipe.id,
                             userId: recipe.userId,
@@ -475,6 +485,8 @@ struct RecipeView: View {
                             chefsNote: saved.chefsNote,
                             profile: recipe.profile,
                             isFavorite: recipe.isFavorite,
+                            step0Summary: saved.step0Summary,
+                            step0AudioUrl: saved.step0AudioUrl,
                             difficulty: saved.difficulty ?? recipe.difficulty,
                             cookingTime: saved.cookingTime ?? recipe.cookingTime,
                             versionId: saved.id
