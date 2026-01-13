@@ -549,6 +549,8 @@ struct RecipeView: View {
                     chefsNote: remixedPart.chefsNote,
                     profile: currentRecipe.profile,
                     isFavorite: currentRecipe.isFavorite,
+                    step0Summary: remixedPart.step0Summary,
+                    step0AudioUrl: remixedPart.step0AudioUrl,
                     difficulty: remixedPart.difficulty ?? currentRecipe.difficulty,
                     cookingTime: remixedPart.cookingTime ?? currentRecipe.cookingTime
                 )
