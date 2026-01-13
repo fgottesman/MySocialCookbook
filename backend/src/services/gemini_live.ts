@@ -59,11 +59,9 @@ export class GeminiLiveService {
 
             error = err;
             if (data) {
-                // Security check: Ensure version belongs to the requested recipe
+                // Security/Logic check: Warning if provided recipeId doesn't match version's parent
                 if (data.recipe_id !== recipeId) {
-                    logger.error(`[GeminiLive] ❌ Security Alert: Version ${versionId} does not belong to recipe ${recipeId}`);
-                    ws.close(1008, "Security violation: Version mismatch");
-                    return;
+                    logger.warn(`[GeminiLive] ⚠️ ID Mismatch: Version ${versionId} belongs to recipe ${data.recipe_id}, but request specified ${recipeId}. Proceeding with version's actual parent.`);
                 }
 
                 // Map version data to standard recipe structure if needed

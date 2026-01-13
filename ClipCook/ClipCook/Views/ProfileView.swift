@@ -46,21 +46,31 @@ struct ProfileView: View {
                         .padding(.leading, 56)
                     
                     // Data Privacy
-                    MenuRow(
-                        icon: "lock.shield",
+                    NavigationLink(destination: LegalDocumentView(
                         title: "Data Privacy",
-                        showComingSoon: true
-                    )
+                        content: ProfileView.privacyPolicyContent
+                    )) {
+                        MenuRow(
+                            icon: "lock.shield",
+                            title: "Data Privacy"
+                        )
+                    }
+                    .buttonStyle(.plain)
                     
                     Divider()
                         .padding(.leading, 56)
                     
                     // Terms of Service
-                    MenuRow(
-                        icon: "doc.text",
+                    NavigationLink(destination: LegalDocumentView(
                         title: "Terms of Service",
-                        showComingSoon: true
-                    )
+                        content: ProfileView.termsOfServiceContent
+                    )) {
+                        MenuRow(
+                            icon: "doc.text",
+                            title: "Terms of Service"
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
                 .background(Color(.systemBackground))
                 .cornerRadius(12)
@@ -171,4 +181,43 @@ struct MenuRow: View {
 
 #Preview {
     ProfileView()
+}
+
+// MARK: - Legal Content
+extension ProfileView {
+    static let privacyPolicyContent = """
+    # Privacy Policy
+    
+    Last Updated: January 1, 2026
+    
+    ## 1. Introduction
+    ClipCook ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how your personal information is collected, used, and disclosed by ClipCook.
+    
+    ## 2. Information We Collect
+    We collect information you provide directly to us, such as when you create an account, save recipes, or contact us for support. This includes your email address and any recipe data you generate.
+    
+    ## 3. How We Use Your Information
+    We use the information we collect to operate, maintain, and improve our services, including generating recipes and providing personalized recommendations.
+    
+    ## 4. Contact Us
+    If you have any questions about this Privacy Policy, please contact us at support@clipcook.com.
+    """
+    
+    static let termsOfServiceContent = """
+    # Terms of Service
+    
+    Last Updated: January 1, 2026
+    
+    ## 1. Acceptance of Terms
+    By accessing or using our application, you agree to be bound by these Terms of Service.
+    
+    ## 2. Use of Service
+    You agree to use ClipCook only for lawful purposes and in accordance with these Terms.
+    
+    ## 3. User Accounts
+    You are responsible for safeguarding the password that you use to access the service and for any activities or actions under your password.
+    
+    ## 4. Changes to Terms
+    We reserve the right to modify or replace these Terms at any time.
+    """
 }

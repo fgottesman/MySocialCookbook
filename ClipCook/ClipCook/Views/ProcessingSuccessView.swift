@@ -75,7 +75,7 @@ struct ProcessingSuccessView: View {
                                 .scaleEffect(isAnimating ? 1.1 : 0.9)
                         )
                         .shadow(color: .clipCookSizzleStart.opacity(0.5), radius: 20, x: 0, y: 0)
-                        .scaleEffect(isAnimating ? 1.05 : 0.95)
+                        .scaleEffect(isAnimating ? 1.05 : 0.90)
                         .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
                 }
                 .padding(.top, 40)

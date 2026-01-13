@@ -308,7 +308,7 @@ struct RemixSheet: View {
             HStack(spacing: 12) {
                 // Text field with pill shape
                 HStack {
-                    TextField("Ask anything...", text: $inputText)
+                    TextField("ask to change anything...", text: $inputText)
                         .font(.system(size: 16))
                         .foregroundColor(.white)
                         .focused($isInputFocused)
@@ -526,7 +526,7 @@ struct ConsultationCard: View {
         VStack(alignment: .leading, spacing: 20) {
             // Chef's Reply
             Text(consult.reply)
-                .font(.system(size: 16, weight: .regular))
+                .font(.system(size: 14, weight: .regular))
                 .foregroundColor(.white)
                 .lineSpacing(4)
             
@@ -559,18 +559,6 @@ struct ConsultationCard: View {
             .background(Color.black.opacity(0.2))
             .cornerRadius(12)
             
-            // Explanations
-            if !consult.difficultyExplanation.isEmpty || !consult.qualityExplanation.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    if !consult.difficultyExplanation.isEmpty {
-                        ExplanationRow(icon: "info.circle.fill", text: consult.difficultyExplanation)
-                    }
-                    if !consult.qualityExplanation.isEmpty {
-                        ExplanationRow(icon: "sparkles", text: consult.qualityExplanation)
-                    }
-                }
-            }
-            
             // Action Button
             Button(action: onConfirm) {
                 HStack(spacing: 8) {
@@ -581,7 +569,7 @@ struct ConsultationCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(LinearGradient.sizzle)
+                .background(Color.clipCookSizzleStart)
                 .foregroundColor(.white)
                 .cornerRadius(14)
                 .shadow(color: Color.clipCookSizzleStart.opacity(0.4), radius: 12, y: 4)

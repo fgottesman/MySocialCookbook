@@ -34,9 +34,27 @@ class VersionService {
             throw URLError(.badServerResponse)
         }
         
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let result = try decoder.decode(VersionsResponse.self, from: data)
+        let jsonDecoder = JSONDecoder()
+        jsonDecoder.dateDecodingStrategy = .custom { (decoder: Decoder) throws -> Date in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+            
+            // Fallback for no fractional seconds
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+            
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date format: \(dateString)")
+        }
+        let result = try jsonDecoder.decode(VersionsResponse.self, from: data)
         return result.versions
     }
     
@@ -52,13 +70,13 @@ class VersionService {
         
         // Add Auth
         // Add Auth
+        // Add Auth
         do {
             let session = try await SupabaseManager.shared.client.auth.session
             request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
         } catch {
-             print("⚠️ VersionService: Failed to get auth session: \(error)")
-             // We allow the request to proceed without token (consistent with original logic), 
-             // but now we log the reason why it's missing.
+             print("❌ VersionService: Aborting save - Failed to get auth session: \(error)")
+             throw error // Strictly enforce auth
         }
         
         let body = SaveVersionRequest(

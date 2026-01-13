@@ -8,7 +8,10 @@ struct AddRecipeView: View {
     @State private var promptText = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var showSuccessView = false
+    
+    // Callbacks to notify parent of processing state
+    var onProcessingStarted: (() -> Void)?
+    var onProcessingFailed: ((String) -> Void)?
     
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
@@ -47,24 +50,12 @@ struct AddRecipeView: View {
                     .frame(maxWidth: .infinity)
                 }
                 
+                // Brief loading indicator while initiating request
                 if isLoading {
-                    Color.black.opacity(0.4).ignoresSafeArea()
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
-                            .scaleEffect(1.5)
-                        Text(selectedTab == 0 ? "Analyzing Video..." : "Asking the Chef...")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                    }
-                    .padding(32)
-                    .background(Color.clipCookSurface)
-                    .cornerRadius(20)
-                }
-                if showSuccessView {
-                    ProcessingSuccessView()
-                        .transition(.opacity)
-                        .zIndex(100)
+                    Color.black.opacity(0.3).ignoresSafeArea()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
+                        .scaleEffect(1.5)
                 }
             }
             .navigationTitle("New Recipe")
@@ -176,17 +167,19 @@ struct AddRecipeView: View {
         errorMessage = nil
         
         let userId = AuthViewModel.shared.userId ?? ""
+        let url = urlString
         
         Task {
             do {
-                try await RecipeService.shared.processRecipe(url: urlString, userId: userId)
+                try await RecipeService.shared.processRecipe(url: url, userId: userId)
                 await MainActor.run {
-                    isLoading = false
-                    showSuccessView = true
+                    onProcessingStarted?()
+                    dismiss()
                 }
             } catch {
                 await MainActor.run {
                     isLoading = false
+                    onProcessingFailed?("Something went wrong. Please check the URL.")
                     errorMessage = "Something went wrong. Please check the URL."
                 }
             }
@@ -199,17 +192,19 @@ struct AddRecipeView: View {
         errorMessage = nil
         
         let userId = AuthViewModel.shared.userId ?? ""
+        let prompt = promptText
         
         Task {
             do {
-                _ = try await RecipeService.shared.createRecipeFromPrompt(prompt: promptText, userId: userId)
+                _ = try await RecipeService.shared.createRecipeFromPrompt(prompt: prompt, userId: userId)
                 await MainActor.run {
-                    isLoading = false
-                    showSuccessView = true
+                    onProcessingStarted?()
+                    dismiss()
                 }
             } catch {
                 await MainActor.run {
                     isLoading = false
+                    onProcessingFailed?("The chef couldn't understand that. Try again!")
                     errorMessage = "The chef couldn't understand that. Try again!"
                 }
             }

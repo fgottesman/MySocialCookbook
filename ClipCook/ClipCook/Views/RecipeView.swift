@@ -38,6 +38,9 @@ struct RecipeView: View {
     // Toast for pending save warning
     @State private var showRemixSaveToast = false
     
+    // Alert for errors
+    @State private var alertItem: AlertItem?
+    
     /// Original recipe for detecting if in remix mode
     private var originalRecipe: Recipe? {
         guard recipeVersions.count > 1 else { return nil }
@@ -150,8 +153,12 @@ struct RecipeView: View {
                                             .padding(.vertical, 8)
                                             .background(
                                                 currentVersionIndex == index
-                                                    ? AnyView(LinearGradient.sizzle)
-                                                    : AnyView(Color.clipCookSurface)
+                                                    ? Color.clear
+                                                    : Color.clipCookSurface
+                                            )
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 16)
+                                                    .stroke(currentVersionIndex == index ? Color.white : Color.clear, lineWidth: 1)
                                             )
                                             .foregroundColor(currentVersionIndex == index ? .white : .clipCookTextSecondary)
                                             .cornerRadius(16)
@@ -284,29 +291,6 @@ struct RecipeView: View {
                     .cornerRadius(12)
             }
             
-            // Loading Overlay for Remixing Generation
-            if isRemixing {
-                Color.black.opacity(0.6).ignoresSafeArea()
-                VStack(spacing: 20) {
-                    Image(systemName: "wand.and.stars")
-                        .font(.system(size: 40))
-                        .foregroundStyle(LinearGradient.sizzle)
-                        .symbolEffect(.bounce.up.byLayer, options: .repeating)
-                    
-                    Text("Chef is Remixing...")
-                        .font(DesignTokens.Typography.headerFont(size: 20))
-                        .foregroundColor(.white)
-                    
-                    Text("Writing new instructions for you")
-                        .font(.caption)
-                        .foregroundColor(.clipCookTextSecondary)
-                }
-                .padding(30)
-                .background(DesignTokens.Colors.surface)
-                .cornerRadius(20)
-                .shadow(radius: 20)
-            }
-            
             // Toast for pending remix save
             if showRemixSaveToast {
                 VStack {
@@ -357,7 +341,7 @@ struct RecipeView: View {
                         }
                         .padding()
                         .padding(.horizontal, 4)
-                        .background(hasPendingRemixSave ? AnyView(Color.gray) : AnyView(LinearGradient.sizzle))
+                        .background(hasPendingRemixSave ? Color.gray : Color.clipCookSizzleStart)
                         .foregroundColor(.white)
                         .cornerRadius(30)
                         .shadow(radius: 10)
@@ -365,6 +349,29 @@ struct RecipeView: View {
                     .disabled(hasPendingRemixSave)
                 }
                 .padding(.bottom, 20)
+            }
+            
+            // Loading Overlay for Remixing Generation (MOVED TO TOP)
+            if isRemixing {
+                Color.black.opacity(0.85).ignoresSafeArea()
+                VStack(spacing: 20) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 40))
+                        .foregroundStyle(LinearGradient.sizzle)
+                        .symbolEffect(.bounce.up.byLayer, options: .repeating)
+                    
+                    Text("Chef is Remixing...")
+                        .font(DesignTokens.Typography.headerFont(size: 20))
+                        .foregroundColor(.white)
+                    
+                    Text("Writing new instructions for you")
+                        .font(.caption)
+                        .foregroundColor(.clipCookTextSecondary)
+                }
+                .padding(30)
+                .background(DesignTokens.Colors.surface)
+                .cornerRadius(20)
+                .shadow(radius: 20)
             }
         }
         .sheet(isPresented: $showingRemix) {
@@ -400,6 +407,9 @@ struct RecipeView: View {
                     }
                 }
             }
+        }
+        .alert(item: $alertItem) { item in
+            Alert(title: Text("Error"), message: Text(item.message), dismissButton: .default(Text("OK")))
         }
     }
     
@@ -444,10 +454,28 @@ struct RecipeView: View {
             
             if !savedVersions.isEmpty {
                 await MainActor.run {
+                    // Check if we should even process these versions.
+                    // If a remix save is in progress OR we have local optimistic updates (>1 version),
+                    // DO NOT overwrite with stale DB data.
+                    if self.hasPendingRemixSave || self.recipeVersions.count > 1 {
+                        print("⚠️ loadSavedVersions: Skipping DB overwrite due to pending save or local mods")
+                        return
+                    }
+
                     // Create RecipeVersion objects from saved versions
-                    var versions: [RecipeVersion] = [RecipeVersion(title: "Original", recipe: recipe)]
+                    var versions: [RecipeVersion] = []
                     
-                    for saved in savedVersions {
+                    // Check if we already have the Original (v1) in the saved set
+                    let hasOriginalSaved = savedVersions.contains { $0.versionNumber == 1 }
+                    
+                    if !hasOriginalSaved {
+                        versions.append(RecipeVersion(title: "Original", recipe: recipe))
+                    }
+                    
+                    // Sort by version number to be safe
+                    let sortedSaved = savedVersions.sorted { $0.versionNumber < $1.versionNumber }
+                    
+                    for saved in sortedSaved {
                         let versionRecipe = Recipe(
                             id: recipe.id,
                             userId: recipe.userId,
@@ -461,6 +489,8 @@ struct RecipeView: View {
                             chefsNote: saved.chefsNote,
                             profile: recipe.profile,
                             isFavorite: recipe.isFavorite,
+                            step0Summary: saved.step0Summary,
+                            step0AudioUrl: saved.step0AudioUrl,
                             difficulty: saved.difficulty ?? recipe.difficulty,
                             cookingTime: saved.cookingTime ?? recipe.cookingTime,
                             versionId: saved.id
@@ -474,9 +504,8 @@ struct RecipeView: View {
                     
                     self.recipeVersions = versions
                     
-                    // Only auto-select latest version if no remix is in progress
-                    // This prevents the DB load from overwriting optimistic updates during remix
-                    if !self.hasPendingRemixSave {
+                    // Auto-select the latest (most recent) version
+                    if !versions.isEmpty {
                         let latestIndex = versions.count - 1
                         self.currentVersionIndex = latestIndex
                         
@@ -492,7 +521,6 @@ struct RecipeView: View {
             }
         } catch {
             print("Failed to load versions: \(error)")
-            // Non-blocking - versions just won't load from DB
         }
     }
     
@@ -538,6 +566,8 @@ struct RecipeView: View {
                     chefsNote: remixedPart.chefsNote,
                     profile: currentRecipe.profile,
                     isFavorite: currentRecipe.isFavorite,
+                    step0Summary: remixedPart.step0Summary,
+                    step0AudioUrl: remixedPart.step0AudioUrl,
                     difficulty: remixedPart.difficulty ?? currentRecipe.difficulty,
                     cookingTime: remixedPart.cookingTime ?? currentRecipe.cookingTime
                 )
@@ -612,8 +642,8 @@ struct RecipeView: View {
                                      self.recipe = currentRecipe
                                      self.changedIngredients.removeAll()
                                  }
-                                 // Show error alert (using a simple print for now, ideally an AlertItem)
-                                 print("Showing error for failed save")
+                                 // Show error alert
+                                 self.alertItem = AlertItem(message: "Failed to save remix. Please try again.")
                              }
                              self.hasPendingRemixSave = false
                          }
@@ -803,7 +833,17 @@ struct SourceCardHeader: View {
                 } else {
                     // Video-based recipe attribution
                     VStack(alignment: .leading, spacing: 2) {
-                        if let name = recipe.displayCreatorName, !name.isEmpty {
+                        if let handle = recipe.creatorUsername, !handle.isEmpty {
+                            Text(handle.hasPrefix("@") ? handle : "@\(handle)")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                        } else if let profile = recipe.profile, let username = profile.username, !username.isEmpty {
+                            Text(username.hasPrefix("@") ? username : "@\(username)")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                        } else if let name = recipe.displayCreatorName, !name.isEmpty {
                             Text(name)
                                 .font(.headline)
                                 .fontWeight(.bold)
