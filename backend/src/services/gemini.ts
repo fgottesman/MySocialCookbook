@@ -80,7 +80,7 @@ Return ONLY valid JSON matching the Recipe schema.
   "instructions": [ ... ],
   "chefsNote": "Detailed explanation of the changes...",
   "changedIngredients": ["ingredient1 name", "ingredient2 name"],
-  "step0Summary": "A brief, enthusiastic 1-2 sentence summary of the REMIXED dish for voice over."
+  "step0Summary": "A brief, enthusiastic 1-2 sentence summary of HOW we are going to cook the REMIXED dish. Focus on the method (e.g., 'We're going to sear the steak in a hot skillet then finish it with butter', not just 'Great steak')."
 }
 `;
 
