@@ -308,7 +308,7 @@ struct RemixSheet: View {
             HStack(spacing: 12) {
                 // Text field with pill shape
                 HStack {
-                    TextField("Ask anything...", text: $inputText)
+                    TextField("ask to change anything...", text: $inputText)
                         .font(.system(size: 16))
                         .foregroundColor(.white)
                         .focused($isInputFocused)
