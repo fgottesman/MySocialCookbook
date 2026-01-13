@@ -1,0 +1,91 @@
+name: Release CI
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ============================================
+  # Full Test Suite (iPhone)
+  # ============================================
+  iphone-tests:
+    name: 📱 iPhone Tests
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Pre-boot Simulator
+        run: |
+          xcrun simctl boot "iPhone 16" || true
+          sleep 5
+      
+      - name: Build and Test
+        working-directory: ClipCook
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ClipCook.xcodeproj \
+            -scheme ClipCook \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -only-testing:ClipCookTests \
+            -only-testing:ClipCookUITests \
+            -resultBundlePath TestResults/iPhoneTests \
+            -retry-tests-on-failure \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty --color
+
+  # ============================================
+  # iPad Compatibility (Build + Unit only, no snapshots)
+  # ============================================
+  ipad-tests:
+    name: 📱 iPad Compatibility
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Pre-boot Simulator
+        run: |
+          xcrun simctl boot "iPad Pro 13-inch (M4)" || true
+          sleep 5
+      
+      - name: Build and Test (Unit only, skip snapshots)
+        working-directory: ClipCook
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ClipCook.xcodeproj \
+            -scheme ClipCook \
+            -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
+            -only-testing:ClipCookTests \
+            -skip-testing:ClipCookTests/FeedViewSnapshotTests \
+            -skip-testing:ClipCookTests/RecipeCardSnapshotTests \
+            -resultBundlePath TestResults/iPadTests \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty --color
+
+  # ============================================
+  # Summary Job
+  # ============================================
+  test-summary:
+    name: ✅ Release Check Summary
+    needs: [iphone-tests, ipad-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check Test Results
+        run: |
+          if [[ "${{ needs.iphone-tests.result }}" == "failure" ]]; then
+            echo "❌ iPhone tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.ipad-tests.result }}" == "failure" ]]; then
+            echo "❌ iPad tests failed"
+            exit 1
+          fi
+          echo "✅ All Release checks passed!"

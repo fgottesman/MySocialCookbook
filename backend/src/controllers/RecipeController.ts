@@ -179,7 +179,7 @@ export class RecipeController {
                 .order('version_number', { ascending: false });
 
             if (error) throw error;
-            res.json(data);
+            res.json({ success: true, versions: data || [] });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
@@ -190,16 +190,58 @@ export class RecipeController {
             const { recipeId } = req.params;
             const { title, description, ingredients, instructions, chefsNote, changedIngredients, step0Summary, step0AudioUrl, difficulty, cookingTime } = req.body;
 
+            // 1. Check existing versions
             const { data: versions, error: vError } = await req.supabase
                 .from('recipe_versions')
                 .select('version_number')
                 .eq('recipe_id', recipeId)
-                .order('version_number', { ascending: false })
-                .limit(1);
+                .order('version_number', { ascending: false });
 
             if (vError) throw vError;
-            const nextVersion = (versions && versions.length > 0) ? (versions[0].version_number + 1) : 1;
 
+            let nextVersion = 1;
+
+            if (!versions || versions.length === 0) {
+                // FIRST TIME REMIX: Snapshot the ORIGINAL recipe as Version 1
+                logger.info(`First remix for recipe ${recipeId}. Snapshotting original as v1.`);
+
+                // Fetch current recipe data (Original)
+                const { data: originalRecipe, error: fetchError } = await req.supabase
+                    .from('recipes')
+                    .select('*')
+                    .eq('id', recipeId)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                // Insert Original as Version 1
+                const { error: snapshotError } = await req.supabase
+                    .from('recipe_versions')
+                    .insert({
+                        recipe_id: recipeId,
+                        version_number: 1,
+                        title: "Original", // Or originalRecipe.title if checking specific logic
+                        description: originalRecipe.description,
+                        ingredients: originalRecipe.ingredients,
+                        instructions: originalRecipe.instructions,
+                        chefs_note: originalRecipe.chefs_note,
+                        changed_ingredients: [], // Original has no changes
+                        step0_summary: originalRecipe.step0_summary,
+                        step0_audio_url: originalRecipe.step0_audio_url,
+                        difficulty: originalRecipe.difficulty,
+                        cooking_time: originalRecipe.cooking_time,
+                        created_at: originalRecipe.created_at // Preserve original creation time if possible, or use now
+                    });
+
+                if (snapshotError) throw snapshotError;
+
+                // New Remix will be Version 2
+                nextVersion = 2;
+            } else {
+                nextVersion = versions[0].version_number + 1;
+            }
+
+            // 2. Insert the NEW Version (The Remix)
             const { data: vData, error: insertError } = await req.supabase
                 .from('recipe_versions')
                 .insert({
@@ -210,7 +252,7 @@ export class RecipeController {
                     ingredients,
                     instructions,
                     chefs_note: chefsNote,
-                    changed_ingredients: JSON.stringify(changedIngredients),
+                    changed_ingredients: changedIngredients,
                     step0_summary: step0Summary,
                     step0_audio_url: step0AudioUrl,
                     difficulty,
@@ -221,18 +263,16 @@ export class RecipeController {
 
             if (insertError) throw insertError;
 
-            await req.supabase
-                .from('recipes')
-                .update({
-                    title, description, ingredients, instructions,
-                    chefs_note: chefsNote, step0_summary: step0Summary,
-                    step0_audio_url: step0AudioUrl, difficulty, cooking_time: cookingTime,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', recipeId);
+            if (insertError) throw insertError;
+
+            // 3. DO NOT Update the Parent Recipe
+            // User Feedback: "I don't want to change the feed card, keep that as the original."
+            // The feed will continue to show the original recipe info.
+            // When the user opens the recipe, the versions will load and auto-select the latest remix.
 
             res.json({ success: true, version: vData });
         } catch (error: any) {
+            logger.error(`Save Version Error: ${error.message}`, { recipeId: req.params.recipeId });
             res.status(500).json({ error: error.message });
         }
     }

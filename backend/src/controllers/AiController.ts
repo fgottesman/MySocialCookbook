@@ -73,7 +73,30 @@ export class AiController {
             const { originalRecipe, userPrompt } = req.body;
             const userId = req.user.id;
             const remixedData = await gemini.remixRecipe(originalRecipe, userPrompt);
-            res.json({ success: true, recipe: remixedData });
+
+            // Handle Step 0 Audio for Remix
+            let step0AudioUrl = null;
+            if (remixedData.step0Summary) {
+                try {
+                    const audioBase64 = await ttsService.synthesize(remixedData.step0Summary);
+                    const audioName = `audio_${crypto.randomUUID()}.mp3`;
+                    const audioBuffer = Buffer.from(audioBase64, 'base64');
+                    const { error } = await req.supabase.storage.from('recipe-thumbnails').upload(audioName, audioBuffer, { contentType: 'audio/mpeg', upsert: true });
+                    if (!error) {
+                        step0AudioUrl = req.supabase.storage.from('recipe-thumbnails').getPublicUrl(audioName).data.publicUrl;
+                    }
+                } catch (ttsError: any) {
+                    logger.error(`Remix TTS Generation Failed: ${ttsError.message}`);
+                }
+            }
+
+            // Inject the audio URL into the response
+            const finalRemix = {
+                ...remixedData,
+                step0AudioUrl: step0AudioUrl
+            };
+
+            res.json({ success: true, recipe: finalRemix });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }

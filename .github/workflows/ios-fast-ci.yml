@@ -1,0 +1,48 @@
+name: Fast CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ClipCook/**'
+      - '.github/workflows/ios-fast-ci.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'ClipCook/**'
+      - '.github/workflows/ios-fast-ci.yml'
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================
+  # Unit Tests ONLY
+  # ============================================
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build and Test (Unit)
+        working-directory: ClipCook
+        run: |
+          set -o pipefail
+          xcodebuild -version
+          xcrun simctl list devices available
+          xcodebuild test \
+            -project ClipCook.xcodeproj \
+            -scheme ClipCook \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -only-testing:ClipCookTests \
+            -skip-testing:ClipCookTests/FeedViewSnapshotTests \
+            -skip-testing:ClipCookTests/RecipeCardSnapshotTests \
+            -resultBundlePath TestResults/UnitTests \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty --color

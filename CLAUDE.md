@@ -20,10 +20,12 @@ ClipCook is an iOS app with a Node.js/TypeScript backend that transforms viral r
 
 ## Project-Specific Rules
 
-1. **No Model Downgrades**: Never downgrade AI model versions (e.g., Gemini 3 → Gemini 2)
-2. **Verify AI Models**: Follow `.agent/workflows/verify_ai_models.md` before changing model names
-3. **Build Before Push**: Always run `npm run build` in backend before committing
-4. **No Orphan Words**: UI text should never have a single word wrapping to its own line
+1. **Feature Branches**: For any new feature or changes touching 5+ files, create a feature branch first following `/branching-strategy`
+2. **No Model Downgrades**: Never downgrade AI model versions (e.g., Gemini 3 → Gemini 2)
+3. **Verify AI Models**: Follow `.agent/workflows/verify_ai_models.md` before changing model names
+4. **Build Before Push**: Always run `npm run build` in backend before committing
+5. **No Orphan Words**: UI text should never have a single word wrapping to its own line
+6. **Pre-Release Check**: Run `/pre-release-checklist` before any TestFlight submission
 
 ## Common Commands
 
