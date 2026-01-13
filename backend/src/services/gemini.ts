@@ -25,6 +25,38 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
 }
 `;
 
+const WEB_RECIPE_PROMPT = `
+You are an expert chef. Extract and structure the recipe from this web page content.
+The content may include structured data from the page and/or raw text extracted from the page.
+
+Your task:
+1. Identify the recipe in the content
+2. Extract all ingredients with their amounts and units
+3. Extract clear, step-by-step cooking instructions
+4. Determine difficulty level based on techniques and time required
+5. Estimate total cooking time if not explicitly stated
+
+Return ONLY a raw JSON object (no markdown formatting) with this schema:
+{
+  "title": "Recipe Title",
+  "description": "Short, appetizing description of the dish",
+  "difficulty": "Easy" | "Medium" | "Hard",
+  "cookingTime": "30-45 minutes",
+  "ingredients": [
+    { "name": "item", "amount": "1", "unit": "cup" }
+  ],
+  "instructions": ["Step 1", "Step 2"],
+  "chefsNote": "A helpful tip about this dish or a key technique to master",
+  "step0Summary": "A brief, enthusiastic 1-2 sentence summary of what we are cooking for voice over."
+}
+
+Important:
+- Ensure ingredient amounts are properly parsed (e.g., "1 1/2 cups" should be amount: "1 1/2", unit: "cups")
+- Instructions should be clear, actionable steps (not paragraph blocks)
+- If the recipe has many instructions, consolidate related steps where sensible
+- Difficulty: Easy (< 30 min, basic techniques), Medium (30-60 min or intermediate techniques), Hard (> 60 min or advanced techniques)
+`;
+
 const PROMPT_TO_RECIPE_SYSTEM_PROMPT = `
 You are an expert chef. A user will describe a dish they want to make.
 Your goal is to turn their description into a fully fleshed out, professional recipe.
@@ -369,6 +401,49 @@ export class GeminiService {
         // We forces the controller to fall back to the "Download -> Upload -> Generate" flow.
         logger.warn(`Direct URL processing deprecated/unsupported for ${url}. Throwing error to trigger fallback.`);
         throw new Error("Direct URL processing not supported. Use fallback.");
+    }
+
+    /**
+     * Generate a recipe from web page content.
+     * Accepts pre-extracted data from WebRecipeScraper.
+     */
+    async generateRecipeFromWebpage(webData: {
+        title?: string;
+        description?: string;
+        ingredients?: string[];
+        instructions?: string[];
+        rawText: string;
+        author?: string;
+        cookTime?: string;
+        hasStructuredData: boolean;
+    }) {
+        const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
+
+        // Build context from extracted data
+        let context = '';
+
+        if (webData.hasStructuredData) {
+            context += 'STRUCTURED DATA EXTRACTED FROM PAGE:\n';
+            if (webData.title) context += `Title: ${webData.title}\n`;
+            if (webData.description) context += `Description: ${webData.description}\n`;
+            if (webData.author) context += `Author: ${webData.author}\n`;
+            if (webData.cookTime) context += `Cook Time: ${webData.cookTime}\n`;
+            if (webData.ingredients && webData.ingredients.length > 0) {
+                context += `Ingredients:\n${webData.ingredients.map(i => `- ${i}`).join('\n')}\n`;
+            }
+            if (webData.instructions && webData.instructions.length > 0) {
+                context += `Instructions:\n${webData.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n`;
+            }
+            context += '\n';
+        }
+
+        context += 'RAW PAGE TEXT:\n' + webData.rawText;
+
+        const FULL_PROMPT = `${WEB_RECIPE_PROMPT}\n\nWEB PAGE CONTENT:\n${context}`;
+
+        logger.info('Generating recipe from web page content');
+        const result = await withRetry(() => model.generateContent(FULL_PROMPT), {}, 'Gemini: generateRecipeFromWebpage');
+        return this.parseRecipeResponse(result.response.text());
     }
 
     async remixRecipe(originalRecipe: any, userPrompt: string) {
