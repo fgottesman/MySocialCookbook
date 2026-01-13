@@ -833,7 +833,17 @@ struct SourceCardHeader: View {
                 } else {
                     // Video-based recipe attribution
                     VStack(alignment: .leading, spacing: 2) {
-                        if let name = recipe.displayCreatorName, !name.isEmpty {
+                        if let handle = recipe.creatorUsername, !handle.isEmpty {
+                            Text(handle.hasPrefix("@") ? handle : "@\(handle)")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                        } else if let profile = recipe.profile, let username = profile.username, !username.isEmpty {
+                            Text(username.hasPrefix("@") ? username : "@\(username)")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                        } else if let name = recipe.displayCreatorName, !name.isEmpty {
                             Text(name)
                                 .font(.headline)
                                 .fontWeight(.bold)
