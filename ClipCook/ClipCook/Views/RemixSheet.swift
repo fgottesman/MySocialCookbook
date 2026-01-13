@@ -526,50 +526,9 @@ struct ConsultationCard: View {
         VStack(alignment: .leading, spacing: 20) {
             // Chef's Reply
             Text(consult.reply)
-                .font(.system(size: 16, weight: .regular))
+                .font(.system(size: 14, weight: .regular))
                 .foregroundColor(.white)
                 .lineSpacing(4)
-            
-            // Metrics Row
-            HStack(spacing: 0) {
-                MetricBadge(
-                    title: "Difficulty",
-                    value: consult.difficultyImpact,
-                    color: difficultyColor(consult.difficultyImpact),
-                    icon: "chart.bar.fill"
-                )
-                
-                Spacer()
-                
-                Rectangle()
-                    .fill(Color.clipCookTextSecondary.opacity(0.2))
-                    .frame(width: 1, height: 40)
-                
-                Spacer()
-                
-                MetricBadge(
-                    title: "Quality",
-                    value: consult.qualityImpact,
-                    color: qualityColor(consult.qualityImpact),
-                    icon: "star.fill"
-                )
-            }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .background(Color.black.opacity(0.2))
-            .cornerRadius(12)
-            
-            // Explanations
-            if !consult.difficultyExplanation.isEmpty || !consult.qualityExplanation.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    if !consult.difficultyExplanation.isEmpty {
-                        ExplanationRow(icon: "info.circle.fill", text: consult.difficultyExplanation)
-                    }
-                    if !consult.qualityExplanation.isEmpty {
-                        ExplanationRow(icon: "sparkles", text: consult.qualityExplanation)
-                    }
-                }
-            }
             
             // Action Button
             Button(action: onConfirm) {
@@ -581,7 +540,7 @@ struct ConsultationCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(LinearGradient.sizzle)
+                .background(Color.clipCookSizzleStart)
                 .foregroundColor(.white)
                 .cornerRadius(14)
                 .shadow(color: Color.clipCookSizzleStart.opacity(0.4), radius: 12, y: 4)
