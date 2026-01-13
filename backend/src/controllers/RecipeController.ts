@@ -96,6 +96,11 @@ export class RecipeController {
 
             if (error) throw error;
 
+            // Increment credits used
+            // We import dynamically to avoid circular dependencies if any, or just standard import
+            const { incrementRecipeCredits } = await import('../middleware/subscriptionMiddleware');
+            await incrementRecipeCredits(userId);
+
             await RecipeController.notifyUser(req, userId, 'Recipe Ready! 🍳', `"${recipeData.title}" is ready to cook.`, data.id);
 
             // Background pre-compute
