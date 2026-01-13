@@ -1,23 +1,10 @@
-name: iOS Tests
+name: Release CI
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - 'ClipCook/**'
-      - '.github/workflows/ios-tests.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'ClipCook/**'
-      - '.github/workflows/ios-tests.yml'
-
-# Cancel in-progress runs for the same branch
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    tags:
+      - 'v*'
 
 jobs:
   # ============================================
@@ -28,12 +15,6 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Show Xcode Version
-        run: xcodebuild -version
-      
-      - name: List Available Simulators
-        run: xcrun simctl list devices available
       
       - name: Build and Test (Unit)
         working-directory: ClipCook
@@ -48,14 +29,6 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             | xcpretty --color
-      
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: unit-test-results
-          path: ClipCook/TestResults/UnitTests
-          retention-days: 7
 
   # ============================================
   # UI Tests
@@ -79,14 +52,6 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             | xcpretty --color
-      
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: ui-test-results
-          path: ClipCook/TestResults/UITests
-          retention-days: 7
 
   # ============================================
   # iPad Compatibility Check
@@ -127,7 +92,7 @@ jobs:
   # Summary Job
   # ============================================
   test-summary:
-    name: ✅ Test Summary
+    name: ✅ Release Check Summary
     needs: [unit-tests, ui-tests, ipad-tests]
     runs-on: ubuntu-latest
     if: always()
@@ -146,4 +111,4 @@ jobs:
             echo "❌ iPad tests failed"
             exit 1
           fi
-          echo "✅ All iOS tests passed!"
+          echo "✅ All Release checks passed!"
