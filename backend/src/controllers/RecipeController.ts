@@ -269,8 +269,8 @@ export class RecipeController {
                 .update({
                     title, description, ingredients, instructions,
                     chefs_note: chefsNote, step0_summary: step0Summary,
-                    step0_audio_url: step0AudioUrl, difficulty, cooking_time: cookingTime,
-                    updated_at: new Date().toISOString()
+                    step0_audio_url: step0AudioUrl, difficulty, cooking_time: cookingTime
+                    // updated_at column missing in prod schema
                 })
                 .eq('id', recipeId);
 
