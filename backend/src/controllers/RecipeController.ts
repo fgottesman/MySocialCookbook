@@ -179,7 +179,7 @@ export class RecipeController {
                 .order('version_number', { ascending: false });
 
             if (error) throw error;
-            res.json(data);
+            res.json({ success: true, versions: data || [] });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
