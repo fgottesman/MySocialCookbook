@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { GeminiService } from '../services/gemini';
 import { VideoDownloader } from '../services/video_downloader';
+import { WebRecipeScraper } from '../services/web_recipe_scraper';
 import { ttsService } from '../services/tts';
 import { apnsService } from '../services/apns';
 import fs from 'fs';
@@ -10,6 +11,7 @@ import crypto from 'crypto';
 import logger from '../utils/logger';
 
 const downloader = new VideoDownloader();
+const webScraper = new WebRecipeScraper();
 const gemini = new GeminiService();
 
 export class RecipeController {
@@ -28,7 +30,14 @@ export class RecipeController {
             let finalDescription: string | undefined;
             let creatorUsername: string | undefined;
 
-            if (RecipeController.isDirectProcessableUrl(url)) {
+            // Check if this is a web recipe URL (not a video)
+            if (WebRecipeScraper.isWebRecipeUrl(url)) {
+                logger.info('Detected web recipe URL, using web scraper');
+                const webData = await webScraper.scrapeRecipe(url);
+                recipeData = await gemini.generateRecipeFromWebpage(webData);
+                recipeData.thumbnailUrl = webData.imageUrl;
+                creatorUsername = webData.author;
+            } else if (RecipeController.isDirectProcessableUrl(url)) {
                 try {
                     recipeData = await gemini.generateRecipeFromURL(url);
                 } catch (err) {
