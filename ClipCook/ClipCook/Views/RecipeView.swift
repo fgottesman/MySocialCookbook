@@ -153,8 +153,12 @@ struct RecipeView: View {
                                             .padding(.vertical, 8)
                                             .background(
                                                 currentVersionIndex == index
-                                                    ? AnyView(LinearGradient.sizzle)
-                                                    : AnyView(Color.clipCookSurface)
+                                                    ? Color.clear
+                                                    : Color.clipCookSurface
+                                            )
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 16)
+                                                    .stroke(currentVersionIndex == index ? Color.white : Color.clear, lineWidth: 1)
                                             )
                                             .foregroundColor(currentVersionIndex == index ? .white : .clipCookTextSecondary)
                                             .cornerRadius(16)
@@ -287,29 +291,6 @@ struct RecipeView: View {
                     .cornerRadius(12)
             }
             
-            // Loading Overlay for Remixing Generation
-            if isRemixing {
-                Color.black.opacity(0.6).ignoresSafeArea()
-                VStack(spacing: 20) {
-                    Image(systemName: "wand.and.stars")
-                        .font(.system(size: 40))
-                        .foregroundStyle(LinearGradient.sizzle)
-                        .symbolEffect(.bounce.up.byLayer, options: .repeating)
-                    
-                    Text("Chef is Remixing...")
-                        .font(DesignTokens.Typography.headerFont(size: 20))
-                        .foregroundColor(.white)
-                    
-                    Text("Writing new instructions for you")
-                        .font(.caption)
-                        .foregroundColor(.clipCookTextSecondary)
-                }
-                .padding(30)
-                .background(DesignTokens.Colors.surface)
-                .cornerRadius(20)
-                .shadow(radius: 20)
-            }
-            
             // Toast for pending remix save
             if showRemixSaveToast {
                 VStack {
@@ -360,7 +341,7 @@ struct RecipeView: View {
                         }
                         .padding()
                         .padding(.horizontal, 4)
-                        .background(hasPendingRemixSave ? AnyView(Color.gray) : AnyView(LinearGradient.sizzle))
+                        .background(hasPendingRemixSave ? Color.gray : Color.clipCookSizzleStart)
                         .foregroundColor(.white)
                         .cornerRadius(30)
                         .shadow(radius: 10)
@@ -368,6 +349,29 @@ struct RecipeView: View {
                     .disabled(hasPendingRemixSave)
                 }
                 .padding(.bottom, 20)
+            }
+            
+            // Loading Overlay for Remixing Generation (MOVED TO TOP)
+            if isRemixing {
+                Color.black.opacity(0.85).ignoresSafeArea()
+                VStack(spacing: 20) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 40))
+                        .foregroundStyle(LinearGradient.sizzle)
+                        .symbolEffect(.bounce.up.byLayer, options: .repeating)
+                    
+                    Text("Chef is Remixing...")
+                        .font(DesignTokens.Typography.headerFont(size: 20))
+                        .foregroundColor(.white)
+                    
+                    Text("Writing new instructions for you")
+                        .font(.caption)
+                        .foregroundColor(.clipCookTextSecondary)
+                }
+                .padding(30)
+                .background(DesignTokens.Colors.surface)
+                .cornerRadius(20)
+                .shadow(radius: 20)
             }
         }
         .sheet(isPresented: $showingRemix) {
@@ -501,21 +505,22 @@ struct RecipeView: View {
                     self.recipeVersions = versions
                     
                     // Auto-select the latest (most recent) version
-                    let latestIndex = versions.count - 1
-                    self.currentVersionIndex = latestIndex
-                    
-                    // Update the displayed recipe to the latest version
-                    let latestVersion = versions[latestIndex]
-                    self.recipe = latestVersion.recipe
-                    self.changedIngredients = latestVersion.changedIngredients
-                    
-                    // Reset checked ingredients since we're viewing a different version
-                    self.checkedIngredients.removeAll()
+                    if !versions.isEmpty {
+                        let latestIndex = versions.count - 1
+                        self.currentVersionIndex = latestIndex
+                        
+                        // Update the displayed recipe to the latest version
+                        let latestVersion = versions[latestIndex]
+                        self.recipe = latestVersion.recipe
+                        self.changedIngredients = latestVersion.changedIngredients
+                        
+                        // Reset checked ingredients since we're viewing a different version
+                        self.checkedIngredients.removeAll()
+                    }
                 }
             }
         } catch {
             print("Failed to load versions: \(error)")
-            // Non-blocking - versions just won't load from DB
         }
     }
     
@@ -828,7 +833,18 @@ struct SourceCardHeader: View {
                 } else {
                     // Video-based recipe attribution
                     VStack(alignment: .leading, spacing: 2) {
-                        if let name = recipe.displayCreatorName, !name.isEmpty {
+                        if let handle = recipe.creatorUsername, !handle.isEmpty {
+                            Text(handle.hasPrefix("@") ? handle : "@" + handle)
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                        } else if let profile = recipe.profile, let username = profile.username, !username.isEmpty {
+                             Text(username.hasPrefix("@") ? username : "@" + username)
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                        } else if let name = recipe.displayCreatorName, !name.isEmpty {
+                             // Fallback to name if no handle found anywhere
                             Text(name)
                                 .font(.headline)
                                 .fontWeight(.bold)
