@@ -16,7 +16,7 @@ class MessagingManager: NSObject, ObservableObject {
         super.init()
     }
     
-    func requestPermission() {
+    func requestPermission(completion: ((Bool) -> Void)? = nil) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             print("Permission granted: \(granted)")
             if granted {
@@ -24,6 +24,7 @@ class MessagingManager: NSObject, ObservableObject {
                     UIApplication.shared.registerForRemoteNotifications()
                 }
             }
+            completion?(granted)
         }
     }
     

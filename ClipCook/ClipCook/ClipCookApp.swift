@@ -34,6 +34,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct MySocialCookbookApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -44,6 +46,12 @@ struct MySocialCookbookApp: App {
                         print("Successfully handled auth callback")
                     }
                 }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                // Clear the badge count when the app is opened
+                UIApplication.shared.applicationIconBadgeNumber = 0
+            }
         }
     }
 }
