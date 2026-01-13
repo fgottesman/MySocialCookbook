@@ -33,10 +33,12 @@ jobs:
         working-directory: ClipCook
         run: |
           set -o pipefail
+          xcodebuild -version
+          xcrun simctl list devices available
           xcodebuild test \
             -project ClipCook.xcodeproj \
             -scheme ClipCook \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -only-testing:ClipCookTests \
             -resultBundlePath TestResults/UnitTests \
             CODE_SIGN_IDENTITY="" \
