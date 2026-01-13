@@ -2,11 +2,13 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var viewModel = FeedViewModel()
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var isSearching = false
     @State private var showingAddRecipe = false
     @State private var isProcessingRecipe = false
     @State private var isTakingLonger = false
     @State private var recipeCountBeforeProcessing = 0
+    @State private var showPaywall = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
@@ -49,26 +51,32 @@ struct FeedView: View {
                         NUXView(showingAddRecipe: $showingAddRecipe)
                     } else {
                         ScrollView {
-                            LazyVGrid(columns: columns, spacing: 20) {
-                                // Show loading card at top when processing
-                                if isProcessingRecipe {
-                                    LoadingRecipeCard(isTakingLonger: isTakingLonger) {
-                                        withAnimation {
-                                            isProcessingRecipe = false
-                                            isTakingLonger = false
-                                        }
-                                    }
-                                        .transition(.opacity)
-                                }
+                            VStack(spacing: 0) {
+                                // Credits banner (only shows when running low)
+                                CreditsBanner()
+                                    .padding(.bottom, 8)
                                 
-                                ForEach(viewModel.filteredRecipes) { recipe in
-                                    NavigationLink(destination: RecipeView(recipe: recipe)) {
-                                        RecipeCard(recipe: recipe)
+                                LazyVGrid(columns: columns, spacing: 20) {
+                                    // Show loading card at top when processing
+                                    if isProcessingRecipe {
+                                        LoadingRecipeCard(isTakingLonger: isTakingLonger) {
+                                            withAnimation {
+                                                isProcessingRecipe = false
+                                                isTakingLonger = false
+                                            }
+                                        }
+                                        .transition(.opacity)
                                     }
-                                    .buttonStyle(PremiumButtonStyle())
+                                    
+                                    ForEach(viewModel.filteredRecipes) { recipe in
+                                        NavigationLink(destination: RecipeView(recipe: recipe)) {
+                                            RecipeCard(recipe: recipe)
+                                        }
+                                        .buttonStyle(PremiumButtonStyle())
+                                    }
                                 }
+                                .padding()
                             }
-                            .padding()
                         }
                         .refreshable {
                             await viewModel.fetchRecipes(isUserInitiated: true)
@@ -133,7 +141,12 @@ struct FeedView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     if !isSearching {
                         Button {
-                            showingAddRecipe = true
+                            // Check if user can import a recipe
+                            if subscriptionManager.canImportRecipe {
+                                showingAddRecipe = true
+                            } else {
+                                showPaywall = true
+                            }
                         } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 18))
@@ -194,6 +207,10 @@ struct FeedView: View {
                 .onDisappear {
                     Task {
                         await viewModel.fetchRecipes()
+                        // Check if new recipe appeared
+                        if viewModel.recipes.count > recipeCountBeforeProcessing {
+                             // Handled by onChange below, but good backup logic
+                        }
                     }
                 }
             }
@@ -205,6 +222,9 @@ struct FeedView: View {
                         isTakingLonger = false
                     }
                 }
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
         }
     }
