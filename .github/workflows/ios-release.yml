@@ -13,6 +13,7 @@ jobs:
   iphone-tests:
     name: 📱 iPhone Tests
     runs-on: macos-15
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       
@@ -33,7 +34,6 @@ jobs:
             -only-testing:ClipCookUITests \
             -resultBundlePath TestResults/iPhoneTests \
             -retry-tests-on-failure \
-            -test-iterations 2 \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             | xcpretty --color
@@ -44,6 +44,7 @@ jobs:
   ipad-tests:
     name: 📱 iPad Compatibility
     runs-on: macos-15
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       
