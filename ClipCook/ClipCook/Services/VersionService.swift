@@ -34,9 +34,8 @@ class VersionService {
             throw URLError(.badServerResponse)
         }
         
-        let decoder = JSONDecoder()
-
-        decoder.dateDecodingStrategy = .custom { decoder in
+        let jsonDecoder = JSONDecoder()
+        jsonDecoder.dateDecodingStrategy = .custom { (decoder: Decoder) throws -> Date in
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
             
@@ -55,7 +54,7 @@ class VersionService {
             
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date format: \(dateString)")
         }
-        let result = try decoder.decode(VersionsResponse.self, from: data)
+        let result = try jsonDecoder.decode(VersionsResponse.self, from: data)
         return result.versions
     }
     
