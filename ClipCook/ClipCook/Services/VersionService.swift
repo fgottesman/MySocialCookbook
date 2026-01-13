@@ -35,7 +35,7 @@ class VersionService {
         }
         
         let decoder = JSONDecoder()
-        let decoder = JSONDecoder()
+
         decoder.dateDecodingStrategy = .custom { decoder in
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
