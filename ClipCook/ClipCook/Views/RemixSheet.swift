@@ -530,6 +530,35 @@ struct ConsultationCard: View {
                 .foregroundColor(.white)
                 .lineSpacing(4)
             
+            // Metrics Row
+            HStack(spacing: 0) {
+                MetricBadge(
+                    title: "Difficulty",
+                    value: consult.difficultyImpact,
+                    color: difficultyColor(consult.difficultyImpact),
+                    icon: "chart.bar.fill"
+                )
+                
+                Spacer()
+                
+                Rectangle()
+                    .fill(Color.clipCookTextSecondary.opacity(0.2))
+                    .frame(width: 1, height: 40)
+                
+                Spacer()
+                
+                MetricBadge(
+                    title: "Quality",
+                    value: consult.qualityImpact,
+                    color: qualityColor(consult.qualityImpact),
+                    icon: "star.fill"
+                )
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .background(Color.black.opacity(0.2))
+            .cornerRadius(12)
+            
             // Action Button
             Button(action: onConfirm) {
                 HStack(spacing: 8) {
