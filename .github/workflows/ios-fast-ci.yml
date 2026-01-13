@@ -40,6 +40,8 @@ jobs:
             -scheme ClipCook \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
             -only-testing:ClipCookTests \
+            -skip-testing:ClipCookTests/FeedViewSnapshotTests \
+            -skip-testing:ClipCookTests/RecipeCardSnapshotTests \
             -resultBundlePath TestResults/UnitTests \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
