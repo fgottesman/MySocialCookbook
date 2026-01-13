@@ -13,7 +13,6 @@ struct RecipeServiceTests {
     
     @Test func processRecipeUsesCorrectEndpoint() async throws {
         // Verify that processRecipe uses the correct backend endpoint
-        let expectedEndpoint = "\(AppConfig.apiEndpoint)/process-recipe"
         
         // This test verifies the endpoint URL is constructed correctly
         // Actual network calls would require mocking URLSession
@@ -26,7 +25,6 @@ struct RecipeServiceTests {
     
     @Test func generateRecipeUsesCorrectEndpoint() async throws {
         // Verify that createRecipeFromPrompt uses the correct backend endpoint
-        let expectedEndpoint = "\(AppConfig.apiEndpoint)/generate-recipe-from-prompt"
         
         let constructedURL = URL(string: "\(AppConfig.apiEndpoint)/generate-recipe-from-prompt")
         
