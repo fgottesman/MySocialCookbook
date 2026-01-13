@@ -35,7 +35,26 @@ class VersionService {
         }
         
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+            
+            // Fallback for no fractional seconds
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+            
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date format: \(dateString)")
+        }
         let result = try decoder.decode(VersionsResponse.self, from: data)
         return result.versions
     }
