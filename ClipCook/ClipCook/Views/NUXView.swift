@@ -141,7 +141,7 @@ struct NUXView: View {
     // MARK: - Actions
     
     private func requestNotifications() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
+        MessagingManager.shared.requestPermission { granted in
             DispatchQueue.main.async {
                 withAnimation {
                     selection = 3

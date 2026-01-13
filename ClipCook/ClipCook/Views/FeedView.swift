@@ -4,6 +4,9 @@ struct FeedView: View {
     @StateObject private var viewModel = FeedViewModel()
     @State private var isSearching = false
     @State private var showingAddRecipe = false
+    @State private var isProcessingRecipe = false
+    @State private var isTakingLonger = false
+    @State private var recipeCountBeforeProcessing = 0
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
@@ -47,6 +50,17 @@ struct FeedView: View {
                     } else {
                         ScrollView {
                             LazyVGrid(columns: columns, spacing: 20) {
+                                // Show loading card at top when processing
+                                if isProcessingRecipe {
+                                    LoadingRecipeCard(isTakingLonger: isTakingLonger) {
+                                        withAnimation {
+                                            isProcessingRecipe = false
+                                            isTakingLonger = false
+                                        }
+                                    }
+                                        .transition(.opacity)
+                                }
+                                
                                 ForEach(viewModel.filteredRecipes) { recipe in
                                     NavigationLink(destination: RecipeView(recipe: recipe)) {
                                         RecipeCard(recipe: recipe)
@@ -153,10 +167,44 @@ struct FeedView: View {
                 }
             }
             .sheet(isPresented: $showingAddRecipe) {
-                AddRecipeView()
-                    .onDisappear {
-                        Task { await viewModel.fetchRecipes() }
+                AddRecipeView(
+                    onProcessingStarted: {
+                        recipeCountBeforeProcessing = viewModel.recipes.count
+                        isProcessingRecipe = true
+                        
+                        // Start timeout timer - show "Taking longer..." after 60 seconds
+                        Task {
+                            try? await Task.sleep(nanoseconds: 60_000_000_000) // 60 seconds
+                            await MainActor.run {
+                                if isProcessingRecipe {
+                                    withAnimation {
+                                        isTakingLonger = true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    onProcessingFailed: { errorMessage in
+                        withAnimation {
+                            isProcessingRecipe = false
+                        }
+                        viewModel.toastMessage = errorMessage
                     }
+                )
+                .onDisappear {
+                    Task {
+                        await viewModel.fetchRecipes()
+                    }
+                }
+            }
+            .onChange(of: viewModel.recipes.count) { oldCount, newCount in
+                // Hide loading card when new recipe appears
+                if isProcessingRecipe && newCount > recipeCountBeforeProcessing {
+                    withAnimation {
+                        isProcessingRecipe = false
+                        isTakingLonger = false
+                    }
+                }
             }
         }
     }
@@ -214,6 +262,23 @@ struct RecipeCard: View {
                 alignment: .bottomTrailing
             )
             .opacity(recipe.videoUrl == nil ? 0 : 1) // Only show play icon if video exists
+            .overlay(
+                // "New" Badge for recipes < 24 hours old
+                Group {
+                    if Calendar.current.dateComponents([.hour], from: recipe.createdAt, to: Date()).hour ?? 25 < 24 {
+                        Text("NEW")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(LinearGradient.sizzle)
+                            .cornerRadius(4)
+                            .padding(8)
+                            .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    }
+                },
+                alignment: .topLeading
+            )
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(recipe.title)
@@ -311,6 +376,111 @@ struct SearchBar: View {
         .cornerRadius(10)
         .onAppear {
             isFocused = true
+        }
+    }
+}
+
+/// Loading placeholder card shown when a recipe is being processed
+struct LoadingRecipeCard: View {
+    @State private var shimmerOffset: CGFloat = -1.0
+    var isTakingLonger: Bool = false
+    var onDismiss: () -> Void = {}
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Shimmer thumbnail placeholder
+            Color.clear
+                .aspectRatio(9/16, contentMode: .fit)
+                .background(
+                    ZStack {
+                        DesignTokens.Colors.background
+                        
+                        // Shimmer effect
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.0),
+                                Color.white.opacity(0.1),
+                                Color.white.opacity(0.0)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .offset(x: shimmerOffset * 200)
+                    }
+                )
+                .cornerRadius(12)
+                .overlay(
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Colors.primary))
+                            .scaleEffect(1.2)
+                        
+                        Text(isTakingLonger ? "Taking longer than expected..." : "Cooking...")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(LinearGradient.sizzle)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        if isTakingLonger {
+                            Button(action: onDismiss) {
+                                Text("Dismiss")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(LinearGradient.sizzle)
+                                    .cornerRadius(12)
+                            }
+                        }
+                    }
+                )
+            
+            // Title placeholder
+            VStack(alignment: .leading, spacing: 8) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(DesignTokens.Colors.background)
+                    .frame(height: 18)
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.0),
+                                Color.white.opacity(0.1),
+                                Color.white.opacity(0.0)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .offset(x: shimmerOffset * 200)
+                    )
+                
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(DesignTokens.Colors.background)
+                    .frame(width: 100, height: 12)
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.0),
+                                Color.white.opacity(0.1),
+                                Color.white.opacity(0.0)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .offset(x: shimmerOffset * 200)
+                    )
+            }
+        }
+        .padding(DesignTokens.Layout.cardPadding)
+        .background(DesignTokens.Colors.surface)
+        .cornerRadius(DesignTokens.Layout.cornerRadius)
+        .shadow(color: DesignTokens.Colors.primary.opacity(0.1), radius: 10)
+        .shadow(color: DesignTokens.Effects.softShadowColor, radius: DesignTokens.Effects.softShadowRadius, y: 4)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: false)) {
+                shimmerOffset = 1.0
+            }
         }
     }
 }
