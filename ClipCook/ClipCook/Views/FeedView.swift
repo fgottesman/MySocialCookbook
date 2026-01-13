@@ -233,7 +233,26 @@ struct RecipeCard: View {
                             .foregroundStyle(LinearGradient.sizzle)
                     } else {
                         // Show creator name if available, otherwise just show platform
-                        if let name = recipe.displayCreatorName, !name.isEmpty {
+                        // Show creator name if available, otherwise just show platform
+                        if let handle = recipe.creatorUsername, !handle.isEmpty {
+                            Text(handle.hasPrefix("@") ? handle : "@" + handle)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                            
+                            Text("•")
+                                .font(.caption)
+                                .foregroundColor(.clipCookTextSecondary)
+                        } else if let profile = recipe.profile, let username = profile.username, !username.isEmpty {
+                             Text(username.hasPrefix("@") ? username : "@" + username)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                            
+                            Text("•")
+                                .font(.caption)
+                                .foregroundColor(.clipCookTextSecondary)
+                        } else if let name = recipe.displayCreatorName, !name.isEmpty {
                             Text(name)
                                 .font(.caption)
                                 .fontWeight(.medium)
