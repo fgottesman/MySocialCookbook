@@ -263,16 +263,12 @@ export class RecipeController {
 
             if (insertError) throw insertError;
 
-            // 3. Update the Parent Recipe to match the latest version (The Remix)
-            await req.supabase
-                .from('recipes')
-                .update({
-                    title, description, ingredients, instructions,
-                    chefs_note: chefsNote, step0_summary: step0Summary,
-                    step0_audio_url: step0AudioUrl, difficulty, cooking_time: cookingTime
-                    // updated_at column missing in prod schema
-                })
-                .eq('id', recipeId);
+            if (insertError) throw insertError;
+
+            // 3. DO NOT Update the Parent Recipe
+            // User Feedback: "I don't want to change the feed card, keep that as the original."
+            // The feed will continue to show the original recipe info.
+            // When the user opens the recipe, the versions will load and auto-select the latest remix.
 
             res.json({ success: true, version: vData });
         } catch (error: any) {
