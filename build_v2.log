@@ -1,0 +1,407 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project ClipCook/ClipCook.xcodeproj -scheme ClipCook -destination "platform=iOS Simulator,name=iPhone 17 Pro" build
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  swift-concurrency-extras: https://github.com/pointfreeco/swift-concurrency-extras @ 1.3.2
+  swift-clocks: https://github.com/pointfreeco/swift-clocks @ 1.0.6
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 602.0.0
+  swift-crypto: https://github.com/apple/swift-crypto.git @ 4.2.0
+  swift-asn1: https://github.com/apple/swift-asn1.git @ 1.5.1
+  swift-http-types: https://github.com/apple/swift-http-types.git @ 1.5.1
+  Supabase: https://github.com/supabase/supabase-swift @ 2.39.0
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.18.7
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.8.0
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.3.3
+
+2026-01-13 07:51:39.769 xcodebuild[93285:1252130] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (29 targets)
+    Target 'ClipCook' in project 'ClipCook'
+        ➜ Explicit dependency on target 'ShareRecipe' in project 'ClipCook'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+    Target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+    Target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+    Target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'swift-crypto_Crypto' in project 'swift-crypto'
+    Target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'swift-crypto_Crypto' in project 'swift-crypto'
+    Target 'swift-crypto_Crypto' in project 'swift-crypto' (no dependencies)
+    Target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+    Target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+    Target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay'
+    Target 'IssueReportingPackageSupport' in project 'xctest-dynamic-overlay' (no dependencies)
+    Target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+    Target 'HTTPTypes' in project 'swift-http-types' (no dependencies)
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras' (no dependencies)
+    Target 'ShareRecipe' in project 'ClipCook' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/ibtool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ReadFileContents /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/share/docc/features.json
+
+Build description signature: 1b37450d163bf4e18ced9a820abab6d2
+Build description path: /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/XCBuildData/1b37450d163bf4e18ced9a820abab6d2.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk /Users/freddygottesman/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache
+
+ProcessProductPackaging /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ShareRecipe/ShareRecipe.entitlements /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex.xcent (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+    Entitlements:
+    
+    {
+}
+    
+    builtin-productPackagingUtility /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ShareRecipe/ShareRecipe.entitlements -entitlements -format xml -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex.xcent
+
+ProcessInfoPlistFile /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/swift-crypto_Crypto.bundle/Info.plist /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/swift-crypto_Crypto.build/empty-swift-crypto_Crypto.plist (in target 'swift-crypto_Crypto' from project 'swift-crypto')
+    cd /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/SourcePackages/checkouts/swift-crypto
+    builtin-infoPlistUtility /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/swift-crypto_Crypto.build/empty-swift-crypto_Crypto.plist -producttype com.apple.product-type.bundle -expandbuildsettings -format binary -platform iphonesimulator -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/swift-crypto_Crypto.bundle/Info.plist
+
+ProcessProductPackaging /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ShareRecipe/ShareRecipe.entitlements /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex-Simulated.xcent (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+    Entitlements:
+    
+    {
+    "application-identifier" = "FKQH296593.Freddy.ClipCook.ShareRecipe";
+    "com.apple.security.application-groups" =     (
+        "group.com.mysocialcookbook"
+    );
+}
+    
+    builtin-productPackagingUtility /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ShareRecipe/ShareRecipe.entitlements -entitlements -format xml -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex-Simulated.xcent
+
+ProcessProductPackagingDER /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex.xcent /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex.xcent.der (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    /usr/bin/derq query -f xml -i /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex.xcent -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex.xcent.der --raw
+
+ProcessProductPackagingDER /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex-Simulated.xcent /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex-Simulated.xcent.der (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    /usr/bin/derq query -f xml -i /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex-Simulated.xcent -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex-Simulated.xcent.der --raw
+
+ProcessInfoPlistFile /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/Info.plist /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ShareRecipe/Info.plist (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    builtin-infoPlistUtility /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ShareRecipe/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Base.lproj/MainInterface-SBPartialInfo.plist -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/Info.plist
+
+Ld /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe.debug.dylib normal (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios26.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -O0 -L/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -F/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -filelist /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ShareRecipe.LinkFileList -install_name @rpath/ShareRecipe.debug.dylib -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/../../Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ShareRecipe_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ShareRecipe_dependency_info.dat -fapplication-extension -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ShareRecipe.swiftmodule @/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ShareRecipe-linker-args.resp -Xlinker -alias -Xlinker _NSExtensionMain -Xlinker ___debug_main_executable_dylib_entry_point -Xlinker -no_adhoc_codesign -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe.debug.dylib
+
+ProcessProductPackaging /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/ClipCook.entitlements /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app.xcent (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+    Entitlements:
+    
+    {
+}
+    
+    builtin-productPackagingUtility /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/ClipCook.entitlements -entitlements -format xml -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app.xcent
+
+ProcessProductPackaging /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/ClipCook.entitlements /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app-Simulated.xcent (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+    Entitlements:
+    
+    {
+    "application-identifier" = "FKQH296593.Freddy.ClipCook";
+    "aps-environment" = development;
+    "com.apple.developer.applesignin" =     (
+        Default
+    );
+    "com.apple.security.application-groups" =     (
+        "group.com.mysocialcookbook"
+    );
+}
+    
+    builtin-productPackagingUtility /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/ClipCook.entitlements -entitlements -format xml -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app-Simulated.xcent
+
+ProcessProductPackagingDER /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app.xcent /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app.xcent.der (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    /usr/bin/derq query -f xml -i /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app.xcent -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app.xcent.der --raw
+
+ProcessProductPackagingDER /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app-Simulated.xcent /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app-Simulated.xcent.der (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    /usr/bin/derq query -f xml -i /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app-Simulated.xcent -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook.app-Simulated.xcent.der --raw
+
+SwiftDriver ClipCook normal arm64 com.apple.xcode.tools.swift.compiler (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name ClipCook -Onone -enforce-exclusivity\=checked @/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook.SwiftFileList -DDEBUG -default-isolation\=MainActor -enable-bare-slash-regex -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -target arm64-apple-ios26.0-simulator -g -module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64 -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache -output-file-map /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook_const_extract_protocols.json -Xcc -iquote -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-generated-files.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-own-target-headers.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook-69197a6be9298c26298ec9d69fa49007-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-project-headers.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources-normal/arm64 -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources/arm64 -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook-Swift.h -working-directory /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook -experimental-emit-module-separately -disable-cmo
+
+ConstructStubExecutorLinkFileList /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe-ExecutorLinkFileList-normal-arm64.txt (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    construct-stub-executor-link-file-list /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe.debug.dylib /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library without Swift entry point. (in target 'ShareRecipe' from project 'ClipCook')
+
+Ld /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe normal (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios26.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -O0 -L/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -F/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/../../Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_entry -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe-DebugEntryPoint-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe-ExecutorLinkFileList-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex-Simulated.xcent.der /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe.debug.dylib -Xlinker -no_adhoc_codesign -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe
+
+ExtractAppIntentsMetadata (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name ShareRecipe --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk --xcode-version 17A400 --platform-family iOS --deployment-target 26.0 --bundle-identifier Freddy.ClipCook.ShareRecipe --output /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex --target-triple arm64-apple-ios26.0-simulator --binary-file /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe --dependency-file /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ShareRecipe_dependency_info.dat --stringsdata-file /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ShareRecipe.SwiftFileList --metadata-file-list /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.DependencyMetadataFileList --static-metadata-file-list /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.DependencyStaticMetadataFileList --swift-const-vals-list /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/Objects-normal/arm64/ShareRecipe.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-01-13 07:51:41.284 appintentsmetadataprocessor[93347:1252464] Starting appintentsmetadataprocessor export
+2026-01-13 07:51:41.285 appintentsmetadataprocessor[93347:1252464] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CodeSign /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe.debug.dylib (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex/ShareRecipe.debug.dylib
+
+CodeSign /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex (in target 'ShareRecipe' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ShareRecipe.build/ShareRecipe.appex.xcent --timestamp\=none --generate-entitlement-der /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/ShareRecipe.appex
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ ClipCook (in target 'ClipCook' from project 'ClipCook')
+
+EmitSwiftModule normal arm64 (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+SwiftCompile normal arm64 Compiling\ FirstRecipeOfferView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FirstRecipeOfferView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FirstRecipeOfferView.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+SwiftCompile normal arm64 Compiling\ FeedView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FeedView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FeedView.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+SwiftCompile normal arm64 Compiling\ PaywallView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift (in target 'ClipCook' from project 'ClipCook')
+Failed frontend command:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Models/AlertItem.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Models/Profile.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Models/Recipe.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Models/RecipeVersion.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/AppleSignInManager.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/AuthViewModel.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/DesignSystem.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/FavoritesViewModel.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/FeedViewModel.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/LiveVoiceManager.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/MeasurementConverter.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/MessagingManager.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/RecipeService.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/RemixService.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/SpeechManager.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/SubscriptionManager.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/SupabaseManager.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/VersionService.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Services/VoiceCompanionService.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/Components/MagicParticles.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/Components/ShareSheet.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/Components/SubscriptionComponents.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/AddRecipeView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/AuthView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/ContentView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FavoritesView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FeedView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FirstRecipeOfferView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/LegalDocumentView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/MainTabView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/NUXView.swift -primary-file /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/ProcessingSuccessView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/ProfileView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/RecipeView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/RemixSheet.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/UserPreferencesView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/VoiceCompanionView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/ClipCookApp.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Config.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/DesignTokens.swift /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources/GeneratedAssetSymbols.swift -emit-dependencies-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/PaywallView.d -emit-const-values-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/PaywallView.swiftconstvalues -emit-reference-dependencies-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/PaywallView.swiftdeps -serialize-diagnostics-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/PaywallView.dia -emit-localized-strings -emit-localized-strings-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64 -target arm64-apple-ios26.0-simulator -module-can-import-version DeveloperToolsSupport 23.0.4 23.0.4 -module-can-import-version SwiftUI 7.0.84.1 7.0.84 -module-can-import-version UIKit 9088.1.113 9088.1.113 -disable-cross-import-overlay-search -swift-module-cross-import AVKit /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/AVKit.framework/Modules/AVKit.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AVKit /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk/System/Library/Frameworks/AVKit.framework/Modules/AVKit.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AuthenticationServices /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Cryptexes/OS/System/Library/Frameworks/AuthenticationServices.framework/Modules/AuthenticationServices.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AuthenticationServices /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk/System/Library/Frameworks/AuthenticationServices.framework/Modules/AuthenticationServices.swiftcrossimport/SwiftUI.swiftoverlay -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libFoundationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#FoundationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libObservationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#ObservationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libPreviewsMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#PreviewsMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftUIMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftUIMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libTipKitMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#TipKitMacros -disable-implicit-swift-modules -Xcc -fno-implicit-modules -Xcc -fno-implicit-module-maps -explicit-swift-module-map-file /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook-dependencies-1.json -Xllvm -aarch64-use-tbi -enable-objc-interop -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk -I /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator -no-color-diagnostics -Xcc -fno-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=5 -module-cache-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -profile-generate -profile-coverage-mapping -swift-version 5 -enforce-exclusivity\=checked -Onone -D DEBUG -serialize-debugging-options -const-gather-protocols-file /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/ClipCook_const_extract_protocols.json -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -default-isolation\=MainActor -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook -enable-anonymous-context-mangled-names -file-compilation-dir /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -Xcc -ivfsstatcache -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.0-23A339-26257891a6c027eb51374368541b8346.sdkstatcache -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-generated-files.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-own-target-headers.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook-69197a6be9298c26298ec9d69fa49007-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/ClipCook-project-headers.hmap -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources-normal/arm64 -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources/arm64 -Xcc -I/Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/DerivedSources -Xcc -DDEBUG\=1 -no-auto-bridging-header-chaining -module-name ClipCook -frontend-parseable-output -disable-clang-spi -target-sdk-version 26.0 -target-sdk-name iphonesimulator26.0 -clang-target arm64-apple-ios26.0-simulator -in-process-plugin-server-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -o /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Build/Intermediates.noindex/ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/PaywallView.o -index-unit-output-path /ClipCook.build/Debug-iphonesimulator/ClipCook.build/Objects-normal/arm64/PaywallView.o -index-store-path /Users/freddygottesman/Library/Developer/Xcode/DerivedData/ClipCook-brxpfanydyhcoqcuuyxmnbkmjoke/Index.noindex/DataStore -index-system-modules
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+/Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift:190:39: error: value of type 'SubscriptionManager' has no dynamic member 'purchase' using key path from root type 'SubscriptionManager'
+            await subscriptionManager.purchase(package: package)
+                  ~~~~~~~~~~~~~~~~~~~ ^~~~~~~~
+/Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift:190:19: error: referencing subscript 'subscript(dynamicMember:)' requires wrapper 'ObservedObject<SubscriptionManager>.Wrapper'
+            await subscriptionManager.purchase(package: package)
+                  ^
+                  $
+/Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift:190:39: error: cannot call value of non-function type 'Binding<Subject>'
+            await subscriptionManager.purchase(package: package)
+                                      ^
+/Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift:204:39: error: value of type 'SubscriptionManager' has no dynamic member 'restorePurchases' using key path from root type 'SubscriptionManager'
+            await subscriptionManager.restorePurchases()
+                  ~~~~~~~~~~~~~~~~~~~ ^~~~~~~~~~~~~~~~
+/Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift:204:19: error: referencing subscript 'subscript(dynamicMember:)' requires wrapper 'ObservedObject<SubscriptionManager>.Wrapper'
+            await subscriptionManager.restorePurchases()
+                  ^
+                  $
+/Users/freddygottesman/fgottesman labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift:204:39: error: cannot call value of non-function type 'Binding<Subject>'
+            await subscriptionManager.restorePurchases()
+                                      ^               ~~
+                                                      
+
+SwiftDriverJobDiscovery normal arm64 Compiling FirstRecipeOfferView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 Compiling\ FavoritesView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FavoritesView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/FavoritesView.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+SwiftCompile normal arm64 Compiling\ ProfileView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/ProfileView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/ProfileView.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+SwiftCompile normal arm64 Compiling\ MainTabView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/MainTabView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/MainTabView.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+SwiftCompile normal arm64 Compiling\ LegalDocumentView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/LegalDocumentView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 Compiling\ UserPreferencesView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/UserPreferencesView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/UserPreferencesView.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+SwiftCompile normal arm64 Compiling\ SubscriptionComponents.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/Components/SubscriptionComponents.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/Components/SubscriptionComponents.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+SwiftCompile normal arm64 Compiling\ ProcessingSuccessView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/ProcessingSuccessView.swift (in target 'ClipCook' from project 'ClipCook')
+
+SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/ProcessingSuccessView.swift (in target 'ClipCook' from project 'ClipCook')
+    cd /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook
+    
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftCompile normal arm64 Compiling\ PaywallView.swift /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift (in target 'ClipCook' from project 'ClipCook')
+	SwiftCompile normal arm64 /Users/freddygottesman/fgottesman\ labs/ClipCook/ClipCook/ClipCook/Views/PaywallView.swift (in target 'ClipCook' from project 'ClipCook')
+	Building project ClipCook with scheme ClipCook
+(3 failures)
