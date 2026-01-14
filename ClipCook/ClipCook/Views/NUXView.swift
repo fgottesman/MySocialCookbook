@@ -14,15 +14,16 @@ struct NUXView: View {
                 NUXCard(
                     title: "ClipCook",
                     subtitle: "Your AI-powered social cookbook. Turn any cooking video into a step-by-step recipe with magic! ✨",
-                    imageName: "sparkles"
+                    imageName: "sparkles",
+                    color: .clipCookSizzleStart
                 ) {
                     Button(action: { withAnimation { selection = 1 } }) {
                         Text("Tell me more")
                             .font(.headline)
-                            .foregroundColor(Color(hex: "0F1A2B"))
+                            .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.white)
+                            .background(LinearGradient.sizzle)
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 40)
@@ -33,7 +34,8 @@ struct NUXView: View {
                 NUXCard(
                     title: "Share to Clip",
                     subtitle: "When you find a delicious recipe on TikTok, IG, or YouTube, tap Share and select ClipCook.",
-                    imageName: "square.and.arrow.up.fill"
+                    imageName: "square.and.arrow.up.fill",
+                    color: .clipCookSizzleEnd
                 ) {
                     VStack(alignment: .leading, spacing: 16) {
                         NUXStepRow(number: "1", text: "Tap the Share icon")
@@ -45,7 +47,7 @@ struct NUXView: View {
                     Button(action: { withAnimation { selection = 2 } }) {
                         Text("Next")
                             .font(.headline)
-                            .foregroundColor(Color(hex: "E8C4B8"))
+                            .foregroundColor(.clipCookTextSecondary)
                     }
                     .padding(.top, 10)
                 }
@@ -55,15 +57,16 @@ struct NUXView: View {
                 NUXCard(
                     title: "Stay in the Loop",
                     subtitle: "AI cooking takes a minute! We'll notify you the second your recipe is ready to cook. 🍳",
-                    imageName: "bell.badge.fill"
+                    imageName: "bell.badge.fill",
+                    color: .clipCookSizzleStart
                 ) {
                     Button(action: requestNotifications) {
                         Text("Enable Notifications")
                             .font(.headline)
-                            .foregroundColor(Color(hex: "0F1A2B"))
+                            .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.white)
+                            .background(LinearGradient.sizzle)
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 40)
@@ -74,7 +77,8 @@ struct NUXView: View {
                 NUXCard(
                     title: "Pro Tip: Pin Us!",
                     subtitle: "Add ClipCook to your Favorites in the Share Sheet so it's always at the top for instant clipping.",
-                    imageName: "pin.fill"
+                    imageName: "pin.fill",
+                    color: .clipCookSuccess
                 ) {
                     VStack(alignment: .leading, spacing: 12) {
                         NUXStepRow(number: "1", text: "Tap Share → More (...)")
@@ -86,7 +90,7 @@ struct NUXView: View {
                     Button(action: { withAnimation { selection = 4 } }) {
                         Text("Got it!")
                             .font(.headline)
-                            .foregroundColor(Color(hex: "E8C4B8"))
+                            .foregroundColor(.clipCookTextSecondary)
                     }
                     .padding(.top, 10)
                 }
@@ -96,7 +100,8 @@ struct NUXView: View {
                 NUXCard(
                     title: "Let's Get Cooking",
                     subtitle: "Find a recipe you love or describe what you want to make.",
-                    imageName: "flame.fill"
+                    imageName: "flame.fill",
+                    color: .clipCookSizzleStart
                 ) {
                     VStack(spacing: 12) {
                         HStack(spacing: 12) {
@@ -107,17 +112,21 @@ struct NUXView: View {
                         
                         Text("OR")
                             .font(.caption)
-                            .foregroundColor(.clipCookTextSecondary)
+                            .foregroundColor(.gray)
                             .padding(.vertical, 4)
                         
                         Button(action: { showingAddRecipe = true }) {
                             Text("Paste Link or Describe")
                                 .font(.headline)
-                                .foregroundColor(Color(hex: "0F1A2B"))
+                                .foregroundColor(.white)
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(Color.white)
-                                .cornerRadius(12)
+                                .background(DesignTokens.Colors.surface)
+                                .cornerRadius(DesignTokens.Layout.cornerRadius / 2)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius / 2)
+                                        .stroke(LinearGradient.sizzle, lineWidth: 1)
+                                )
                         }
                     }
                     .padding(.horizontal, 40)
@@ -190,12 +199,14 @@ struct NUXCard<Content: View>: View {
     let title: String
     let subtitle: String
     let imageName: String
+    let color: Color
     let content: Content
     
-    init(title: String, subtitle: String, imageName: String, @ViewBuilder content: () -> Content) {
+    init(title: String, subtitle: String, imageName: String, color: Color, @ViewBuilder content: () -> Content) {
         self.title = title
         self.subtitle = subtitle
         self.imageName = imageName
+        self.color = color
         self.content = content()
     }
     
@@ -203,22 +214,29 @@ struct NUXCard<Content: View>: View {
         VStack(spacing: 30) {
             Spacer()
             
-            // Icon - no circle background, just the icon
-            Image(systemName: imageName)
-                .font(.system(size: 60, weight: .bold))
-                .foregroundStyle(LinearGradient.sizzle)
-                .padding(.bottom, 10)
+            // Icon Circle
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: imageName)
+                    .font(.system(size: 50, weight: .bold))
+                    .foregroundStyle(color)
+            }
             
             VStack(spacing: 12) {
                 Text(title)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(.clipCookTextPrimary)
+                    .font(DesignTokens.Typography.headerFont(size: 32))
+                    .foregroundColor(DesignTokens.Colors.textPrimary)
+                    .premiumText()
                 
                 Text(subtitle)
-                    .font(.system(size: 18, weight: .regular, design: .rounded))
-                    .foregroundColor(.clipCookTextSecondary)
+                    .font(DesignTokens.Typography.bodyFont(size: 18))
+                    .foregroundColor(DesignTokens.Colors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 30)
+                    .premiumText()
             }
             
             content

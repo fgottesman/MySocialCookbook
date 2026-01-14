@@ -35,41 +35,6 @@ struct MySocialCookbookApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     @Environment(\.scenePhase) private var scenePhase
-    
-    init() {
-        // Configure global navigation bar appearance for Midnight Rose theme
-        let navAppearance = UINavigationBarAppearance()
-        navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = UIColor(Color(hex: "0F1A2B"))
-        navAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-        
-        UINavigationBar.appearance().standardAppearance = navAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
-        UINavigationBar.appearance().compactAppearance = navAppearance
-        UINavigationBar.appearance().tintColor = UIColor(Color(hex: "E8C4B8")) // Rose gold for back buttons
-        
-        // Configure global tab bar appearance for Midnight Rose theme
-        // (Consolidated here - runs ONCE at launch, not on each tab switch)
-        let tabAppearance = UITabBarAppearance()
-        tabAppearance.configureWithOpaqueBackground()
-        tabAppearance.backgroundColor = UIColor(Color(hex: "0F1A2B"))
-        
-        // Unselected tab items
-        tabAppearance.stackedLayoutAppearance.normal.iconColor = UIColor(Color(hex: "D4A5A5").opacity(0.5))
-        tabAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor(Color(hex: "D4A5A5").opacity(0.5))
-        ]
-        
-        // Selected tab items (rose gold)
-        tabAppearance.stackedLayoutAppearance.selected.iconColor = UIColor(Color(hex: "E8C4B8"))
-        tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-            .foregroundColor: UIColor(Color(hex: "E8C4B8"))
-        ]
-        
-        UITabBar.appearance().standardAppearance = tabAppearance
-        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
-    }
 
     var body: some Scene {
         WindowGroup {

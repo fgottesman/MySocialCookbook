@@ -3,19 +3,18 @@ import SwiftUI
 
 // MARK: - Colors
 extension Color {
-    static let clipCookBackground = Color(hex: "0F1A2B")      // Midnight Navy
-    static let clipCookSurface = Color(hex: "1A2A3D")         // Deep Navy
+    static let clipCookBackground = Color(hex: "1D1D1D")
+    static let clipCookSurface = Color(hex: "2C2C2E")
     static let clipCookTextPrimary = Color.white
-    static let clipCookTextSecondary = Color(hex: "D4A5A5")   // Dusty Rose
+    static let clipCookTextSecondary = Color(hex: "8E8E93")
     
-    // The "Sizzle" Gradient Colors (now Rose Gold)
-    static let clipCookSizzleStart = Color(hex: "E8C4B8")     // Rose Gold
-    static let clipCookSizzleEnd = Color(hex: "D4A5A5")       // Dusty Rose
+    // The "Sizzle" Gradient Colors
+    static let clipCookSizzleStart = Color(hex: "FF512F") // Sunset Orange
+    static let clipCookSizzleEnd = Color(hex: "DD2476")   // Hot Pink
     
     // Utility Colors
-    static let clipCookSuccess = Color(hex: "A8D4A5")         // Soft Sage
+    static let clipCookSuccess = Color(hex: "4CD964")
 }
-
 
 // MARK: - Gradients
 extension LinearGradient {
