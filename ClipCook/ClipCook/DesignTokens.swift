@@ -3,16 +3,17 @@ import SwiftUI
 struct DesignTokens {
     // MARK: - Colors
     struct Colors {
-        static let primary = Color(red: 0.2, green: 0.6, blue: 0.4) // Deep Sea Green
-        static let secondary = Color(red: 0.95, green: 0.4, blue: 0.3) // Coral Accent
-        static let background = Color.black
-        static let surface = Color(white: 0.1) // Dark Gray Surface
+        static let primary = Color(hex: "E8C4B8")             // Rose Gold
+        static let secondary = Color(hex: "D4A5A5")           // Dusty Rose
+        static let background = Color(hex: "0F1A2B")          // Midnight Navy
+        static let surface = Color(hex: "1A2A3D")             // Deep Navy
         static let textPrimary = Color.white
-        static let textSecondary = Color(white: 0.7)
+        static let textSecondary = Color(hex: "D4A5A5")       // Dusty Rose
         
-        static let gradientStart = Color(red: 0.1, green: 0.15, blue: 0.1)
-        static let gradientEnd = Color.black
+        static let gradientStart = Color(hex: "0F1A2B")       // Midnight Navy
+        static let gradientEnd = Color(hex: "0A1220")         // Deeper Navy
     }
+
     
     // MARK: - Spacing & Grid
     struct Layout {

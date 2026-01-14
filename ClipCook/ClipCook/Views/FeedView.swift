@@ -139,20 +139,19 @@ struct FeedView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarLeading) {
-                    if !isSearching {
-                        Button {
-                            // Check if user can import a recipe
-                            if subscriptionManager.canImportRecipe {
-                                showingAddRecipe = true
-                            } else {
-                                showPaywall = true
-                            }
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 18))
-                                .foregroundStyle(LinearGradient.sizzle)
+                    Button {
+                        // Check if user can import a recipe
+                        if subscriptionManager.canImportRecipe {
+                            showingAddRecipe = true
+                        } else {
+                            showPaywall = true
                         }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(Color(hex: "E8C4B8"))
                     }
+                    .opacity(isSearching ? 0 : 1)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -165,7 +164,8 @@ struct FeedView: View {
                         }
                     } label: {
                         Image(systemName: isSearching ? "xmark.circle.fill" : "magnifyingglass")
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .font(.system(size: 18))
+                            .foregroundColor(Color(hex: "E8C4B8"))
                     }
                 }
             }

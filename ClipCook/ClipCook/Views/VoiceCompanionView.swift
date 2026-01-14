@@ -192,46 +192,48 @@ struct VoiceCompanionView: View {
     
     // MARK: - Header View
     private var headerView: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(isLiveMode ? "Live Chef 🔴" : "Sous Chef Mode")
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundStyle(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing) : LinearGradient.sizzle)
-                Text(recipe.title)
-                    .font(.caption)
-                    .foregroundColor(.clipCookTextSecondary)
-                    .lineLimit(1)
-            }
-            Spacer()
-            
-            // Mute Button (Only for Standard Mode usually, but useful globally)
-            Button(action: { 
-                speechManager.isMuted.toggle()
-                if speechManager.isMuted {
-                    speechManager.stopSpeaking()
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(isLiveMode ? "Live Chef 🔴" : "Sous Chef Mode")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing) : LinearGradient.sizzle)
+                    Text(recipe.title)
+                        .font(.caption)
+                        .foregroundColor(.clipCookTextSecondary)
+                        .lineLimit(1)
                 }
-            }) {
-                Image(systemName: speechManager.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                    .font(.title2)
-                    .foregroundColor(speechManager.isMuted ? .clipCookSizzleStart : .clipCookTextSecondary)
-                    .frame(width: 44, height: 44)
-                    .background(Color.clipCookSurface)
-                    .cornerRadius(12)
+                Spacer()
+                
+                // Mute Button (Only for Standard Mode usually, but useful globally)
+                Button(action: {
+                    speechManager.isMuted.toggle()
+                    if speechManager.isMuted {
+                        speechManager.stopSpeaking()
+                    }
+                }) {
+                    Image(systemName: speechManager.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                        .font(.title2)
+                        .foregroundColor(speechManager.isMuted ? .clipCookSizzleStart : .clipCookTextSecondary)
+                        .frame(width: 44, height: 44)
+                        .background(Color.clipCookSurface)
+                        .cornerRadius(12)
+                }
+                
+                Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                    .font(.title)
+                    .foregroundColor(.clipCookTextSecondary)
+                }
             }
+            .padding()
             
-            Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                Image(systemName: "xmark.circle.fill")
-                .font(.title)
-                .foregroundColor(.clipCookTextSecondary)
+            // Timer Badge (slid under header)
+            if isFreeUserWithLimit {
+                PreviewTimerBadge(secondsRemaining: voicePreviewTimeRemaining)
+                    .transition(.move(edge: .top))
             }
-        }
-        .padding()
-        
-        // Timer Badge (slid under header)
-        if isFreeUserWithLimit {
-            PreviewTimerBadge(secondsRemaining: voicePreviewTimeRemaining)
-                .transition(.move(edge: .top))
         }
     }
     
