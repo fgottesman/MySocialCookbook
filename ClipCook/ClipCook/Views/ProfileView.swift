@@ -6,100 +6,132 @@ struct ProfileView: View {
     @State private var userEmail: String?
     @State private var isLoading = true
     @State private var showingSignOutAlert = false
+    @State private var showingPaywall = false
     
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // User Info Section
-                VStack(spacing: 12) {
-                    // Profile Icon
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.gray.opacity(0.5))
-                    
-                    // Email
-                    if let email = userEmail {
-                        Text(email)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                    } else if isLoading {
-                        ProgressView()
-                    }
-                }
-                .padding(.top, 20)
-                .padding(.bottom, 40)
+            ZStack {
+                Color.clipCookBackground.ignoresSafeArea()
                 
-                // Menu Items
                 VStack(spacing: 0) {
-                    // Settings
-                    NavigationLink(destination: UserPreferencesView()) {
-                        MenuRow(
-                            icon: "gearshape",
-                            title: "Settings"
-                        )
+                    // User Info Section
+                    VStack(spacing: 12) {
+                        // Profile Icon
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 80))
+                            .foregroundStyle(LinearGradient.sizzle)
+                        
+                        // Email
+                        if let email = userEmail {
+                            Text(email)
+                                .font(.headline)
+                                .foregroundColor(.clipCookTextPrimary)
+                        } else if isLoading {
+                            ProgressView()
+                                .tint(.clipCookSizzleStart)
+                        }
                     }
-                    .buttonStyle(.plain)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
                     
-                    Divider()
-                        .padding(.leading, 56)
-                    
-                    // Data Privacy
-                    NavigationLink(destination: LegalDocumentView(
-                        title: "Data Privacy",
-                        content: ProfileView.privacyPolicyContent
-                    )) {
-                        MenuRow(
-                            icon: "lock.shield",
-                            title: "Data Privacy"
-                        )
+                    // Menu Items
+                    VStack(spacing: 0) {
+                        // Subscription Management
+                        Button(action: { showingPaywall = true }) {
+                            MenuRow(
+                                icon: "crown.fill",
+                                title: SubscriptionManager.shared.isPro ? "Manage Subscription" : "Unlock ClipCook Pro",
+                                iconColor: .clipCookSizzleStart
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .sheet(isPresented: $showingPaywall) {
+                            PaywallView()
+                        }
+                        
+                        Divider()
+                            .background(Color.clipCookTextSecondary.opacity(0.3))
+                            .padding(.leading, 56)
+                        
+                        // Settings
+                        NavigationLink(destination: UserPreferencesView()) {
+                            MenuRow(
+                                icon: "gearshape",
+                                title: "Settings"
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Divider()
+                            .background(Color.clipCookTextSecondary.opacity(0.3))
+                            .padding(.leading, 56)
+                        
+                        // Data Privacy
+                        NavigationLink(destination: LegalDocumentView(
+                            title: "Data Privacy",
+                            content: ProfileView.privacyPolicyContent
+                        )) {
+                            MenuRow(
+                                icon: "lock.shield",
+                                title: "Data Privacy"
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Divider()
+                            .background(Color.clipCookTextSecondary.opacity(0.3))
+                            .padding(.leading, 56)
+                        
+                        // Terms of Service
+                        NavigationLink(destination: LegalDocumentView(
+                            title: "Terms of Service",
+                            content: ProfileView.termsOfServiceContent
+                        )) {
+                            MenuRow(
+                                icon: "doc.text",
+                                title: "Terms of Service"
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                    .background(Color.clipCookSurface)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.clipCookTextSecondary.opacity(0.2), lineWidth: 1)
+                    )
+                    .padding(.horizontal)
                     
-                    Divider()
-                        .padding(.leading, 56)
+                    Spacer()
                     
-                    // Terms of Service
-                    NavigationLink(destination: LegalDocumentView(
-                        title: "Terms of Service",
-                        content: ProfileView.termsOfServiceContent
-                    )) {
-                        MenuRow(
-                            icon: "doc.text",
-                            title: "Terms of Service"
-                        )
+                    // Sign Out Button
+                    Button(role: .destructive) {
+                        showingSignOutAlert = true
+                    } label: {
+                        Text("Sign Out")
+                            .font(.headline)
+                            .foregroundColor(.clipCookBackground)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(LinearGradient.sizzle)
+                            .cornerRadius(12)
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
                 }
-                .background(Color(.systemBackground))
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(.systemGray5), lineWidth: 1)
-                )
-                .padding(.horizontal)
-                
-                Spacer()
-                
-                // Sign Out Button
-                Button(role: .destructive) {
-                    showingSignOutAlert = true
-                } label: {
-                    Text("Sign Out")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red)
-                        .cornerRadius(12)
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 20)
+                .frame(maxWidth: horizontalSizeClass == .regular ? 600 : .infinity)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: horizontalSizeClass == .regular ? 600 : .infinity)
-            .frame(maxWidth: .infinity)
-            .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Profile")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(LinearGradient.sizzle)
+                }
+            }
             .alert("Sign Out", isPresented: $showingSignOutAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Sign Out", role: .destructive) {
@@ -144,17 +176,18 @@ struct MenuRow: View {
     let icon: String
     let title: String
     var showComingSoon: Bool = false
+    var iconColor: Color = .clipCookTextSecondary
     
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(.primary)
+                .foregroundColor(iconColor)
                 .frame(width: 24)
             
             Text(title)
                 .font(.body)
-                .foregroundColor(.primary)
+                .foregroundColor(.clipCookTextPrimary)
             
             Spacer()
             
@@ -162,16 +195,16 @@ struct MenuRow: View {
                 Text("Coming Soon")
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.clipCookTextSecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color(.systemGray5))
+                    .background(Color.clipCookSurface)
                     .cornerRadius(12)
             }
             
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color(.systemGray3))
+                .foregroundColor(.clipCookTextSecondary.opacity(0.5))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)

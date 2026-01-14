@@ -10,10 +10,15 @@ struct PaywallView: View {
     @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var selectedPlan: Plan = .annual
+    @State private var selectedPackageId: String?
     
-    enum Plan {
-        case monthly, annual
+    // Derived from available packages
+    private var annualPackage: SubscriptionPackage? {
+        subscriptionManager.availablePackages.first(where: { $0.period == "Yearly" })
+    }
+    
+    private var monthlyPackage: SubscriptionPackage? {
+        subscriptionManager.availablePackages.first(where: { $0.period == "Monthly" })
     }
     
     var body: some View {
@@ -75,35 +80,51 @@ struct PaywallView: View {
                     .padding(.horizontal)
                     
                     // Plan selection
-                    VStack(spacing: 12) {
-                        // Annual plan (recommended)
-                        PlanButton(
-                            title: "Annual",
-                            price: subscriptionManager.config.pricing.annualPrice,
-                            subtitle: subscriptionManager.config.pricing.annualSavings,
-                            isSelected: selectedPlan == .annual,
-                            isRecommended: true
-                        ) {
-                            selectedPlan = .annual
+                    if !subscriptionManager.availablePackages.isEmpty {
+                        VStack(spacing: 12) {
+                            // Annual plan (recommended)
+                            if let annual = annualPackage {
+                                PlanButton(
+                                    title: "Annual",
+                                    price: annual.priceString,
+                                    subtitle: subscriptionManager.config.pricing.annualSavings, // Can update to use actual savings calc if needed
+                                    isSelected: selectedPackageId == annual.id,
+                                    isRecommended: true
+                                ) {
+                                    selectedPackageId = annual.id
+                                }
+                            }
+                            
+                            // Monthly plan
+                            if let monthly = monthlyPackage {
+                                PlanButton(
+                                    title: "Monthly",
+                                    price: monthly.priceString,
+                                    subtitle: "Cancel anytime",
+                                    isSelected: selectedPackageId == monthly.id,
+                                    isRecommended: false
+                                ) {
+                                    selectedPackageId = monthly.id
+                                }
+                            }
                         }
-                        
-                        // Monthly plan
-                        PlanButton(
-                            title: "Monthly",
-                            price: subscriptionManager.config.pricing.monthlyPrice,
-                            subtitle: "Cancel anytime",
-                            isSelected: selectedPlan == .monthly,
-                            isRecommended: false
-                        ) {
-                            selectedPlan = .monthly
+                        .padding(.horizontal)
+                        .onAppear {
+                            // Default to annual if not set
+                            if selectedPackageId == nil {
+                                selectedPackageId = annualPackage?.id
+                            }
                         }
+                    } else {
+                        // Loading state for packages
+                        ProgressView()
+                            .padding()
                     }
-                    .padding(.horizontal)
                     
                     // Subscribe button
                     Button(action: subscribe) {
                         HStack {
-                            if isLoading {
+                            if subscriptionManager.isLoading {
                                 ProgressView()
                                     .tint(.orange)
                             } else {
@@ -118,7 +139,8 @@ struct PaywallView: View {
                         .cornerRadius(14)
                         .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
                     }
-                    .disabled(isLoading)
+                    .disabled(subscriptionManager.isLoading || selectedPackageId == nil)
+                    .opacity(subscriptionManager.isLoading ? 0.7 : 1.0)
                     .padding(.horizontal)
                     
                     // Error message
@@ -154,48 +176,40 @@ struct PaywallView: View {
     
     // MARK: - Actions
     
+    // MARK: - Actions
+    
     private func subscribe() {
-        isLoading = true
+        guard let packageId = selectedPackageId,
+              let package = subscriptionManager.availablePackages.first(where: { $0.id == packageId }) else {
+            return
+        }
+        
         errorMessage = nil
         
         Task {
-            do {
-                // TODO: Integrate with RevenueCat
-                // let package = selectedPlan == .annual ? annualPackage : monthlyPackage
-                // try await Purchases.shared.purchase(package: package)
-                
-                // For now, simulate success and reload status
-                try await Task.sleep(nanoseconds: 1_000_000_000)
-                await subscriptionManager.loadSubscriptionStatus()
-                dismiss()
-            } catch {
-                errorMessage = "Purchase failed. Please try again."
+            await subscriptionManager.purchase(package: package)
+            
+            if let error = subscriptionManager.error {
+                 errorMessage = error
+            } else if subscriptionManager.isPro {
+                 dismiss()
             }
-            isLoading = false
         }
     }
     
     private func restorePurchases() {
-        isLoading = true
         errorMessage = nil
         
         Task {
-            do {
-                // TODO: Integrate with RevenueCat
-                // try await Purchases.shared.restorePurchases()
-                
-                try await Task.sleep(nanoseconds: 500_000_000)
-                await subscriptionManager.loadSubscriptionStatus()
-                
-                if subscriptionManager.isPro {
-                    dismiss()
-                } else {
-                    errorMessage = "No purchases to restore"
-                }
-            } catch {
-                errorMessage = "Restore failed. Please try again."
+            await subscriptionManager.restorePurchases()
+            
+            if let error = subscriptionManager.error {
+                errorMessage = error
+            } else if subscriptionManager.isPro {
+                dismiss()
+            } else {
+                errorMessage = "No active subscription found to restore."
             }
-            isLoading = false
         }
     }
 }
