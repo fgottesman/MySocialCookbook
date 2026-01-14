@@ -20,7 +20,6 @@ import {
     SynthesizeSchema
 } from '../schemas';
 import healthRouter from './health';
-import subscriptionRouter from './subscriptionRoutes';
 
 /**
  * LEGACY ROUTER - DO NOT ADD NEW FEATURES HERE
@@ -31,8 +30,6 @@ const router = express.Router();
 
 // Mount health check routes
 router.use('/health', healthRouter);
-// Mount subscription routes (paywall, entitlements, RevenueCat webhook)
-router.use('/subscription', subscriptionRouter);
 router.use(apiLimiter);
 
 // Recipes

@@ -76,7 +76,7 @@ class RecipeService {
     // Process recipe from URL
     func processRecipe(url: String, userId: String) async throws {
         isProcessingRecipe = true
-        guard let endpoint = URL(string: "\(backendBaseUrl)/recipes/process") else {
+        guard let endpoint = URL(string: "\(backendBaseUrl)/process-recipe") else {
             throw URLError(.badURL)
         }
         
@@ -96,12 +96,9 @@ class RecipeService {
         let body: [String: String] = ["url": url, "userId": userId]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-            let responseBody = String(data: data, encoding: .utf8) ?? "No response body"
-            print("❌ RecipeService: processRecipe failed with status \(statusCode): \(responseBody)")
             throw URLError(.badServerResponse)
         }
     }

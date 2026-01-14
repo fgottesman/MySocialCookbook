@@ -63,19 +63,6 @@ struct VoiceCompanionView: View {
         stepPreparation?.subSteps?.count ?? 1
     }
     
-    // MARK: - Subscription State
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
-    @State private var voicePreviewTimeRemaining: Int = 60
-    @State private var previewTimer: Timer?
-    @State private var showingUpgradeSheet = false
-    
-    // Timer logic
-    private var isFreeUserWithLimit: Bool {
-        return subscriptionManager.isPaywallEnabled && 
-               !subscriptionManager.isPro && 
-               subscriptionManager.voicePreviewSeconds > 0
-    }
-    
     private var currentDisplayText: String {
         if hasStep0 && currentStepIndex == 0 {
             return recipe.step0Summary ?? ""
@@ -156,19 +143,12 @@ struct VoiceCompanionView: View {
             }
             preloadAllSteps()
             loadUserPreferences()
-            
-            // Start voice preview timer if applicable
-            if isFreeUserWithLimit {
-                voicePreviewTimeRemaining = subscriptionManager.voicePreviewSeconds
-                startPreviewTimer()
-            }
         }
         .onDisappear {
             // Cleanup live mode if active overlay
             if isLiveMode {
                 liveManager.disconnect()
             }
-            stopPreviewTimer()
         }
         .onChange(of: liveManager.errorMessage) { _, error in
             if let error = error {
@@ -185,56 +165,45 @@ struct VoiceCompanionView: View {
         )) { item in
             Alert(title: Text("Connection Error"), message: Text(item.message), dismissButton: .default(Text("OK")))
         }
-        .sheet(isPresented: $showingUpgradeSheet) {
-            VoiceUpgradeSheet()
-        }
     }
     
     // MARK: - Header View
     private var headerView: some View {
-        VStack(spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(isLiveMode ? "Live Chef 🔴" : "Sous Chef Mode")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .foregroundStyle(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing) : LinearGradient.sizzle)
-                    Text(recipe.title)
-                        .font(.caption)
-                        .foregroundColor(.clipCookTextSecondary)
-                        .lineLimit(1)
-                }
-                Spacer()
-                
-                // Mute Button (Only for Standard Mode usually, but useful globally)
-                Button(action: {
-                    speechManager.isMuted.toggle()
-                    if speechManager.isMuted {
-                        speechManager.stopSpeaking()
-                    }
-                }) {
-                    Image(systemName: speechManager.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.title2)
-                        .foregroundColor(speechManager.isMuted ? .clipCookSizzleStart : .clipCookTextSecondary)
-                        .frame(width: 44, height: 44)
-                        .background(Color.clipCookSurface)
-                        .cornerRadius(12)
-                }
-                
-                Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                    .font(.title)
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(isLiveMode ? "Live Chef 🔴" : "Sous Chef Mode")
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundStyle(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing) : LinearGradient.sizzle)
+                Text(recipe.title)
+                    .font(.caption)
                     .foregroundColor(.clipCookTextSecondary)
-                }
+                    .lineLimit(1)
             }
-            .padding()
+            Spacer()
             
-            // Timer Badge (slid under header)
-            if isFreeUserWithLimit {
-                PreviewTimerBadge(secondsRemaining: voicePreviewTimeRemaining)
-                    .transition(.move(edge: .top))
+            // Mute Button (Only for Standard Mode usually, but useful globally)
+            Button(action: { 
+                speechManager.isMuted.toggle()
+                if speechManager.isMuted {
+                    speechManager.stopSpeaking()
+                }
+            }) {
+                Image(systemName: speechManager.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                    .font(.title2)
+                    .foregroundColor(speechManager.isMuted ? .clipCookSizzleStart : .clipCookTextSecondary)
+                    .frame(width: 44, height: 44)
+                    .background(Color.clipCookSurface)
+                    .cornerRadius(12)
+            }
+            
+            Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                Image(systemName: "xmark.circle.fill")
+                .font(.title)
+                .foregroundColor(.clipCookTextSecondary)
             }
         }
+        .padding()
     }
     
     // MARK: - Step Content View
@@ -639,42 +608,6 @@ struct VoiceCompanionView: View {
                 await MainActor.run { isProcessing = false }
             }
         }
-    }
-    
-    // MARK: - Voice Timer Logic
-    
-    private func startPreviewTimer() {
-        stopPreviewTimer()
-        
-        previewTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if voicePreviewTimeRemaining > 0 {
-                voicePreviewTimeRemaining -= 1
-                
-                // Warnings
-                if voicePreviewTimeRemaining == 15 {
-                    speechManager.speak("Note: Free voice preview ends in 15 seconds.")
-                } else if voicePreviewTimeRemaining == 0 {
-                    endVoiceSessionGracefully()
-                }
-            }
-        }
-    }
-    
-    private func stopPreviewTimer() {
-        previewTimer?.invalidate()
-        previewTimer = nil
-    }
-    
-    private func endVoiceSessionGracefully() {
-        stopPreviewTimer()
-        
-        // Stop all audio
-        liveManager.disconnect()
-        speechManager.stopSpeaking()
-        
-        // Show upgrade sheet
-        isLiveMode = false
-        showingUpgradeSheet = true
     }
 }
 

@@ -2,13 +2,11 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var viewModel = FeedViewModel()
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var isSearching = false
     @State private var showingAddRecipe = false
     @State private var isProcessingRecipe = false
     @State private var isTakingLonger = false
     @State private var recipeCountBeforeProcessing = 0
-    @State private var showPaywall = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
@@ -51,32 +49,26 @@ struct FeedView: View {
                         NUXView(showingAddRecipe: $showingAddRecipe)
                     } else {
                         ScrollView {
-                            VStack(spacing: 0) {
-                                // Credits banner (only shows when running low)
-                                CreditsBanner()
-                                    .padding(.bottom, 8)
-                                
-                                LazyVGrid(columns: columns, spacing: 20) {
-                                    // Show loading card at top when processing
-                                    if isProcessingRecipe {
-                                        LoadingRecipeCard(isTakingLonger: isTakingLonger) {
-                                            withAnimation {
-                                                isProcessingRecipe = false
-                                                isTakingLonger = false
-                                            }
+                            LazyVGrid(columns: columns, spacing: 20) {
+                                // Show loading card at top when processing
+                                if isProcessingRecipe {
+                                    LoadingRecipeCard(isTakingLonger: isTakingLonger) {
+                                        withAnimation {
+                                            isProcessingRecipe = false
+                                            isTakingLonger = false
                                         }
+                                    }
                                         .transition(.opacity)
-                                    }
-                                    
-                                    ForEach(viewModel.filteredRecipes) { recipe in
-                                        NavigationLink(destination: RecipeView(recipe: recipe)) {
-                                            RecipeCard(recipe: recipe)
-                                        }
-                                        .buttonStyle(PremiumButtonStyle())
-                                    }
                                 }
-                                .padding()
+                                
+                                ForEach(viewModel.filteredRecipes) { recipe in
+                                    NavigationLink(destination: RecipeView(recipe: recipe)) {
+                                        RecipeCard(recipe: recipe)
+                                    }
+                                    .buttonStyle(PremiumButtonStyle())
+                                }
                             }
+                            .padding()
                         }
                         .refreshable {
                             await viewModel.fetchRecipes(isUserInitiated: true)
@@ -139,19 +131,15 @@ struct FeedView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        // Check if user can import a recipe
-                        if subscriptionManager.canImportRecipe {
+                    if !isSearching {
+                        Button {
                             showingAddRecipe = true
-                        } else {
-                            showPaywall = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(LinearGradient.sizzle)
                         }
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundColor(Color(hex: "E8C4B8"))
                     }
-                    .opacity(isSearching ? 0 : 1)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -164,8 +152,7 @@ struct FeedView: View {
                         }
                     } label: {
                         Image(systemName: isSearching ? "xmark.circle.fill" : "magnifyingglass")
-                            .font(.system(size: 18))
-                            .foregroundColor(Color(hex: "E8C4B8"))
+                            .foregroundStyle(LinearGradient.sizzle)
                     }
                 }
             }
@@ -207,10 +194,6 @@ struct FeedView: View {
                 .onDisappear {
                     Task {
                         await viewModel.fetchRecipes()
-                        // Check if new recipe appeared
-                        if viewModel.recipes.count > recipeCountBeforeProcessing {
-                             // Handled by onChange below, but good backup logic
-                        }
                     }
                 }
             }
@@ -222,9 +205,6 @@ struct FeedView: View {
                         isTakingLonger = false
                     }
                 }
-            }
-            .sheet(isPresented: $showPaywall) {
-                PaywallView()
             }
         }
     }
