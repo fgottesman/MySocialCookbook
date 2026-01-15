@@ -6,6 +6,7 @@ struct ProfileView: View {
     @State private var userEmail: String?
     @State private var isLoading = true
     @State private var showingSignOutAlert = false
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
@@ -79,7 +80,7 @@ struct ProfileView: View {
                         .padding(.leading, 56)
                     
                     // ClipCook Pro - show different UI and destination based on subscription status
-                    if SubscriptionManager.shared.isPro {
+                    if subscriptionManager.isPro {
                         NavigationLink(destination: ManageSubscriptionView()) {
                             MenuRow(
                                 icon: "crown.fill",
