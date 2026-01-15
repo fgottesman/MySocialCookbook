@@ -78,14 +78,25 @@ struct ProfileView: View {
                     Divider()
                         .padding(.leading, 56)
                     
-                    // ClipCook Pro
-                    NavigationLink(destination: PaywallView()) {
-                        MenuRow(
-                            icon: "crown",
-                            title: "ClipCook Pro"
-                        )
+                    // ClipCook Pro - show different UI and destination based on subscription status
+                    if SubscriptionManager.shared.isPro {
+                        NavigationLink(destination: ManageSubscriptionView()) {
+                            MenuRow(
+                                icon: "crown.fill",
+                                title: "ClipCook Pro",
+                                showCheckmark: true
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        NavigationLink(destination: PaywallView()) {
+                            MenuRow(
+                                icon: "crown",
+                                title: "ClipCook Pro"
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
                 .background(Color.clipCookSurface)
                 .cornerRadius(12)
@@ -160,17 +171,24 @@ struct MenuRow: View {
     let icon: String
     let title: String
     var showComingSoon: Bool = false
+    var showCheckmark: Bool = false
     
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(.clipCookTextPrimary)
+                .foregroundColor(showCheckmark ? .clipCookSizzleStart : .clipCookTextPrimary)
                 .frame(width: 24)
             
             Text(title)
                 .font(.body)
                 .foregroundColor(.clipCookTextPrimary)
+            
+            if showCheckmark {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.clipCookSuccess)
+            }
             
             Spacer()
             

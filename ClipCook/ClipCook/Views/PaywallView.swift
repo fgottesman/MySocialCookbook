@@ -13,6 +13,7 @@ struct PaywallView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedPlan: Plan = .annual
+    @State private var showSuccess = false
     
     enum Plan {
         case monthly, annual
@@ -75,7 +76,7 @@ struct PaywallView: View {
                         // Annual plan
                         PlanButton(
                             title: "Annual",
-                            price: "$21.99",
+                            price: subscriptionManager.offerings?.current?.annual?.localizedPriceString ?? "$21.99",
                             subtitle: "Save 54% — best value!",
                             isSelected: selectedPlan == .annual,
                             isRecommended: true
@@ -86,7 +87,7 @@ struct PaywallView: View {
                         // Monthly plan
                         PlanButton(
                             title: "Monthly",
-                            price: "$3.99",
+                            price: subscriptionManager.offerings?.current?.monthly?.localizedPriceString ?? "$3.99",
                             subtitle: "Flexible monthly billing",
                             isSelected: selectedPlan == .monthly,
                             isRecommended: false
@@ -148,6 +149,29 @@ struct PaywallView: View {
                     Spacer(minLength: 40)
                 }
             }
+            
+            // Success Overlay
+            if showSuccess {
+                Color.clipCookBackground.opacity(0.95)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 80))
+                        .foregroundColor(.clipCookSizzleStart)
+                        .scaleEffect(showSuccess ? 1 : 0)
+                        .animation(.spring(.bouncy), value: showSuccess)
+                    
+                    Text("Welcome to ClipCook Pro!")
+                        .font(.title2.bold())
+                        .foregroundColor(.clipCookTextPrimary)
+                    
+                    Text("You now have unlimited access")
+                        .font(.body)
+                        .foregroundColor(.clipCookTextSecondary)
+                }
+                .transition(.opacity)
+            }
         }
         .navigationBarBackButtonHidden(true)
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -181,6 +205,14 @@ struct PaywallView: View {
                 let result = try await Purchases.shared.purchase(package: packageToPurchase)
                 if !result.userCancelled {
                     await subscriptionManager.loadSubscriptionStatus()
+                    
+                    // Show success animation
+                    withAnimation {
+                        showSuccess = true
+                    }
+                    
+                    // Dismiss after 1.5 seconds
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
                     dismiss()
                 }
             } catch {
