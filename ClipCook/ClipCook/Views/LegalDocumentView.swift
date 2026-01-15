@@ -7,16 +7,23 @@ struct LegalDocumentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(content)
+                Text(.init(content))
                     .font(.body)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.clipCookTextPrimary)
                     .multilineTextAlignment(.leading)
             }
             .padding()
         }
+        .background(Color.clipCookBackground)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .background(Color(.systemBackground))
+        .navigationBarBackButtonHidden(true)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                LiquidGlassBackButton()
+            }
+        }
     }
 }
 

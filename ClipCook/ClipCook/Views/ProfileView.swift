@@ -6,24 +6,28 @@ struct ProfileView: View {
     @State private var userEmail: String?
     @State private var isLoading = true
     @State private var showingSignOutAlert = false
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
+            ZStack {
+                Color.clipCookBackground.ignoresSafeArea()
+                
+                VStack(spacing: 0) {
                 // User Info Section
                 VStack(spacing: 12) {
                     // Profile Icon
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 80))
-                        .foregroundColor(.gray.opacity(0.5))
+                        .foregroundColor(.clipCookTextSecondary.opacity(0.5))
                     
                     // Email
                     if let email = userEmail {
                         Text(email)
                             .font(.headline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.clipCookTextPrimary)
                     } else if isLoading {
                         ProgressView()
                     }
@@ -71,12 +75,35 @@ struct ProfileView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    
+                    Divider()
+                        .padding(.leading, 56)
+                    
+                    // ClipCook Pro - show different UI and destination based on subscription status
+                    if subscriptionManager.isPro {
+                        NavigationLink(destination: ManageSubscriptionView()) {
+                            MenuRow(
+                                icon: "crown.fill",
+                                title: "ClipCook Pro",
+                                showCheckmark: true
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        NavigationLink(destination: PaywallView()) {
+                            MenuRow(
+                                icon: "crown",
+                                title: "ClipCook Pro"
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .background(Color(.systemBackground))
+                .background(Color.clipCookSurface)
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(.systemGray5), lineWidth: 1)
+                        .stroke(Color.clipCookSizzleStart.opacity(0.2), lineWidth: 1)
                 )
                 .padding(.horizontal)
                 
@@ -96,10 +123,11 @@ struct ProfileView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 20)
+                }
+                .frame(maxWidth: horizontalSizeClass == .regular ? 600 : .infinity)
             }
-            .frame(maxWidth: horizontalSizeClass == .regular ? 600 : .infinity)
-            .frame(maxWidth: .infinity)
             .navigationTitle("Profile")
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .alert("Sign Out", isPresented: $showingSignOutAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Sign Out", role: .destructive) {
@@ -144,17 +172,24 @@ struct MenuRow: View {
     let icon: String
     let title: String
     var showComingSoon: Bool = false
+    var showCheckmark: Bool = false
     
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(.primary)
+                .foregroundColor(showCheckmark ? .clipCookSizzleStart : .clipCookTextPrimary)
                 .frame(width: 24)
             
             Text(title)
                 .font(.body)
-                .foregroundColor(.primary)
+                .foregroundColor(.clipCookTextPrimary)
+            
+            if showCheckmark {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.clipCookSuccess)
+            }
             
             Spacer()
             
@@ -162,16 +197,16 @@ struct MenuRow: View {
                 Text("Coming Soon")
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.clipCookTextSecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color(.systemGray5))
+                    .background(Color.clipCookSurface)
                     .cornerRadius(12)
             }
             
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color(.systemGray3))
+                .foregroundColor(.clipCookTextSecondary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
