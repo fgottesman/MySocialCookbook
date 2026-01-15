@@ -10,6 +10,8 @@ import Foundation
 import Combine
 import Supabase
 import Auth
+import RevenueCat
+
 
 // MARK: - Models
 
@@ -39,7 +41,7 @@ struct SubscriptionConfig: Codable {
     }
     
     static let `default` = SubscriptionConfig(
-        paywallEnabled: false,
+        paywallEnabled: true,
         entitlements: EntitlementConfig(
             starterRecipeCredits: 5,
             monthlyFreeCredits: 3,
@@ -80,7 +82,7 @@ struct UserEntitlements: Codable {
 // MARK: - SubscriptionManager
 
 @MainActor
-class SubscriptionManager: ObservableObject {
+class SubscriptionManager: NSObject, ObservableObject, PurchasesDelegate {
     static let shared = SubscriptionManager()
     
     // MARK: - Published State
@@ -97,6 +99,10 @@ class SubscriptionManager: ObservableObject {
     // First recipe offer
     @Published var showFirstRecipeOffer: Bool = false
     @Published var isFirstRecipe: Bool = true
+    
+    // RevenueCat Offerings
+    @Published var offerings: Offerings?
+
     
     // MARK: - Enums
     
@@ -190,13 +196,52 @@ class SubscriptionManager: ObservableObject {
     
     // MARK: - Initialization
     
-    private init() {
+    private override init() {
+        super.init()
+        
+        // Set self as the RevenueCat delegate for real-time updates
+        Purchases.shared.delegate = self
+        
         Task {
             await loadSubscriptionStatus()
+            await fetchOfferings()
+        }
+    }
+    
+    // MARK: - PurchasesDelegate
+    
+    /// Called when CustomerInfo changes (purchase, renewal, expiration)
+    nonisolated func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
+        Task { @MainActor in
+            let isProActive = customerInfo.entitlements["ClipCook Pro"]?.isActive ?? false
+            print("[SubscriptionManager] CustomerInfo updated - Pro active: \(isProActive)")
+            
+            // Update subscription status based on entitlement
+            if isProActive {
+                self.subscriptionStatus = .pro
+            } else if customerInfo.entitlements["ClipCook Pro"]?.expirationDate != nil {
+                self.subscriptionStatus = .expired
+            } else {
+                self.subscriptionStatus = .free
+            }
+            
+            // Refresh full status from backend to sync credits
+            await self.loadSubscriptionStatus()
         }
     }
     
     // MARK: - Public Methods
+    
+    /// Fetch available offerings from RevenueCat
+    func fetchOfferings() async {
+        do {
+            self.offerings = try await Purchases.shared.offerings()
+            print("[SubscriptionManager] Offerings loaded: \(offerings?.current?.availablePackages.count ?? 0) packages available")
+        } catch {
+            print("[SubscriptionManager] Error fetching offerings: \(error)")
+        }
+    }
+
     
     /// Load subscription status from backend
     func loadSubscriptionStatus() async {

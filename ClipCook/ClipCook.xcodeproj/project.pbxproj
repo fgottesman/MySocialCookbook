@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AC381F5C2F1735F60091F8DF /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = AC381F5B2F1735F60091F8DF /* ReceiptParser */; };
+		AC381F5E2F1735F60091F8DF /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = AC381F5D2F1735F60091F8DF /* RevenueCat */; };
 		AC54C5422F157677007C63C2 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = AC54C5412F157677007C63C2 /* InlineSnapshotTesting */; };
 		AC54C5442F157677007C63C2 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = AC54C5432F157677007C63C2 /* SnapshotTesting */; };
 		AC54C5462F157677007C63C2 /* SnapshotTestingCustomDump in Frameworks */ = {isa = PBXBuildFile; productRef = AC54C5452F157677007C63C2 /* SnapshotTestingCustomDump */; };
@@ -126,6 +128,8 @@
 				AC8768E72F0B343C009D1E74 /* PostgREST in Frameworks */,
 				AC8768E52F0B343C009D1E74 /* Functions in Frameworks */,
 				AC8768ED2F0B343C009D1E74 /* Supabase in Frameworks */,
+				AC381F5C2F1735F60091F8DF /* ReceiptParser in Frameworks */,
+				AC381F5E2F1735F60091F8DF /* RevenueCat in Frameworks */,
 				AC8768E32F0B343C009D1E74 /* Auth in Frameworks */,
 				AC8768EB2F0B343C009D1E74 /* Storage in Frameworks */,
 				AC8768E92F0B343C009D1E74 /* Realtime in Frameworks */,
@@ -209,6 +213,8 @@
 				AC8768E82F0B343C009D1E74 /* Realtime */,
 				AC8768EA2F0B343C009D1E74 /* Storage */,
 				AC8768EC2F0B343C009D1E74 /* Supabase */,
+				AC381F5B2F1735F60091F8DF /* ReceiptParser */,
+				AC381F5D2F1735F60091F8DF /* RevenueCat */,
 			);
 			productName = ClipCook;
 			productReference = AC8768922F0B2A37009D1E74 /* ClipCook.app */;
@@ -323,6 +329,7 @@
 			packageReferences = (
 				AC8768E12F0B343C009D1E74 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				AC54C5402F157677007C63C2 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
+				AC381F5A2F1735F60091F8DF /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AC8768932F0B2A37009D1E74 /* Products */;
@@ -800,6 +807,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		AC381F5A2F1735F60091F8DF /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.54.0;
+			};
+		};
 		AC54C5402F157677007C63C2 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
@@ -819,6 +834,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AC381F5B2F1735F60091F8DF /* ReceiptParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC381F5A2F1735F60091F8DF /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = ReceiptParser;
+		};
+		AC381F5D2F1735F60091F8DF /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC381F5A2F1735F60091F8DF /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
 		AC54C5412F157677007C63C2 /* InlineSnapshotTesting */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AC54C5402F157677007C63C2 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
