@@ -9,102 +9,102 @@ struct UserPreferencesView: View {
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        NavigationView {
-            Form {
-                // Cooking Preferences Section
-                Section {
-                    // Unit System Picker
-                    Picker("Measurement Units", selection: $preferences.unitSystem) {
-                        Text("Imperial (cups, °F)").tag("imperial")
-                        Text("Metric (grams, °C)").tag("metric")
-                    }
-                    .onChange(of: preferences.unitSystem) { _, _ in
-                        savePreferences()
-                    }
-                    
-                    // Prep Style Picker
-                    Picker("Cooking Style", selection: $preferences.prepStyle) {
-                        Text("Step by Step").tag("just_in_time")
-                        Text("Prep Everything First").tag("prep_first")
-                    }
-                    .onChange(of: preferences.prepStyle) { _, _ in
-                        savePreferences()
-                    }
-                } header: {
-                    Label("Cooking Preferences", systemImage: "frying.pan")
-                } footer: {
-                    Text("These preferences customize how your sous chef guides you through recipes.")
+        Form {
+            // Cooking Preferences Section
+            Section {
+                // Unit System Picker
+                Picker("Measurement Units", selection: $preferences.unitSystem) {
+                    Text("Imperial (cups, °F)").tag("imperial")
+                    Text("Metric (grams, °C)").tag("metric")
+                }
+                .onChange(of: preferences.unitSystem) { _, _ in
+                    savePreferences()
                 }
                 
-                // Voice Settings Section
-                Section {
-                    HStack {
-                        Text("Voice Introduction Delay")
-                        Spacer()
-                        Text("\(Int(SpeechManager.stepIntroductionDelay * 1000))ms")
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Slider(
-                        value: Binding(
-                            get: { SpeechManager.stepIntroductionDelay },
-                            set: { SpeechManager.stepIntroductionDelay = $0 }
-                        ),
-                        in: 0...1,
-                        step: 0.1
-                    )
-                } header: {
-                    Label("Voice Settings", systemImage: "speaker.wave.2")
-                } footer: {
-                    Text("Adjust how quickly the sous chef starts speaking when you move to a new step.")
+                // Prep Style Picker
+                Picker("Cooking Style", selection: $preferences.prepStyle) {
+                    Text("Step by Step").tag("just_in_time")
+                    Text("Prep Everything First").tag("prep_first")
+                }
+                .onChange(of: preferences.prepStyle) { _, _ in
+                    savePreferences()
+                }
+            } header: {
+                Label("Cooking Preferences", systemImage: "frying.pan")
+            } footer: {
+                Text("These preferences customize how your sous chef guides you through recipes.")
+            }
+            
+            // Voice Settings Section
+            Section {
+                HStack {
+                    Text("Voice Introduction Delay")
+                    Spacer()
+                    Text("\(Int(SpeechManager.stepIntroductionDelay * 1000))ms")
+                        .foregroundColor(.clipCookTextSecondary)
                 }
                 
-                // Coming Soon Section
-                Section {
-                    HStack {
-                        Image(systemName: "heart")
-                            .foregroundColor(.pink)
-                        Text("Dietary Restrictions")
-                        Spacer()
-                        Text("Coming Soon")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(.systemGray5))
-                            .cornerRadius(8)
-                    }
-                    
-                    HStack {
-                        Image(systemName: "person.2")
-                            .foregroundColor(.blue)
-                        Text("Default Servings")
-                        Spacer()
-                        Text("Coming Soon")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(.systemGray5))
-                            .cornerRadius(8)
-                    }
-                } header: {
-                    Label("More Options", systemImage: "sparkles")
-                }
+                Slider(
+                    value: Binding(
+                        get: { SpeechManager.stepIntroductionDelay },
+                        set: { SpeechManager.stepIntroductionDelay = $0 }
+                    ),
+                    in: 0...1,
+                    step: 0.1
+                )
+            } header: {
+                Label("Voice Settings", systemImage: "speaker.wave.2")
+            } footer: {
+                Text("Adjust how quickly the sous chef starts speaking when you move to a new step.")
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+            
+            // Coming Soon Section
+            Section {
+                HStack {
+                    Image(systemName: "heart")
+                        .foregroundColor(.clipCookSizzleEnd)
+                    Text("Dietary Restrictions")
+                    Spacer()
+                    Text("Coming Soon")
+                        .font(.caption)
+                        .foregroundColor(.clipCookTextSecondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.clipCookSurface)
+                        .cornerRadius(8)
                 }
+                
+                HStack {
+                    Image(systemName: "person.2")
+                        .foregroundColor(.clipCookSizzleStart)
+                    Text("Default Servings")
+                    Spacer()
+                    Text("Coming Soon")
+                        .font(.caption)
+                        .foregroundColor(.clipCookTextSecondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.clipCookSurface)
+                        .cornerRadius(8)
+                }
+            } header: {
+                Label("More Options", systemImage: "sparkles")
             }
-            .overlay {
-                if isLoading {
-                    ProgressView("Loading...")
-                }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.clipCookBackground)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                LiquidGlassBackButton()
+            }
+        }
+        .overlay {
+            if isLoading {
+                ProgressView("Loading...")
             }
         }
         .task {

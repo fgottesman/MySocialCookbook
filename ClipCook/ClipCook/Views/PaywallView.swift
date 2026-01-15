@@ -4,6 +4,8 @@
  */
 
 import SwiftUI
+import RevenueCat
+
 
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
@@ -18,38 +20,27 @@ struct PaywallView: View {
     
     var body: some View {
         ZStack {
-            // Premium gradient background
+            // Midnight Rose Theme Gradient
+            Color.clipCookBackground.ignoresSafeArea()
+            
             LinearGradient(
-                colors: [Color.orange.opacity(0.9), Color.red.opacity(0.7)],
+                colors: [
+                    Color.clipCookSizzleStart.opacity(0.15),
+                    Color.clipCookBackground
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
+
             
             ScrollView {
                 VStack(spacing: 24) {
-                    // Close button
-                    HStack {
-                        Spacer()
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title)
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                    }
-                    .padding(.horizontal)
-                    
                     // Hero section
                     VStack(spacing: 12) {
-                        Image(systemName: "flame.fill")
+                        Image(systemName: "sparkles")
                             .font(.system(size: 70))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.white, .yellow],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+                            .foregroundStyle(LinearGradient.sizzle)
                         
                         Text("ClipCook Pro")
                             .font(.system(size: 36, weight: .bold))
@@ -57,30 +48,35 @@ struct PaywallView: View {
                         
                         Text("Your AI Sous Chef, Unlimited")
                             .font(.title3)
-                            .foregroundColor(.white.opacity(0.9))
+                            .foregroundColor(.clipCookSizzleStart)
                     }
                     .padding(.top, 20)
+
                     
                     // Features list
                     VStack(alignment: .leading, spacing: 16) {
-                        FeatureRow(icon: "infinity", text: "Unlimited Recipe Imports", highlight: true)
-                        FeatureRow(icon: "waveform", text: "AI Voice Companion", highlight: true)
-                        FeatureRow(icon: "sparkles", text: "Smart Recipe Remixing", highlight: false)
-                        FeatureRow(icon: "photo.fill", text: "AI Food Photography", highlight: false)
-                        FeatureRow(icon: "heart.fill", text: "Support Indie Development", highlight: false)
+                        FeatureRow(icon: "infinity", text: "Unlimited recipe imports", highlight: true)
+                        FeatureRow(icon: "phone.bubble.fill", text: "Unlimited calls to the chef", highlight: true)
+                        FeatureRow(icon: "wand.and.stars", text: "Unlimited recipe remix", highlight: true)
+                        FeatureRow(icon: "sparkles.tv", text: "Early access to beta features", highlight: false)
                     }
                     .padding(20)
-                    .background(.ultraThinMaterial.opacity(0.8))
+                    .background(Color.clipCookSurface.opacity(0.8))
                     .cornerRadius(20)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.clipCookSizzleStart.opacity(0.2), lineWidth: 1)
+                    )
                     .padding(.horizontal)
+
                     
-                    // Plan selection
+                    // Plan selection - always show correct pricing
                     VStack(spacing: 12) {
-                        // Annual plan (recommended)
+                        // Annual plan
                         PlanButton(
                             title: "Annual",
-                            price: subscriptionManager.config.pricing.annualPrice,
-                            subtitle: subscriptionManager.config.pricing.annualSavings,
+                            price: "$21.99",
+                            subtitle: "Save 54% — best value!",
                             isSelected: selectedPlan == .annual,
                             isRecommended: true
                         ) {
@@ -90,8 +86,8 @@ struct PaywallView: View {
                         // Monthly plan
                         PlanButton(
                             title: "Monthly",
-                            price: subscriptionManager.config.pricing.monthlyPrice,
-                            subtitle: "Cancel anytime",
+                            price: "$3.99",
+                            subtitle: "Flexible monthly billing",
                             isSelected: selectedPlan == .monthly,
                             isRecommended: false
                         ) {
@@ -99,6 +95,7 @@ struct PaywallView: View {
                         }
                     }
                     .padding(.horizontal)
+
                     
                     // Subscribe button
                     Button(action: subscribe) {
@@ -113,10 +110,11 @@ struct PaywallView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(.white)
-                        .foregroundColor(.orange)
+                        .background(LinearGradient.sizzle)
+                        .foregroundColor(.clipCookBackground)
                         .cornerRadius(14)
-                        .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+                        .shadow(color: Color.clipCookSizzleStart.opacity(0.2), radius: 10, y: 5)
+
                     }
                     .disabled(isLoading)
                     .padding(.horizontal)
@@ -138,11 +136,12 @@ struct PaywallView: View {
                         .foregroundColor(.white.opacity(0.9))
                         
                         HStack(spacing: 16) {
-                            Link("Terms", destination: URL(string: "https://ghplabs.io/terms")!)
-                            Link("Privacy", destination: URL(string: "https://ghplabs.io/privacy")!)
+                            Link("Terms", destination: URL(string: "https://clipcookapp.com/terms")!)
+                            Link("Privacy", destination: URL(string: "https://clipcookapp.com/privacy")!)
                         }
                         .font(.caption2)
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(.clipCookTextSecondary.opacity(0.6))
+
                     }
                     .padding(.top, 8)
                     
@@ -150,30 +149,47 @@ struct PaywallView: View {
                 }
             }
         }
+        .navigationBarBackButtonHidden(true)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                LiquidGlassBackButton()
+            }
+        }
     }
     
     // MARK: - Actions
     
     private func subscribe() {
+        guard let currentOfferings = subscriptionManager.offerings?.current else { 
+            errorMessage = "Pricing not available. Please check your connection."
+            return 
+        }
+        
+        let package = selectedPlan == .annual ? currentOfferings.annual : currentOfferings.monthly
+        
+        guard let packageToPurchase = package else {
+            errorMessage = "Selected plan is currently unavailable."
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         
         Task {
             do {
-                // TODO: Integrate with RevenueCat
-                // let package = selectedPlan == .annual ? annualPackage : monthlyPackage
-                // try await Purchases.shared.purchase(package: package)
-                
-                // For now, simulate success and reload status
-                try await Task.sleep(nanoseconds: 1_000_000_000)
-                await subscriptionManager.loadSubscriptionStatus()
-                dismiss()
+                let result = try await Purchases.shared.purchase(package: packageToPurchase)
+                if !result.userCancelled {
+                    await subscriptionManager.loadSubscriptionStatus()
+                    dismiss()
+                }
             } catch {
-                errorMessage = "Purchase failed. Please try again."
+                errorMessage = error.localizedDescription
             }
             isLoading = false
         }
     }
+
     
     private func restorePurchases() {
         isLoading = true
@@ -181,23 +197,21 @@ struct PaywallView: View {
         
         Task {
             do {
-                // TODO: Integrate with RevenueCat
-                // try await Purchases.shared.restorePurchases()
-                
-                try await Task.sleep(nanoseconds: 500_000_000)
+                let customerInfo = try await Purchases.shared.restorePurchases()
                 await subscriptionManager.loadSubscriptionStatus()
                 
-                if subscriptionManager.isPro {
+                if subscriptionManager.isPro || customerInfo.entitlements["ClipCook Pro"]?.isActive == true {
                     dismiss()
                 } else {
-                    errorMessage = "No purchases to restore"
+                    errorMessage = "No active purchases found to restore."
                 }
             } catch {
-                errorMessage = "Restore failed. Please try again."
+                errorMessage = error.localizedDescription
             }
             isLoading = false
         }
     }
+
 }
 
 // MARK: - Supporting Views
@@ -211,11 +225,13 @@ struct FeatureRow: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(highlight ? .orange : .gray)
+                .foregroundColor(highlight ? .clipCookSizzleStart : .clipCookTextSecondary.opacity(0.5))
                 .frame(width: 30)
+
             
             Text(text)
-                .foregroundColor(.primary)
+                .foregroundColor(.white)
+
             
             Spacer()
             
@@ -244,17 +260,17 @@ struct PlanButton: View {
                         if isRecommended {
                             Text("BEST VALUE")
                                 .font(.caption2.bold())
-                                .foregroundColor(.white)
+                                .foregroundColor(.clipCookBackground)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color.green)
+                                .background(Color.clipCookSizzleStart)
                                 .cornerRadius(4)
                         }
                     }
                     
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.clipCookTextSecondary.opacity(0.7))
                 }
                 
                 Spacer()
@@ -265,14 +281,16 @@ struct PlanButton: View {
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.white : Color.white.opacity(0.3))
+                    .fill(isSelected ? Color.clipCookSurface : Color.clipCookSurface.opacity(0.3))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.orange : Color.clear, lineWidth: 3)
+                    .stroke(isSelected ? Color.clipCookSizzleStart : Color.clear, lineWidth: 2)
             )
+
         }
-        .foregroundColor(isSelected ? .primary : .white)
+        .foregroundColor(isSelected ? .white : .clipCookTextSecondary)
+
     }
 }
 

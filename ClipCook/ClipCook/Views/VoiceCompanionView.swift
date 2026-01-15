@@ -191,6 +191,7 @@ struct VoiceCompanionView: View {
     }
     
     // MARK: - Header View
+    @ViewBuilder
     private var headerView: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -705,3 +706,5 @@ struct ChatBubble: View {
         }
     }
 }
+
+

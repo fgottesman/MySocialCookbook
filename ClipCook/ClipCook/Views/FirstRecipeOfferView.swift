@@ -19,103 +19,102 @@ struct FirstRecipeOfferView: View {
     }
     
     var body: some View {
-        VStack(spacing: 24) {
-            // Celebration emoji
-            Text("🎉")
-                .font(.system(size: 70))
-                .padding(.top, 20)
+        ZStack {
+            DesignTokens.Colors.background.ignoresSafeArea()
             
-            // Congrats message
-            Text("Congrats on your first recipe!")
-                .font(.title2.bold())
-                .multilineTextAlignment(.center)
-            
-            Text("Unlock Pro in the next hour and get")
-                .foregroundColor(.secondary)
-            
-            // Discount badge
-            Text("\(subscriptionManager.config.offers.firstRecipeOfferDiscountPercent)% OFF")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 30)
-                .padding(.vertical, 14)
-                .background(
-                    LinearGradient(
-                        colors: [.orange, .red],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(12)
-                .shadow(color: .orange.opacity(0.4), radius: 10, y: 5)
-            
-            Text("your first year")
-                .font(.headline)
-            
-            // Strikethrough pricing
-            HStack(spacing: 10) {
-                Text(subscriptionManager.config.pricing.annualPrice)
-                    .strikethrough()
-                    .foregroundColor(.secondary)
+            VStack(spacing: 24) {
+                // Celebration emoji
+                Text("🎉")
+                    .font(.system(size: 70))
+                    .padding(.top, 20)
                 
-                Text("→")
-                    .foregroundColor(.secondary)
-                
-                Text(discountedPrice)
+                // Congrats message
+                Text("Congrats on your first recipe!")
                     .font(.title2.bold())
-                    .foregroundColor(.green)
-            }
-            
-            // Countdown timer
-            HStack(spacing: 6) {
-                Image(systemName: "clock.fill")
-                    .foregroundColor(.orange)
-                Text("Offer expires in: \(formatTime(timeRemaining))")
-                    .font(.subheadline.monospacedDigit())
-            }
-            .foregroundColor(timeRemaining < 300 ? .red : .orange)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            .background(
-                Capsule()
-                    .fill(Color.orange.opacity(0.1))
-            )
-            
-            // CTA Button
-            Button(action: claimDiscount) {
-                HStack {
-                    if isLoading {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        Text("Claim My Discount")
-                            .font(.headline)
-                    }
+                    .multilineTextAlignment(.center)
+                
+                Text("Unlock Pro in the next hour and get")
+                    .foregroundColor(DesignTokens.Colors.secondary)
+
+                
+                // Discount badge
+                Text("\(subscriptionManager.config.offers.firstRecipeOfferDiscountPercent)% OFF")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 14)
+                    .background(LinearGradient.sizzle)
+                    .cornerRadius(12)
+                    .shadow(color: DesignTokens.Colors.primary.opacity(0.4), radius: 10, y: 5)
+
+                
+                Text("your first year")
+                    .font(.headline)
+                
+                // Strikethrough pricing
+                HStack(spacing: 10) {
+                    Text(subscriptionManager.config.pricing.annualPrice)
+                        .strikethrough()
+                        .foregroundColor(DesignTokens.Colors.secondary.opacity(0.5))
+
+                    
+                    Text("→")
+                        .foregroundColor(.secondary)
+                    
+                    Text(discountedPrice)
+                        .font(.title2.bold())
+                        .foregroundColor(.green)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                
+                // Countdown timer
+                HStack(spacing: 6) {
+                    Image(systemName: "clock.fill")
+                        .foregroundColor(DesignTokens.Colors.primary)
+                    Text("Offer expires in: \(formatTime(timeRemaining))")
+                        .font(.subheadline.monospacedDigit())
+
+                }
+                .foregroundColor(timeRemaining < 300 ? .red : DesignTokens.Colors.primary)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
                 .background(
-                    LinearGradient(
-                        colors: [.orange, .red],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                    Capsule()
+                        .fill(DesignTokens.Colors.surface)
                 )
-                .foregroundColor(.white)
-                .cornerRadius(14)
-                .shadow(color: .orange.opacity(0.3), radius: 8, y: 4)
+
+                
+                // CTA Button
+                Button(action: claimDiscount) {
+                    HStack {
+                        if isLoading {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Text("Claim My Discount")
+                                .font(.headline)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(LinearGradient.sizzle)
+                    .foregroundColor(DesignTokens.Colors.background)
+                    .cornerRadius(14)
+                    .shadow(color: DesignTokens.Colors.primary.opacity(0.3), radius: 8, y: 4)
+
+                }
+                .disabled(isLoading)
+                .padding(.horizontal)
+                
+                // Maybe later
+                Button("Maybe later") {
+                    dismiss()
+                }
+                .foregroundColor(DesignTokens.Colors.secondary)
+
+                .padding(.bottom, 20)
             }
-            .disabled(isLoading)
-            .padding(.horizontal)
-            
-            // Maybe later
-            Button("Maybe later") {
-                dismiss()
-            }
-            .foregroundColor(.secondary)
-            .padding(.bottom, 20)
+            .padding()
         }
-        .padding()
         .onAppear {
             startTimer()
             Task {
