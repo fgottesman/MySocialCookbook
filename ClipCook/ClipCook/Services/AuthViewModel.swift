@@ -4,6 +4,7 @@ import Auth
 import SwiftUI
 import Combine
 import AuthenticationServices
+import RevenueCat
 
 @MainActor
 class AuthViewModel: ObservableObject {
@@ -40,6 +41,32 @@ class AuthViewModel: ObservableObject {
                     // Register device token for the new user if we have a session
                     if let user = session?.user, (event == .signedIn || event == .initialSession) {
                         MessagingManager.shared.registerCurrentDevice(userId: user.id.uuidString)
+                        
+                        // Sync RevenueCat user ID with Supabase user
+                        Task {
+                            do {
+                                let (customerInfo, _) = try await Purchases.shared.logIn(user.id.uuidString)
+                                print("[RevenueCat] Logged in user: \(user.id.uuidString)")
+                                print("[RevenueCat] Pro entitlement active: \(customerInfo.entitlements["ClipCook Pro"]?.isActive ?? false)")
+                                
+                                // Refresh subscription status after login
+                                await SubscriptionManager.shared.loadSubscriptionStatus()
+                            } catch {
+                                print("[RevenueCat] Login error: \(error)")
+                            }
+                        }
+                    }
+                    
+                    // Log out of RevenueCat when user signs out
+                    if event == .signedOut {
+                        Task {
+                            do {
+                                _ = try await Purchases.shared.logOut()
+                                print("[RevenueCat] Logged out")
+                            } catch {
+                                print("[RevenueCat] Logout error: \(error)")
+                            }
+                        }
                     }
                 }
             }

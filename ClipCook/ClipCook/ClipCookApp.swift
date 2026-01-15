@@ -9,9 +9,15 @@ import SwiftUI
 import UIKit // Required for UIApplicationDelegate
 import Supabase
 import Auth
+import RevenueCat
+
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // Initialize RevenueCat
+        Purchases.logLevel = .debug
+        Purchases.configure(withAPIKey: "test_BddOAgtqxNNXhxQAiTlQmnXGrYl")
+        
         return true
     }
     
