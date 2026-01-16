@@ -13,7 +13,7 @@ struct NUXView: View {
                 // Step 1: Branding
                 NUXCard(
                     title: "ClipCook",
-                    subtitle: "Your AI-powered social cookbook. Turn any cooking video into a step-by-step recipe with magic! ✨",
+                    subtitle: "Your AI-powered social cookbook. Turn any cooking video into a step-by-step recipe, like magic.",
                     imageName: "sparkles",
                     color: .clipCookPrimary
                 ) {
@@ -56,7 +56,7 @@ struct NUXView: View {
                 // Step 3: Push Permissions
                 NUXCard(
                     title: "Stay in the Loop",
-                    subtitle: "AI cooking takes a minute! We'll notify you the second your recipe is ready to cook. 🍳",
+                    subtitle: "AI cooking takes a minute. We'll notify you the moment your recipe is ready.",
                     imageName: "bell.badge.fill",
                     color: .clipCookPrimary
                 ) {
