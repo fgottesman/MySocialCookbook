@@ -8,6 +8,9 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
+            // Background color that extends behind floating tab bar
+            Color.clipCookBackground.ignoresSafeArea()
+
             Group {
                 if isAuthenticated {
                     MainTabView()
@@ -66,20 +69,20 @@ struct SplashView: View {
             VStack(spacing: 20) {
                 ZStack {
                     Circle()
-                        .fill(LinearGradient.sizzle)
+                        .fill(LinearGradient.roseGold)
                         .frame(width: 120, height: 120)
                         .scaleEffect(isAnimating ? 1.2 : 1.0)
                         .opacity(isAnimating ? 0.3 : 0.6)
                     
                     Image(systemName: "flame.fill")
                         .font(.system(size: 60))
-                        .foregroundStyle(LinearGradient.sizzle)
+                        .foregroundStyle(LinearGradient.roseGold)
                         .scaleEffect(isAnimating ? 1.1 : 1.0)
                 }
                 
                 Text("ClipCook")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(LinearGradient.sizzle)
+                    .foregroundStyle(LinearGradient.roseGold)
                     .floatingAnimation()
             }
         }

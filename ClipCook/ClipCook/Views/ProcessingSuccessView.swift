@@ -27,7 +27,7 @@ struct ProcessingSuccessView: View {
             
             // Background ambient glow
             Circle()
-                .fill(Color.clipCookSizzleStart.opacity(0.1))
+                .fill(Color.clipCookPrimary.opacity(0.1))
                 .frame(width: 300, height: 300)
                 .blur(radius: 60)
                 .scaleEffect(isAnimating ? 1.2 : 0.8)
@@ -43,7 +43,7 @@ struct ProcessingSuccessView: View {
                         Circle()
                             .stroke(
                                 LinearGradient(
-                                    colors: [.clipCookSizzleStart.opacity(0.5), .clear],
+                                    colors: [.clipCookPrimary.opacity(0.5), .clear],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
@@ -61,7 +61,7 @@ struct ProcessingSuccessView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [.clipCookSizzleStart, .purple],
+                                colors: [.clipCookPrimary, .purple],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -74,7 +74,7 @@ struct ProcessingSuccessView: View {
                                 .opacity(isAnimating ? 1 : 0.5)
                                 .scaleEffect(isAnimating ? 1.1 : 0.9)
                         )
-                        .shadow(color: .clipCookSizzleStart.opacity(0.5), radius: 20, x: 0, y: 0)
+                        .shadow(color: .clipCookPrimary.opacity(0.5), radius: 20, x: 0, y: 0)
                         .scaleEffect(isAnimating ? 1.05 : 0.90)
                         .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
                 }

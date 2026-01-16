@@ -103,7 +103,7 @@ struct ProfileView: View {
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.clipCookSizzleStart.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.clipCookPrimary.opacity(0.2), lineWidth: 1)
                 )
                 .padding(.horizontal)
                 
@@ -178,7 +178,7 @@ struct MenuRow: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(showCheckmark ? .clipCookSizzleStart : .clipCookTextPrimary)
+                .foregroundColor(showCheckmark ? .clipCookPrimary : .clipCookTextPrimary)
                 .frame(width: 24)
             
             Text(title)

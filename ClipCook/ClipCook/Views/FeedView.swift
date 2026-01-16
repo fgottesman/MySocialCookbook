@@ -13,27 +13,28 @@ struct FeedView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     private var columns: [GridItem] {
+        let spacing = DesignTokens.Layout.gridSpacing
         if horizontalSizeClass == .regular {
-            return [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+            return [GridItem(.flexible(), spacing: spacing), GridItem(.flexible(), spacing: spacing), GridItem(.flexible(), spacing: spacing)]
         } else {
-            return [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+            return [GridItem(.flexible(), spacing: spacing), GridItem(.flexible(), spacing: spacing)]
         }
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
-                DesignTokens.Colors.background.ignoresSafeArea()
+                DesignTokens.Colors.background.ignoresSafeArea(.all)
                 
                 Group {
                     if viewModel.isLoading && viewModel.recipes.isEmpty {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Colors.primary))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookPrimary))
                     } else if viewModel.errorMessage != nil && viewModel.recipes.isEmpty {
                         VStack(spacing: 16) {
                             Image(systemName: "flame")
                                 .font(.largeTitle)
-                                .foregroundColor(.clipCookSizzleEnd)
+                                .foregroundColor(.clipCookSecondary)
                             Text("The stove's not lighting")
                                 .modifier(UtilityHeadline())
                             Text("Let's try again! 🧊")
@@ -45,7 +46,7 @@ struct FeedView: View {
                             .padding()
                             .foregroundColor(.white)
                             .background(Color.clipCookSurface)
-                            .cornerRadius(8)
+                            .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                         }
                     } else if viewModel.recipes.isEmpty {
                         NUXView(showingAddRecipe: $showingAddRecipe)
@@ -56,7 +57,7 @@ struct FeedView: View {
                                 CreditsBanner()
                                     .padding(.bottom, 8)
                                 
-                                LazyVGrid(columns: columns, spacing: 20) {
+                                LazyVGrid(columns: columns, spacing: DesignTokens.Layout.gridSpacing) {
                                     // Show loading card at top when processing
                                     if isProcessingRecipe {
                                         LoadingRecipeCard(isTakingLonger: isTakingLonger) {
@@ -101,11 +102,11 @@ struct FeedView: View {
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, DesignTokens.Layout.spacing16)
+                        .padding(.vertical, DesignTokens.Layout.spacing12)
                         .background(Color.clipCookSurface.opacity(0.95))
-                        .cornerRadius(30)
-                        .shadow(radius: 10)
+                        .cornerRadius(DesignTokens.Layout.cornerRadiusPill)
+                        .shadow(color: DesignTokens.Effects.shadowColor, radius: DesignTokens.Effects.shadowMediumRadius)
                         .padding(.bottom, 20)
                         .padding(.horizontal)
                     }
@@ -134,7 +135,7 @@ struct FeedView: View {
                     } else {
                         Text("ClipCook")
                             .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                     }
                 }
                 
@@ -150,7 +151,7 @@ struct FeedView: View {
                         } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 18))
-                                .foregroundStyle(LinearGradient.sizzle)
+                                .foregroundStyle(LinearGradient.roseGold)
                         }
                     }
                 }
@@ -165,7 +166,7 @@ struct FeedView: View {
                         }
                     } label: {
                         Image(systemName: isSearching ? "xmark.circle.fill" : "magnifyingglass")
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                     }
                 }
             }
@@ -236,11 +237,10 @@ struct RecipeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Video Thumbnail
-            // Video Thumbnail
             Color.clear
                 .aspectRatio(9/16, contentMode: .fit)
                 .background(DesignTokens.Colors.background)
-                .cornerRadius(DesignTokens.Layout.cornerRadius / 2)
+                .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                 .overlay(
                     Group {
                         if let thumbnailUrl = recipe.thumbnailUrl, let url = URL(string: thumbnailUrl) {
@@ -254,22 +254,22 @@ struct RecipeCard: View {
                         } else {
                             // Fallback Placeholder for recipes without video
                             ZStack {
-                                LinearGradient.sizzle.opacity(0.1)
+                                LinearGradient.roseGold.opacity(0.1)
                                 VStack(spacing: 8) {
                                     Image(systemName: recipe.isAIRecipe ? "sparkles" : "fork.knife")
                                         .font(.largeTitle)
-                                        .foregroundStyle(LinearGradient.sizzle)
+                                        .foregroundStyle(LinearGradient.roseGold)
                                     Text(recipe.isAIRecipe ? "AI Recipe" : "ClipCook")
                                         .font(.caption)
                                         .fontWeight(.bold)
-                                        .foregroundColor(.clipCookSizzleStart)
+                                        .foregroundColor(.clipCookPrimary)
                                 }
                             }
                         }
                     }
                 )
                 .clipped()
-                .cornerRadius(12)
+                .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
             .overlay(
                 // Play icon overlay for video indication
                 Image(systemName: "play.fill")
@@ -291,10 +291,10 @@ struct RecipeCard: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
-                            .background(LinearGradient.sizzle)
-                            .cornerRadius(4)
-                            .padding(8)
-                            .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                            .background(LinearGradient.roseGold)
+                            .cornerRadius(DesignTokens.Layout.cornerRadiusSmall)
+                            .padding(DesignTokens.Layout.spacing8)
+                            .shadow(color: DesignTokens.Effects.shadowColorStrong, radius: DesignTokens.Effects.shadowSmallRadius, x: 0, y: 1)
                     }
                 },
                 alignment: .topLeading
@@ -311,11 +311,11 @@ struct RecipeCard: View {
                     if recipe.isAIRecipe {
                         Image(systemName: "sparkles")
                             .font(.caption2)
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                         Text("AI Creation")
                             .font(.caption)
                             .fontWeight(.bold)
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                     } else {
                         // Show creator name if available, otherwise just show platform
                         // Show creator name if available, otherwise just show platform
@@ -390,10 +390,10 @@ struct SearchBar: View {
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, DesignTokens.Layout.spacing12)
+        .padding(.vertical, DesignTokens.Layout.spacing8)
         .background(Color.clipCookSurface)
-        .cornerRadius(10)
+        .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
         .onAppear {
             isFocused = true
         }
@@ -428,30 +428,31 @@ struct LoadingRecipeCard: View {
                         .offset(x: shimmerOffset * 200)
                     }
                 )
-                .cornerRadius(12)
+                .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                 .overlay(
-                    VStack(spacing: 12) {
+                    VStack(spacing: DesignTokens.Layout.spacing12) {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: DesignTokens.Colors.primary))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookPrimary))
                             .scaleEffect(1.2)
-                        
+
+                        // "Cooking..." text uses sizzle gradient (appropriate for loading state)
                         Text(isTakingLonger ? "Taking longer than expected..." : "Cooking...")
                             .font(.caption)
                             .fontWeight(.semibold)
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
-                        
+
                         if isTakingLonger {
                             Button(action: onDismiss) {
                                 Text("Dismiss")
                                     .font(.caption)
                                     .fontWeight(.bold)
                                     .foregroundColor(.white)
-                                    .padding(.horizontal, 12)
+                                    .padding(.horizontal, DesignTokens.Layout.spacing12)
                                     .padding(.vertical, 6)
-                                    .background(LinearGradient.sizzle)
-                                    .cornerRadius(12)
+                                    .background(LinearGradient.roseGold)
+                                    .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                             }
                         }
                     }

@@ -53,6 +53,14 @@ struct UIKitAppearance {
     // MARK: - Tab Bar Configuration
 
     private static func configureTabBar() {
+        // iOS 26+: Let Liquid Glass handle the floating tab bar appearance
+        // Forcing opaque configuration creates a grey gap behind the floating pill
+        if #available(iOS 26.0, *) {
+            UITabBar.appearance().tintColor = UIKitColors.primary
+            return
+        }
+
+        // Pre-iOS 26: Use opaque tab bar configuration
         let tabAppearance = UITabBarAppearance()
         tabAppearance.configureWithOpaqueBackground()
 

@@ -26,7 +26,7 @@ struct PaywallView: View {
             
             LinearGradient(
                 colors: [
-                    Color.clipCookSizzleStart.opacity(0.15),
+                    Color.clipCookPrimary.opacity(0.15),
                     Color.clipCookBackground
                 ],
                 startPoint: .topLeading,
@@ -41,7 +41,7 @@ struct PaywallView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 70))
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                         
                         Text("ClipCook Pro")
                             .font(.system(size: 36, weight: .bold))
@@ -49,7 +49,7 @@ struct PaywallView: View {
                         
                         Text("Your AI Sous Chef, Unlimited")
                             .font(.title3)
-                            .foregroundColor(.clipCookSizzleStart)
+                            .foregroundColor(.clipCookPrimary)
                     }
                     .padding(.top, 20)
 
@@ -61,12 +61,12 @@ struct PaywallView: View {
                         FeatureRow(icon: "wand.and.stars", text: "Unlimited recipe remix", highlight: true)
                         FeatureRow(icon: "sparkles.tv", text: "Early access to beta features", highlight: false)
                     }
-                    .padding(20)
+                    .padding(DesignTokens.Layout.spacing20)
                     .background(Color.clipCookSurface.opacity(0.8))
-                    .cornerRadius(20)
+                    .cornerRadius(DesignTokens.Layout.cornerRadius)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.clipCookSizzleStart.opacity(0.2), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius)
+                            .stroke(Color.clipCookPrimary.opacity(0.2), lineWidth: 1)
                     )
                     .padding(.horizontal)
 
@@ -103,18 +103,18 @@ struct PaywallView: View {
                         HStack {
                             if isLoading {
                                 ProgressView()
-                                    .tint(.orange)
+                                    .tint(.clipCookPrimary)
                             } else {
                                 Text("Subscribe Now")
                                     .font(.headline)
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(LinearGradient.sizzle)
+                        .padding(.vertical, DesignTokens.Layout.spacing16)
+                        .background(LinearGradient.roseGold)
                         .foregroundColor(.clipCookBackground)
-                        .cornerRadius(14)
-                        .shadow(color: Color.clipCookSizzleStart.opacity(0.2), radius: 10, y: 5)
+                        .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
+                        .shadow(color: Color.clipCookPrimary.opacity(0.2), radius: DesignTokens.Effects.shadowMediumRadius, y: 5)
 
                     }
                     .disabled(isLoading)
@@ -158,7 +158,7 @@ struct PaywallView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 80))
-                        .foregroundColor(.clipCookSizzleStart)
+                        .foregroundColor(.clipCookPrimary)
                         .scaleEffect(showSuccess ? 1 : 0)
                         .animation(.spring(.bouncy), value: showSuccess)
                     
@@ -257,7 +257,7 @@ struct FeatureRow: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(highlight ? .clipCookSizzleStart : .clipCookTextSecondary.opacity(0.5))
+                .foregroundColor(highlight ? .clipCookPrimary : .clipCookTextSecondary.opacity(0.5))
                 .frame(width: 30)
 
             
@@ -295,8 +295,8 @@ struct PlanButton: View {
                                 .foregroundColor(.clipCookBackground)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color.clipCookSizzleStart)
-                                .cornerRadius(4)
+                                .background(Color.clipCookPrimary)
+                                .cornerRadius(DesignTokens.Layout.cornerRadiusSmall)
                         }
                     }
                     
@@ -312,12 +312,12 @@ struct PlanButton: View {
             }
             .padding()
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusMedium)
                     .fill(isSelected ? Color.clipCookSurface : Color.clipCookSurface.opacity(0.3))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.clipCookSizzleStart : Color.clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusMedium)
+                    .stroke(isSelected ? Color.clipCookPrimary : Color.clear, lineWidth: 2)
             )
 
         }

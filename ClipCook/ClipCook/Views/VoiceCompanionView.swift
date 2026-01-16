@@ -198,7 +198,7 @@ struct VoiceCompanionView: View {
                 Text(isLiveMode ? "Live Chef 🔴" : "Sous Chef Mode")
                     .font(.subheadline)
                     .fontWeight(.bold)
-                    .foregroundStyle(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing) : LinearGradient.sizzle)
+                    .foregroundStyle(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing) : LinearGradient.roseGold)
                 Text(recipe.title)
                     .font(.caption)
                     .foregroundColor(.clipCookTextSecondary)
@@ -215,7 +215,7 @@ struct VoiceCompanionView: View {
             }) {
                 Image(systemName: speechManager.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                     .font(.title2)
-                    .foregroundColor(speechManager.isMuted ? .clipCookSizzleStart : .clipCookTextSecondary)
+                    .foregroundColor(speechManager.isMuted ? .clipCookPrimary : .clipCookTextSecondary)
                     .frame(width: 44, height: 44)
                     .background(Color.clipCookSurface)
                     .cornerRadius(12)
@@ -251,7 +251,7 @@ struct VoiceCompanionView: View {
             VStack(spacing: 24) {
                 Text(currentStepLabel)
                     .font(.system(size: 16, weight: .black))
-                    .foregroundColor(.clipCookSizzleStart)
+                    .foregroundColor(.clipCookPrimary)
                     .tracking(2)
                 
                 // Sub-step indicator dots (if applicable)
@@ -259,7 +259,7 @@ struct VoiceCompanionView: View {
                     HStack(spacing: 6) {
                         ForEach(0..<totalSubSteps, id: \.self) { index in
                             Circle()
-                                .fill(index == currentSubStepIndex ? Color.clipCookSizzleStart : Color.clipCookSurface)
+                                .fill(index == currentSubStepIndex ? Color.clipCookPrimary : Color.clipCookSurface)
                                 .frame(width: 8, height: 8)
                         }
                     }
@@ -356,11 +356,11 @@ struct VoiceCompanionView: View {
                 .font(.body)
                 .foregroundColor(.white)
                 .padding()
-                .background(Color.clipCookSizzleStart.opacity(0.2))
+                .background(Color.clipCookPrimary.opacity(0.2))
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.clipCookSizzleStart, lineWidth: 1)
+                        .stroke(Color.clipCookPrimary, lineWidth: 1)
                 )
                 .padding()
                 .withWhimsyBounce(trigger: showingAIResponse)
@@ -398,9 +398,9 @@ struct VoiceCompanionView: View {
                     
                     // Button Background
                     Circle()
-                        .fill(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .topLeading, endPoint: .bottomTrailing) : LinearGradient.sizzle)
+                        .fill(isLiveMode ? LinearGradient(colors: [.red, .orange], startPoint: .topLeading, endPoint: .bottomTrailing) : LinearGradient.roseGold)
                         .frame(width: 80, height: 80)
-                        .shadow(color: (isLiveMode ? Color.red : Color.clipCookSizzleStart).opacity(0.4), radius: 10, y: 5)
+                        .shadow(color: (isLiveMode ? Color.red : Color.clipCookPrimary).opacity(0.4), radius: 10, y: 5)
                     
                     // Icon
                     if liveManager.isConnecting {
@@ -694,12 +694,12 @@ struct ChatBubble: View {
             
             Text(text)
                 .padding()
-                .background(isUser ? Color.clipCookSurface : Color.clipCookSizzleStart.opacity(0.2))
+                .background(isUser ? Color.clipCookSurface : Color.clipCookPrimary.opacity(0.2))
                 .foregroundColor(.white)
                 .cornerRadius(16)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(isUser ? Color.clear : Color.clipCookSizzleStart, lineWidth: 1)
+                        .stroke(isUser ? Color.clear : Color.clipCookPrimary, lineWidth: 1)
                 )
             
             if !isUser { Spacer() }

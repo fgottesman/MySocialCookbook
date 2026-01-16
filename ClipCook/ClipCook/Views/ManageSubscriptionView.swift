@@ -20,7 +20,7 @@ struct ManageSubscriptionView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "crown.fill")
                             .font(.system(size: 60))
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                         
                         Text("You're a Pro!")
                             .font(.system(size: 28, weight: .bold))
@@ -49,7 +49,7 @@ struct ManageSubscriptionView: View {
                     .cornerRadius(16)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.clipCookSizzleStart.opacity(0.2), lineWidth: 1)
+                            .stroke(Color.clipCookPrimary.opacity(0.2), lineWidth: 1)
                     )
                     .padding(.horizontal)
                     
@@ -67,7 +67,7 @@ struct ManageSubscriptionView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.clipCookSizzleStart.opacity(0.3), lineWidth: 1)
+                                .stroke(Color.clipCookPrimary.opacity(0.3), lineWidth: 1)
                         )
                     }
                     .padding(.horizontal)
@@ -108,7 +108,7 @@ private struct BenefitRow: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(.clipCookSizzleStart)
+                .foregroundColor(.clipCookPrimary)
                 .frame(width: 24)
             
             Text(text)

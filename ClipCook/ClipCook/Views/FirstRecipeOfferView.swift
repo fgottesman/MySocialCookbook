@@ -43,7 +43,7 @@ struct FirstRecipeOfferView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 30)
                     .padding(.vertical, 14)
-                    .background(LinearGradient.sizzle)
+                    .background(LinearGradient.roseGold)
                     .cornerRadius(12)
                     .shadow(color: DesignTokens.Colors.primary.opacity(0.4), radius: 10, y: 5)
 
@@ -96,7 +96,7 @@ struct FirstRecipeOfferView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(LinearGradient.sizzle)
+                    .background(LinearGradient.roseGold)
                     .foregroundColor(DesignTokens.Colors.background)
                     .cornerRadius(14)
                     .shadow(color: DesignTokens.Colors.primary.opacity(0.3), radius: 8, y: 4)

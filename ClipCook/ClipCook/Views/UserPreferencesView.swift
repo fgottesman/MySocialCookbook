@@ -62,7 +62,7 @@ struct UserPreferencesView: View {
             Section {
                 HStack {
                     Image(systemName: "heart")
-                        .foregroundColor(.clipCookSizzleEnd)
+                        .foregroundColor(.clipCookSecondary)
                     Text("Dietary Restrictions")
                     Spacer()
                     Text("Coming Soon")
@@ -76,7 +76,7 @@ struct UserPreferencesView: View {
                 
                 HStack {
                     Image(systemName: "person.2")
-                        .foregroundColor(.clipCookSizzleStart)
+                        .foregroundColor(.clipCookPrimary)
                     Text("Default Servings")
                     Spacer()
                     Text("Coming Soon")
