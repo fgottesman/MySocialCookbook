@@ -240,8 +240,8 @@ describe('Recipe Versioning', () => {
 
             const savePromise = RecipeController.saveVersion(mockReq as any, mockRes as Response);
 
-            // Fast-forward timers
-            jest.runAllTimers();
+            // Fast-forward timers for async code
+            await jest.advanceTimersByTimeAsync(1000);
 
             await savePromise;
 
@@ -294,7 +294,8 @@ describe('Recipe Versioning', () => {
 
             const savePromise = RecipeController.saveVersion(mockReq as any, mockRes as Response);
 
-            jest.runAllTimers();
+            // Fast-forward timers for all retry attempts (100ms * 0 + 100ms * 1 + 100ms * 2 = 300ms)
+            await jest.advanceTimersByTimeAsync(1000);
 
             await savePromise;
 

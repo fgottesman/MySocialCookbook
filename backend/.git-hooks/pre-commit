@@ -78,12 +78,25 @@ if [ -n "$STAGED_FILES" ]; then
         exit 1
     fi
 
-    # Check for common API key patterns (any file type)
+    # Check for common API key patterns (any file type, including documentation)
     if echo "$STAGED_FILES" | xargs grep -E "(sk-[A-Za-z0-9]{40,}|AIza[A-Za-z0-9]{35}|sb_secret_[A-Za-z0-9_-]{20,})" 2>/dev/null; then
         echo -e "${RED}❌ API key pattern detected!${NC}"
         echo -e "${YELLOW}Detected patterns: OpenAI (sk-), Google (AIza), or Supabase (sb_secret_)${NC}"
-        echo -e "${YELLOW}Never commit API keys${NC}"
+        echo -e "${YELLOW}Never commit API keys - even in documentation!${NC}"
+        echo -e "${YELLOW}Use redacted format: AIzaSy...xxx or sb_secret_...xxx${NC}"
         exit 1
+    fi
+
+    # Special check for documentation files - extra vigilant
+    DOC_FILES=$(echo "$STAGED_FILES" | grep -E '\.(md|txt|rst)$' || true)
+    if [ -n "$DOC_FILES" ]; then
+        # Check for key-like strings in documentation
+        if echo "$DOC_FILES" | xargs grep -E "(AIza[A-Za-z0-9]{20,}|sb_secret_[A-Za-z0-9_-]{15,}|sk-[A-Za-z0-9]{30,})" 2>/dev/null; then
+            echo -e "${RED}❌ Potential API key in documentation detected!${NC}"
+            echo -e "${YELLOW}Documentation files should NEVER contain actual keys${NC}"
+            echo -e "${YELLOW}Always use redacted format: AIzaSy...xxx${NC}"
+            exit 1
+        fi
     fi
 fi
 echo -e "${GREEN}✓ No hardcoded secrets detected${NC}"
