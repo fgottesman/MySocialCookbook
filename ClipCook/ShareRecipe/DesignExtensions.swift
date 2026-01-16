@@ -1,8 +1,63 @@
 //
 //  DesignExtensions.swift
-//  ClipCook
+//  ShareRecipe
 //
-//  Deprecated: This file's functionality has been moved to Services/DesignSystem.swift
-//  This file is kept empty to preserve the file reference in Xcode and prevent missing file errors.
-//  You can safely remove this file from the project in Xcode if you wish.
+//  Design system for Share Extension (standalone, mirrors main app DesignTokens)
+//  Note: Share extensions cannot import from main app, so colors are defined here
+//  with matching values from DesignTokens.swift
 //
+
+import SwiftUI
+
+// MARK: - Color Extensions
+extension Color {
+    // Core Colors (matching DesignTokens.Colors)
+    static var clipCookBackground: Color { Color(hex: "0F1A2B") }      // Midnight Navy
+    static var clipCookSurface: Color { Color(hex: "1A2A3D") }         // Deep Navy
+    static var clipCookTextPrimary: Color { .white }
+    static var clipCookTextSecondary: Color { Color(hex: "D4A5A5") }   // Dusty Rose
+    static var clipCookPrimary: Color { Color(hex: "E8C4B8") }         // Rose Gold
+    static var clipCookSecondary: Color { Color(hex: "D4A5A5") }       // Dusty Rose
+
+    // Sizzle gradient colors (warm accent for cooking app)
+    static var clipCookSizzleStart: Color { Color(hex: "FF6B4A") }     // Coral
+    static var clipCookSizzleEnd: Color { Color(hex: "FF8E53") }       // Light Orange
+
+    static var clipCookSuccess: Color { Color(hex: "4CAF50") }         // Green
+
+    // Hex color initializer
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+
+// MARK: - LinearGradient Extensions
+extension LinearGradient {
+    static var sizzle: LinearGradient {
+        LinearGradient(
+            colors: [.clipCookSizzleStart, .clipCookSizzleEnd],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+}
