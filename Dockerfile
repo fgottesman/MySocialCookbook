@@ -15,7 +15,7 @@ COPY backend/ ./
 RUN npm run build
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8083
 
 # Start server
 CMD ["npm", "start"]
