@@ -2,3 +2,7 @@ node_modules
 dist
 .env
 .DS_Store
+
+# Railway environment files (contain secrets)
+railway-env.json
+*-env.json

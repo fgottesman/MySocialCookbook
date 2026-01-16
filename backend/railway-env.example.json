@@ -1,0 +1,22 @@
+{
+  "_comment": "Example Railway environment variables - DO NOT commit with real values!",
+  "_instructions": "Use this as reference for setting up Railway environment variables",
+
+  "SUPABASE_URL": "https://your-project.supabase.co",
+  "SUPABASE_ANON_KEY": "your-anon-key-here",
+  "SUPABASE_SERVICE_ROLE_KEY": "your-service-role-key-here",
+
+  "GEMINI_API_KEY": "your-gemini-api-key-here",
+  "RAPIDAPI_KEY": "your-rapidapi-key-here",
+
+  "REVENUECAT_WEBHOOK_SECRET": "your-webhook-secret-here",
+
+  "APPLE_TEAM_ID": "YOUR_TEAM_ID",
+  "APNS_KEY_ID": "YOUR_KEY_ID",
+  "APNS_KEY": "-----BEGIN PRIVATE KEY-----\\nYOUR_KEY_HERE\\n-----END PRIVATE KEY-----",
+  "APNS_ENV": "production",
+
+  "NODE_ENV": "production",
+  "ENV_TIER": "production",
+  "PORT": "8080"
+}
