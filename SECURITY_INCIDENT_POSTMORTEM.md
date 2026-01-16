@@ -61,26 +61,27 @@ The pre-commit hooks were configured to detect patterns like:
 ## 🎯 Exposed Credentials
 
 ### 1. Google Gemini API Key
-- **Old Key**: `AIzaSyAgJJeUopPvXGxuMAeit07g0bOdC5XpkTU`
-- **New Key**: `AIzaSyDE5ubNc0vB21G9Kk-VtOd2MlLTIU1uxlI`
+- **Old Key**: `AIzaSy...kTU` (redacted)
+- **New Key**: `AIzaSy...xlI` (redacted)
 - **Action**: Revoked old key, generated new key
 - **Risk**: Could have been used to make unauthorized AI API calls (costs money)
 
 ### 2. Supabase Service Role Key
-- **Old Key**: `sb_secret_usHZKT7hrl2VSyY441Hktg_XqXqGr7k`
-- **New Key**: `sb_secret_EsmdQomXjbHknusW-j9CYw_JijQrDOJ`
+- **Old Key**: `sb_secret_...Gr7k` (redacted)
+- **New Key**: `sb_secret_...DOJ` (redacted)
 - **Action**: Regenerated key in Supabase dashboard
 - **Risk**: HIGH - service role key bypasses Row Level Security, could access/modify ALL data
 
 ### 3. File Committed
 ```json
 {
-  "GEMINI_API_KEY": "AIzaSyAgJJeUopPvXGxuMAeit07g0bOdC5XpkTU",
-  "SUPABASE_SERVICE_ROLE_KEY": "sb_secret_usHZKT7hrl2VSyY441Hktg_XqXqGr7k",
+  "GEMINI_API_KEY": "AIzaSy...kTU",
+  "SUPABASE_SERVICE_ROLE_KEY": "sb_secret_...Gr7k",
   "SUPABASE_URL": "https://xbclhuikdmcarifsugru.supabase.co",
   "SUPABASE_ANON_KEY": "eyJhbGci..."
 }
 ```
+Note: All sensitive values redacted for security
 
 **Exposure Duration**: ~2 minutes in public repository history
 
