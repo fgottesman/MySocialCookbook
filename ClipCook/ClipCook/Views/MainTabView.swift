@@ -2,40 +2,41 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab = 0
-    @State private var hasConfiguredAppearance = false
+
+    init() {
+        // Configure UIKit appearance immediately in init
+        UIKitAppearance.configure()
+    }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            FeedView()
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(0)
+        ZStack {
+            // Full-screen background that extends into safe areas
+            Color.clipCookBackground
+                .ignoresSafeArea()
 
-            FavoritesView()
-                .tabItem {
-                    Label("Favorites", systemImage: "star.fill")
-                }
-                .tag(1)
+            TabView(selection: $selectedTab) {
+                FeedView()
+                    .tabItem {
+                        Label("Home", systemImage: "house.fill")
+                    }
+                    .tag(0)
 
-            ProfileView()
-                .tabItem {
-                    Label("Profile", systemImage: "person.fill")
-                }
-                .tag(2)
-        }
-        // Use DesignTokens instead of hardcoded hex values
-        .tint(DesignTokens.Colors.primary)
-        // Ensure consistent background color
-        .background(DesignTokens.Colors.background)
-        // Force UIKit appearance configuration on appear
-        // This prevents any potential color flashing
-        .onAppear {
-            if !hasConfiguredAppearance {
-                UIKitAppearance.configure()
-                hasConfiguredAppearance = true
+                FavoritesView()
+                    .tabItem {
+                        Label("Favorites", systemImage: "star.fill")
+                    }
+                    .tag(1)
+
+                ProfileView()
+                    .tabItem {
+                        Label("Profile", systemImage: "person.fill")
+                    }
+                    .tag(2)
             }
+            .tint(DesignTokens.Colors.primary)
         }
+        .toolbarBackground(Color.clipCookBackground, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
     }
 }
 
