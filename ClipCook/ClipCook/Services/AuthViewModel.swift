@@ -22,53 +22,54 @@ class AuthViewModel: ObservableObject {
     }
     
     init() {
-        // Fetch initial session
-        Task {
-            do {
-                self.session = try await SupabaseManager.shared.client.auth.session
-            } catch {
-                print("Error fetching initial session: \(error)")
-            }
-        }
-        
         // Listen for auth state changes
-        Task {
-            for await (event, session) in SupabaseManager.shared.client.auth.authStateChanges {
-                await MainActor.run {
-                    self.session = session
-                    print("Auth Event: \(event)")
-                    
-                    // Register device token for the new user if we have a session
-                    if let user = session?.user, (event == .signedIn || event == .initialSession) {
-                        MessagingManager.shared.registerCurrentDevice(userId: user.id.uuidString)
-                        
-                        // Sync RevenueCat user ID with Supabase user
-                        Task {
-                            do {
-                                let (customerInfo, _) = try await Purchases.shared.logIn(user.id.uuidString)
-                                print("[RevenueCat] Logged in user: \(user.id.uuidString)")
-                                print("[RevenueCat] Pro entitlement active: \(customerInfo.entitlements["ClipCook Pro"]?.isActive ?? false)")
-                                
-                                // Refresh subscription status after login
-                                await SubscriptionManager.shared.loadSubscriptionStatus()
-                            } catch {
-                                print("[RevenueCat] Login error: \(error)")
+        // Note: With emitLocalSessionAsInitialSession: true, the initial session is provided automatically
+        Task { [weak self] in
+            do {
+                for await (event, session) in SupabaseManager.shared.client.auth.authStateChanges {
+                    guard let self = self else { break }
+
+                    await MainActor.run { [weak self] in
+                        guard let self = self else { return }
+
+                        self.session = session
+                        print("[Auth] Event: \(event)")
+
+                        // Register device token for the new user if we have a session
+                        if let user = session?.user, (event == .signedIn || event == .initialSession) {
+                            MessagingManager.shared.registerCurrentDevice(userId: user.id.uuidString)
+
+                            // Sync RevenueCat user ID with Supabase user
+                            // Use detached task to avoid actor isolation issues
+                            Task.detached { @MainActor in
+                                do {
+                                    let (customerInfo, _) = try await Purchases.shared.logIn(user.id.uuidString)
+                                    print("[RevenueCat] Logged in user: \(user.id.uuidString)")
+                                    print("[RevenueCat] Pro entitlement active: \(customerInfo.entitlements["ClipCook Pro"]?.isActive ?? false)")
+
+                                    // Refresh subscription status after login
+                                    await SubscriptionManager.shared.loadSubscriptionStatus()
+                                } catch {
+                                    print("[RevenueCat] Login error: \(error)")
+                                }
                             }
                         }
-                    }
-                    
-                    // Log out of RevenueCat when user signs out
-                    if event == .signedOut {
-                        Task {
-                            do {
-                                _ = try await Purchases.shared.logOut()
-                                print("[RevenueCat] Logged out")
-                            } catch {
-                                print("[RevenueCat] Logout error: \(error)")
+
+                        // Log out of RevenueCat when user signs out
+                        if event == .signedOut {
+                            Task.detached { @MainActor in
+                                do {
+                                    _ = try await Purchases.shared.logOut()
+                                    print("[RevenueCat] Logged out")
+                                } catch {
+                                    print("[RevenueCat] Logout error: \(error)")
+                                }
                             }
                         }
                     }
                 }
+            } catch {
+                print("[Auth] Error in auth state changes: \(error)")
             }
         }
     }

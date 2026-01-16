@@ -198,13 +198,15 @@ class SubscriptionManager: NSObject, ObservableObject, PurchasesDelegate {
     
     private override init() {
         super.init()
-        
+
         // Set self as the RevenueCat delegate for real-time updates
         Purchases.shared.delegate = self
-        
-        Task {
-            await loadSubscriptionStatus()
-            await fetchOfferings()
+
+        // Load initial state in a detached task to avoid blocking
+        Task.detached { @MainActor [weak self] in
+            guard let self = self else { return }
+            await self.loadSubscriptionStatus()
+            await self.fetchOfferings()
         }
     }
     
