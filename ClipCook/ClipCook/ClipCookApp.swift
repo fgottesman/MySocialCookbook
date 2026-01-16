@@ -17,20 +17,17 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Initialize RevenueCat
         Purchases.logLevel = .debug
         Purchases.configure(withAPIKey: "test_BddOAgtqxNNXhxQAiTlQmnXGrYl")
-        
+
         return true
     }
-    
+
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         // Send token to backend
-        // Use a default user ID for now or grab from Supabase if logged in
-        // Ideally we pass the token to MessagingManager
-        // Assuming SupabaseManager and MessagingManager are defined elsewhere
         if let user = SupabaseManager.shared.client.auth.currentUser {
              MessagingManager.shared.registerDevice(token: deviceToken, userId: user.id.uuidString)
         }
     }
-    
+
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         print("Failed to register for notifications: \(error)")
     }
@@ -41,7 +38,7 @@ struct MySocialCookbookApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     @Environment(\.scenePhase) private var scenePhase
-    
+
     init() {
         // Configure all UIKit appearance using centralized configuration
         // This prevents tab bar color flashing and ensures consistent theming

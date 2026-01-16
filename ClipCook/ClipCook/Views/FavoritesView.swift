@@ -21,12 +21,12 @@ struct FavoritesView: View {
                 Group {
                     if viewModel.isLoading && viewModel.favorites.isEmpty {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .clipCookPrimary))
                     } else if let error = viewModel.errorMessage {
                         VStack(spacing: 16) {
                             Image(systemName: "exclamationmark.triangle")
                                 .font(.largeTitle)
-                                .foregroundColor(.clipCookSizzleEnd)
+                                .foregroundColor(.clipCookSecondary)
                             Text("Kitchen Error")
                                 .modifier(UtilityHeadline())
                             Text(error)
@@ -64,7 +64,7 @@ struct FavoritesView: View {
                 ToolbarItem(placement: .principal) {
                     Text("Favorites")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(LinearGradient.sizzle)
+                        .foregroundStyle(LinearGradient.roseGold)
                 }
             }
             .task {
@@ -79,7 +79,7 @@ struct EmptyFavoritesView: View {
         VStack(spacing: 16) {
             Image(systemName: "star.slash")
                 .font(.system(size: 60))
-                .foregroundStyle(LinearGradient.sizzle)
+                .foregroundStyle(LinearGradient.roseGold)
             
             Text("No Favorites Yet")
                 .font(.title2.bold())

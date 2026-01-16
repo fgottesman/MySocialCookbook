@@ -15,7 +15,7 @@ struct NUXView: View {
                     title: "ClipCook",
                     subtitle: "Your AI-powered social cookbook. Turn any cooking video into a step-by-step recipe with magic! ✨",
                     imageName: "sparkles",
-                    color: .clipCookSizzleStart
+                    color: .clipCookPrimary
                 ) {
                     Button(action: { withAnimation { selection = 1 } }) {
                         Text("Tell me more")
@@ -23,8 +23,8 @@ struct NUXView: View {
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(LinearGradient.sizzle)
-                            .cornerRadius(12)
+                            .background(LinearGradient.roseGold)
+                            .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                     }
                     .padding(.horizontal, 40)
                 }
@@ -35,7 +35,7 @@ struct NUXView: View {
                     title: "Share to Clip",
                     subtitle: "When you find a delicious recipe on TikTok, IG, or YouTube, tap Share and select ClipCook.",
                     imageName: "square.and.arrow.up.fill",
-                    color: .clipCookSizzleEnd
+                    color: .clipCookSecondary
                 ) {
                     VStack(alignment: .leading, spacing: 16) {
                         NUXStepRow(number: "1", text: "Tap the Share icon")
@@ -58,7 +58,7 @@ struct NUXView: View {
                     title: "Stay in the Loop",
                     subtitle: "AI cooking takes a minute! We'll notify you the second your recipe is ready to cook. 🍳",
                     imageName: "bell.badge.fill",
-                    color: .clipCookSizzleStart
+                    color: .clipCookPrimary
                 ) {
                     Button(action: requestNotifications) {
                         Text("Enable Notifications")
@@ -66,8 +66,8 @@ struct NUXView: View {
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(LinearGradient.sizzle)
-                            .cornerRadius(12)
+                            .background(LinearGradient.roseGold)
+                            .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                     }
                     .padding(.horizontal, 40)
                 }
@@ -101,7 +101,7 @@ struct NUXView: View {
                     title: "Let's Get Cooking",
                     subtitle: "Find a recipe you love or describe what you want to make.",
                     imageName: "flame.fill",
-                    color: .clipCookSizzleStart
+                    color: .clipCookPrimary
                 ) {
                     VStack(spacing: 12) {
                         HStack(spacing: 12) {
@@ -122,10 +122,10 @@ struct NUXView: View {
                                 .padding()
                                 .frame(maxWidth: .infinity)
                                 .background(DesignTokens.Colors.surface)
-                                .cornerRadius(DesignTokens.Layout.cornerRadius / 2)
+                                .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius / 2)
-                                        .stroke(LinearGradient.sizzle, lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusMedium)
+                                        .stroke(LinearGradient.roseGold, lineWidth: 1)
                                 )
                         }
                     }
@@ -170,7 +170,7 @@ struct AppIconButton: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusMedium)
                         .fill(Color.clipCookSurface)
                         .frame(width: 64, height: 64)
                     
@@ -259,7 +259,7 @@ struct NUXStepRow: View {
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
                 .frame(width: 24, height: 24)
-                .background(Circle().fill(LinearGradient.sizzle))
+                .background(Circle().fill(LinearGradient.roseGold))
             
             Text(text)
                 .font(.system(size: 17, weight: .medium, design: .rounded))

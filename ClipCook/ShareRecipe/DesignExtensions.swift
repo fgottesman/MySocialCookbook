@@ -51,8 +51,57 @@ extension Color {
     }
 }
 
+// MARK: - Design Tokens (matching main app DesignTokens struct)
+enum DesignTokens {
+    enum Layout {
+        // Spacing scale
+        static let spacing8: CGFloat = 8
+        static let spacing12: CGFloat = 12
+        static let spacing16: CGFloat = 16
+        static let spacing20: CGFloat = 20
+        static let spacing24: CGFloat = 24
+
+        // Corner radii hierarchy
+        static let cornerRadiusSmall: CGFloat = 8     // badges, chips
+        static let cornerRadiusMedium: CGFloat = 12   // inputs, thumbnails
+        static let cornerRadius: CGFloat = 20         // cards (default)
+        static let cornerRadiusLarge: CGFloat = 20    // alias for clarity
+        static let cornerRadiusPill: CGFloat = 999    // pills, rounded buttons
+
+        // Grid
+        static let gridSpacing: CGFloat = 16
+        static let cardPadding: CGFloat = 12
+    }
+
+    enum Effects {
+        // Shadow hierarchy
+        static let shadowSmallRadius: CGFloat = 4
+        static let shadowSmallY: CGFloat = 2
+        static let shadowMediumRadius: CGFloat = 10
+        static let shadowMediumY: CGFloat = 4
+        static let shadowLargeRadius: CGFloat = 20
+        static let shadowLargeY: CGFloat = 8
+
+        // Standardized shadow colors
+        static let shadowColor = Color.black.opacity(0.15)
+        static let shadowColorStrong = Color.black.opacity(0.3)
+    }
+}
+
 // MARK: - LinearGradient Extensions
 extension LinearGradient {
+    /// Rose gold gradient - primary brand accent (matches app icon)
+    /// Use for: navigation titles, toolbar icons, primary CTAs
+    static var roseGold: LinearGradient {
+        LinearGradient(
+            colors: [.clipCookPrimary, .clipCookSecondary],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    /// Sizzle gradient - warm coral/orange accent
+    /// Use for: loading states, AI features, "cooking" animations, processing indicators
     static var sizzle: LinearGradient {
         LinearGradient(
             colors: [.clipCookSizzleStart, .clipCookSizzleEnd],

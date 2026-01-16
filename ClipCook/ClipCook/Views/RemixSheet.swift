@@ -124,7 +124,7 @@ struct RemixSheet: View {
             // Chef Icon
             Image(systemName: "chef.hat.fill")
                 .font(.title2)
-                .foregroundStyle(LinearGradient.sizzle)
+                .foregroundStyle(LinearGradient.roseGold)
             
             Text("Remix Chef")
                 .font(DesignTokens.Typography.headerFont(size: 20))
@@ -198,7 +198,7 @@ struct RemixSheet: View {
             ZStack {
                 // Outer ring pulse
                 Circle()
-                    .stroke(LinearGradient.sizzle.opacity(0.3), lineWidth: 2)
+                    .stroke(LinearGradient.roseGold.opacity(0.3), lineWidth: 2)
                     .frame(width: 100, height: 100)
                     .scaleEffect(pulseAnimation ? 1.2 : 1.0)
                     .opacity(pulseAnimation ? 0 : 0.8)
@@ -208,12 +208,12 @@ struct RemixSheet: View {
                 Circle()
                     .fill(Color.clipCookSurface)
                     .frame(width: 80, height: 80)
-                    .shadow(color: Color.clipCookSizzleStart.opacity(0.3), radius: 20)
+                    .shadow(color: Color.clipCookPrimary.opacity(0.3), radius: 20)
                 
                 // Chef icon
                 Image(systemName: "wand.and.stars")
                     .font(.system(size: 32))
-                    .foregroundStyle(LinearGradient.sizzle)
+                    .foregroundStyle(LinearGradient.roseGold)
             }
             .onAppear { pulseAnimation = true }
             .onDisappear { pulseAnimation = false }
@@ -229,7 +229,7 @@ struct RemixSheet: View {
                 HStack(spacing: 6) {
                     ForEach(0..<3) { i in
                         Circle()
-                            .fill(Color.clipCookSizzleStart)
+                            .fill(Color.clipCookPrimary)
                             .frame(width: 8, height: 8)
                             .scaleEffect(pulseAnimation ? 1.0 : 0.6)
                             .animation(
@@ -283,12 +283,12 @@ struct RemixSheet: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange.opacity(0.1))
-        .cornerRadius(12)
+        .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusMedium)
                 .stroke(Color.orange.opacity(0.3), lineWidth: 1)
         )
-        .padding(.horizontal, 20)
+        .padding(.horizontal, DesignTokens.Layout.spacing20)
     }
     
     // MARK: - Input View
@@ -336,7 +336,7 @@ struct RemixSheet: View {
                             if inputText.isEmpty {
                                 Circle().fill(Color.clipCookSurface)
                             } else {
-                                Circle().fill(LinearGradient.sizzle)
+                                Circle().fill(LinearGradient.roseGold)
                             }
                         }
                         .frame(width: 48, height: 48)
@@ -434,20 +434,20 @@ struct SuggestionChip: View {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 14))
-                    .foregroundStyle(LinearGradient.sizzle)
+                    .foregroundStyle(LinearGradient.roseGold)
                 
                 Text(text)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, DesignTokens.Layout.spacing16)
+            .padding(.vertical, DesignTokens.Layout.spacing12)
             .background(Color.clipCookSurface)
-            .cornerRadius(20)
+            .cornerRadius(DesignTokens.Layout.cornerRadius)
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius)
                     .stroke(
-                        LinearGradient.sizzle.opacity(isPressed ? 0.8 : 0.2),
+                        LinearGradient.roseGold.opacity(isPressed ? 0.8 : 0.2),
                         lineWidth: 1
                     )
             )
@@ -481,7 +481,7 @@ struct SuggestionCard: View {
 
                     Image(systemName: icon)
                         .font(.system(size: 20))
-                        .foregroundStyle(LinearGradient.sizzle)
+                        .foregroundStyle(LinearGradient.roseGold)
                 }
 
                 Text(text)
@@ -499,9 +499,9 @@ struct SuggestionCard: View {
             .background(DesignTokens.Colors.surface)
             .cornerRadius(DesignTokens.Layout.cornerRadius)
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius)
                     .stroke(
-                        LinearGradient.sizzle.opacity(isPressed ? 0.8 : 0.15),
+                        LinearGradient.roseGold.opacity(isPressed ? 0.8 : 0.15),
                         lineWidth: 1
                     )
             )
@@ -554,10 +554,10 @@ struct ConsultationCard: View {
                     icon: "star.fill"
                 )
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
+            .padding(.vertical, DesignTokens.Layout.spacing12)
+            .padding(.horizontal, DesignTokens.Layout.spacing16)
             .background(Color.black.opacity(0.2))
-            .cornerRadius(12)
+            .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
             
             // Action Button
             Button(action: onConfirm) {
@@ -568,11 +568,11 @@ struct ConsultationCard: View {
                         .font(.system(size: 14, weight: .semibold))
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color.clipCookSizzleStart)
+                .padding(.vertical, DesignTokens.Layout.spacing16)
+                .background(Color.clipCookPrimary)
                 .foregroundColor(.white)
-                .cornerRadius(14)
-                .shadow(color: Color.clipCookSizzleStart.opacity(0.4), radius: 12, y: 4)
+                .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
+                .shadow(color: Color.clipCookPrimary.opacity(0.4), radius: DesignTokens.Effects.shadowMediumRadius, y: 4)
             }
         }
         .padding(20)
@@ -637,7 +637,7 @@ struct ExplanationRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 12))
-                .foregroundStyle(LinearGradient.sizzle)
+                .foregroundStyle(LinearGradient.roseGold)
                 .frame(width: 16)
             Text(text)
                 .font(.system(size: 14))

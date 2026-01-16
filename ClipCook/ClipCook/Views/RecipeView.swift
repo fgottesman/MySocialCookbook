@@ -73,24 +73,24 @@ struct RecipeView: View {
                     
                     // MARK: - Metrics (AI Generated)
                     if let difficulty = recipe.difficulty, let time = recipe.cookingTime {
-                        HStack(spacing: 16) {
+                        HStack(spacing: DesignTokens.Layout.spacing16) {
                             Label(difficulty, systemImage: "chart.bar.fill")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(LinearGradient.sizzle)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
+                                .foregroundStyle(LinearGradient.roseGold)
+                                .padding(.horizontal, DesignTokens.Layout.spacing12)
+                                .padding(.vertical, DesignTokens.Layout.spacing8)
                                 .background(Color.clipCookSurface)
-                                .cornerRadius(8)
-                            
+                                .cornerRadius(DesignTokens.Layout.cornerRadiusSmall)
+
                             Label(time, systemImage: "clock.fill")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(LinearGradient.sizzle)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
+                                .foregroundStyle(LinearGradient.roseGold)
+                                .padding(.horizontal, DesignTokens.Layout.spacing12)
+                                .padding(.vertical, DesignTokens.Layout.spacing8)
                                 .background(Color.clipCookSurface)
-                                .cornerRadius(8)
+                                .cornerRadius(DesignTokens.Layout.cornerRadiusSmall)
                         }
                         .padding(.horizontal)
                     }
@@ -106,12 +106,12 @@ struct RecipeView: View {
                     if let note = recipe.chefsNote {
                         HStack(alignment: .top) {
                             Image(systemName: "sparkles")
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Chef's Note")
                                     .font(.caption)
                                     .fontWeight(.bold)
-                                    .foregroundStyle(LinearGradient.sizzle)
+                                    .foregroundStyle(LinearGradient.roseGold)
                                 
                                 Text(note)
                                     .font(DesignTokens.Typography.bodyFont())
@@ -149,19 +149,19 @@ struct RecipeView: View {
                                                     .fontWeight(.medium)
                                                     .lineLimit(1)
                                             }
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, DesignTokens.Layout.spacing12)
+                                            .padding(.vertical, DesignTokens.Layout.spacing8)
                                             .background(
                                                 currentVersionIndex == index
                                                     ? Color.clear
                                                     : Color.clipCookSurface
                                             )
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 16)
+                                                RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusMedium)
                                                     .stroke(currentVersionIndex == index ? Color.white : Color.clear, lineWidth: 1)
                                             )
                                             .foregroundColor(currentVersionIndex == index ? .white : .clipCookTextSecondary)
-                                            .cornerRadius(16)
+                                            .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                                         }
                                     }
                                 }
@@ -176,7 +176,7 @@ struct RecipeView: View {
                             HStack {
                                 Text("Ingredients")
                                     .font(.headline)
-                                    .foregroundColor(.clipCookSizzleStart)
+                                    .foregroundColor(.clipCookPrimary)
                                 
                                 Spacer()
                                 
@@ -212,7 +212,7 @@ struct RecipeView: View {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Instructions")
                                 .font(.headline)
-                                .foregroundColor(.clipCookSizzleStart)
+                                .foregroundColor(.clipCookPrimary)
                             
                             ForEach(Array(instructions.enumerated()), id: \.offset) { index, step in
                                 StepCard(index: index + 1, text: step)
@@ -288,7 +288,7 @@ struct RecipeView: View {
                 ProgressView("Saving Remix...")
                     .padding()
                     .background(Color.clipCookSurface)
-                    .cornerRadius(12)
+                    .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
             }
             
             // Toast for pending remix save
@@ -303,11 +303,11 @@ struct RecipeView: View {
                             .fontWeight(.medium)
                             .foregroundColor(.white)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(Color.clipCookSizzleStart.opacity(0.95))
-                    .cornerRadius(25)
-                    .shadow(radius: 8)
+                    .padding(.horizontal, DesignTokens.Layout.spacing20)
+                    .padding(.vertical, DesignTokens.Layout.spacing12)
+                    .background(Color.clipCookPrimary.opacity(0.95))
+                    .cornerRadius(DesignTokens.Layout.cornerRadiusPill)
+                    .shadow(color: DesignTokens.Effects.shadowColor, radius: DesignTokens.Effects.shadowMediumRadius)
                     .padding(.bottom, 80)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -327,11 +327,11 @@ struct RecipeView: View {
                         }
                         .padding()
                         .background(Color.clipCookSurface)
-                        .foregroundColor(.clipCookSizzleStart)
-                        .cornerRadius(30)
-                        .shadow(radius: 10)
+                        .foregroundColor(.clipCookPrimary)
+                        .cornerRadius(DesignTokens.Layout.cornerRadiusPill)
+                        .shadow(color: DesignTokens.Effects.shadowColor, radius: DesignTokens.Effects.shadowMediumRadius)
                     }
-                    
+
                     // Start Cooking (Voice) Button
                     Button(action: { showingVoiceCompanion = true }) {
                         HStack {
@@ -341,10 +341,10 @@ struct RecipeView: View {
                         }
                         .padding()
                         .padding(.horizontal, 4)
-                        .background(hasPendingRemixSave ? Color.gray : Color.clipCookSizzleStart)
+                        .background(hasPendingRemixSave ? Color.gray : Color.clipCookPrimary)
                         .foregroundColor(.white)
-                        .cornerRadius(30)
-                        .shadow(radius: 10)
+                        .cornerRadius(DesignTokens.Layout.cornerRadiusPill)
+                        .shadow(color: DesignTokens.Effects.shadowColor, radius: DesignTokens.Effects.shadowMediumRadius)
                     }
                     .disabled(hasPendingRemixSave)
                 }
@@ -357,7 +357,7 @@ struct RecipeView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "wand.and.stars")
                         .font(.system(size: 40))
-                        .foregroundStyle(LinearGradient.sizzle)
+                        .foregroundStyle(LinearGradient.roseGold)
                         .symbolEffect(.bounce.up.byLayer, options: .repeating)
                     
                     Text("Chef is Remixing...")
@@ -791,14 +791,14 @@ struct SourceCardHeader: View {
                         Color.clipCookSurface
                         Image(systemName: "sparkles")
                             .font(.title2)
-                            .foregroundColor(.clipCookSizzleStart)
+                            .foregroundColor(.clipCookPrimary)
                     }
                 }
             }
             .frame(width: 60, height: 80)
-            .cornerRadius(12)
+            .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusMedium)
                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
             .clipped()
@@ -808,12 +808,12 @@ struct SourceCardHeader: View {
                     // AI-generated recipe attribution
                     HStack {
                         Image(systemName: "sparkles")
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                             .font(.caption)
                         Text("AI Creation")
                             .font(.subheadline)
                             .fontWeight(.bold)
-                            .foregroundStyle(LinearGradient.sizzle)
+                            .foregroundStyle(LinearGradient.roseGold)
                     }
                     
                     if let prompt = recipe.sourcePrompt {
@@ -853,7 +853,7 @@ struct SourceCardHeader: View {
                         Text("via \(recipe.sourcePlatform)")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.clipCookSizzleStart)
+                            .foregroundColor(.clipCookPrimary)
                     }
                     
                     // Deep Link Button
@@ -865,7 +865,7 @@ struct SourceCardHeader: View {
                             }
                             .font(.caption)
                             .fontWeight(.bold)
-                            .foregroundColor(.clipCookSizzleStart)
+                            .foregroundColor(.clipCookPrimary)
                         }
                     }
                 }
@@ -875,7 +875,7 @@ struct SourceCardHeader: View {
         }
         .padding()
         .background(Color.clipCookSurface)
-        .cornerRadius(16)
+        .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
         .padding(.horizontal)
     }
 }
@@ -911,14 +911,14 @@ struct IngredientRow: View {
                 if isRemixed {
                     Image(systemName: "wand.and.stars")
                         .font(.caption)
-                        .foregroundStyle(LinearGradient.sizzle)
+                        .foregroundStyle(LinearGradient.roseGold)
                 }
                 
                 Spacer()
             }
             .padding()
             .background(DesignTokens.Colors.surface)
-            .cornerRadius(DesignTokens.Layout.cornerRadius / 2)
+            .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
         }
     }
 }

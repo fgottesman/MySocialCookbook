@@ -54,7 +54,7 @@ struct AddRecipeView: View {
                 if isLoading {
                     Color.black.opacity(0.3).ignoresSafeArea()
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .clipCookSizzleStart))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .clipCookPrimary))
                         .scaleEffect(1.5)
                 }
             }
@@ -84,7 +84,7 @@ struct AddRecipeView: View {
             TextField("https://...", text: $urlString)
                 .padding()
                 .background(Color.clipCookSurface)
-                .cornerRadius(12)
+                .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                 .foregroundColor(.white)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
@@ -98,13 +98,13 @@ struct AddRecipeView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(urlString.isEmpty ? Color.gray : Color.clipCookSizzleStart)
+                .background(urlString.isEmpty ? Color.gray : Color.clipCookPrimary)
                 .foregroundColor(.white)
-                .cornerRadius(12)
+                .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
             }
             .disabled(urlString.isEmpty || isLoading)
             .padding(.horizontal)
-            
+
             Text("We'll analyze the video and notify you once the recipe is ready!")
                 .font(.caption)
                 .foregroundColor(.clipCookTextSecondary)
@@ -125,13 +125,13 @@ struct AddRecipeView: View {
                         .background(Color.clipCookSurface)
                         .foregroundColor(.white)
                         .frame(height: 150)
-                        .cornerRadius(12)
+                        .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                 } else {
                     TextEditor(text: $promptText)
                         .background(Color.clipCookSurface)
                         .foregroundColor(.white)
                         .frame(height: 150)
-                        .cornerRadius(12)
+                        .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
                 }
                 
                 if promptText.isEmpty {
@@ -152,9 +152,9 @@ struct AddRecipeView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(promptText.isEmpty ? Color.gray : Color.clipCookSizzleStart)
+                .background(promptText.isEmpty ? Color.gray : Color.clipCookPrimary)
                 .foregroundColor(.white)
-                .cornerRadius(12)
+                .cornerRadius(DesignTokens.Layout.cornerRadiusMedium)
             }
             .disabled(promptText.isEmpty || isLoading)
             .padding(.horizontal)
