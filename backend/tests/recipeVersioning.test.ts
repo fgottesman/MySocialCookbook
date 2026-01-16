@@ -34,7 +34,13 @@ describe('Recipe Versioning', () => {
                 cookingTime: 30
             },
             supabase: mockSupabase,
-            user: { id: 'user-123' }
+            user: {
+                id: 'user-123',
+                app_metadata: {},
+                user_metadata: {},
+                aud: 'authenticated',
+                created_at: new Date().toISOString()
+            } as any
         };
 
         mockRes = {
