@@ -97,14 +97,3 @@ struct UIKitAppearance {
     }
 }
 
-// MARK: - UIColor Extension for DesignTokens Bridge
-
-extension UIColor {
-    /// Convenience initializer to bridge SwiftUI Color to UIColor
-    /// This ensures consistent color conversion across UIKit components
-    convenience init(_ designColor: Color) {
-        // Get UIColor from SwiftUI Color
-        let uiColor = UIColor(designColor)
-        self.init(cgColor: uiColor.cgColor)
-    }
-}
