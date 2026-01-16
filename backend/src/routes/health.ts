@@ -4,6 +4,7 @@ import { supabaseUrl, supabaseServiceRoleKey, supabaseAnonKey } from '../db/supa
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 import logger from '../utils/logger';
+import { getEnvironmentSummary } from '../utils/envValidator';
 
 const router = Router();
 
@@ -148,6 +149,36 @@ router.get('/share-extension', async (req: Request, res: Response) => {
     logger.info(`[HealthCheck] Share Extension health: ${health.overall}`);
 
     res.status(statusCode).json(health);
+});
+
+/**
+ * GET /health/environment
+ * Returns the current environment configuration and validation status
+ * Useful for debugging deployment issues
+ */
+router.get('/environment', async (req: Request, res: Response) => {
+    try {
+        const envSummary = getEnvironmentSummary();
+
+        logger.info('[HealthCheck] Environment validation requested', {
+            isValid: envSummary.isValid,
+            errors: envSummary.errors,
+            warnings: envSummary.warnings
+        });
+
+        res.json({
+            status: envSummary.isValid ? 'healthy' : 'unhealthy',
+            timestamp: new Date().toISOString(),
+            environment: envSummary
+        });
+    } catch (error: any) {
+        logger.error('[HealthCheck] Failed to get environment summary', { error: error.message });
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to retrieve environment validation',
+            error: error.message
+        });
+    }
 });
 
 export default router;

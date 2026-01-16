@@ -204,80 +204,122 @@ export class RecipeController {
             const { recipeId } = req.params;
             const { title, description, ingredients, instructions, chefsNote, changedIngredients, step0Summary, step0AudioUrl, difficulty, cookingTime } = req.body;
 
-            // 1. Check existing versions
-            const { data: versions, error: vError } = await req.supabase
-                .from('recipe_versions')
-                .select('version_number')
-                .eq('recipe_id', recipeId)
-                .order('version_number', { ascending: false });
+            // Use a retry mechanism for handling concurrent version creation
+            const MAX_RETRIES = 3;
+            let retryCount = 0;
+            let vData = null;
 
-            if (vError) throw vError;
+            while (retryCount < MAX_RETRIES && !vData) {
+                try {
+                    // 1. Get the latest version number in a single atomic query
+                    const { data: latestVersion, error: vError } = await req.supabase
+                        .from('recipe_versions')
+                        .select('version_number')
+                        .eq('recipe_id', recipeId)
+                        .order('version_number', { ascending: false })
+                        .limit(1)
+                        .single();
 
-            let nextVersion = 1;
+                    let nextVersion = 1;
+                    let needsOriginalSnapshot = false;
 
-            if (!versions || versions.length === 0) {
-                // FIRST TIME REMIX: Snapshot the ORIGINAL recipe as Version 1
-                logger.info(`First remix for recipe ${recipeId}. Snapshotting original as v1.`);
+                    if (vError?.code === 'PGRST116') {
+                        // No versions exist - need to create original snapshot first
+                        needsOriginalSnapshot = true;
+                        nextVersion = 2; // Remix will be version 2
+                    } else if (vError) {
+                        throw vError;
+                    } else {
+                        nextVersion = latestVersion.version_number + 1;
+                    }
 
-                // Fetch current recipe data (Original)
-                const { data: originalRecipe, error: fetchError } = await req.supabase
-                    .from('recipes')
-                    .select('*')
-                    .eq('id', recipeId)
-                    .single();
+                    // If this is the first remix, snapshot the original
+                    if (needsOriginalSnapshot) {
+                        logger.info(`First remix for recipe ${recipeId}. Creating original snapshot as v1.`);
 
-                if (fetchError) throw fetchError;
+                        // Fetch original recipe
+                        const { data: originalRecipe, error: fetchError } = await req.supabase
+                            .from('recipes')
+                            .select('*')
+                            .eq('id', recipeId)
+                            .single();
 
-                // Insert Original as Version 1
-                const { error: snapshotError } = await req.supabase
-                    .from('recipe_versions')
-                    .insert({
-                        recipe_id: recipeId,
-                        version_number: 1,
-                        title: "Original", // Or originalRecipe.title if checking specific logic
-                        description: originalRecipe.description,
-                        ingredients: originalRecipe.ingredients,
-                        instructions: originalRecipe.instructions,
-                        chefs_note: originalRecipe.chefs_note,
-                        changed_ingredients: [], // Original has no changes
-                        step0_summary: originalRecipe.step0_summary,
-                        step0_audio_url: originalRecipe.step0_audio_url,
-                        difficulty: originalRecipe.difficulty,
-                        cooking_time: originalRecipe.cooking_time,
-                        created_at: originalRecipe.created_at // Preserve original creation time if possible, or use now
-                    });
+                        if (fetchError) throw fetchError;
 
-                if (snapshotError) throw snapshotError;
+                        // Try to insert original as version 1
+                        // Use upsert=false to fail if it already exists (concurrent request created it)
+                        const { error: snapshotError } = await req.supabase
+                            .from('recipe_versions')
+                            .insert({
+                                recipe_id: recipeId,
+                                version_number: 1,
+                                title: "Original",
+                                description: originalRecipe.description,
+                                ingredients: originalRecipe.ingredients,
+                                instructions: originalRecipe.instructions,
+                                chefs_note: originalRecipe.chefs_note,
+                                changed_ingredients: [],
+                                step0_summary: originalRecipe.step0_summary,
+                                step0_audio_url: originalRecipe.step0_audio_url,
+                                difficulty: originalRecipe.difficulty,
+                                cooking_time: originalRecipe.cooking_time,
+                                created_at: originalRecipe.created_at
+                            });
 
-                // New Remix will be Version 2
-                nextVersion = 2;
-            } else {
-                nextVersion = versions[0].version_number + 1;
+                        // If snapshot fails with duplicate key, another request already created it
+                        // Continue to create the remix version
+                        if (snapshotError && !snapshotError.message.includes('duplicate')) {
+                            throw snapshotError;
+                        }
+                    }
+
+                    // 2. Insert the new version with the calculated version number
+                    const { data: insertedVersion, error: insertError } = await req.supabase
+                        .from('recipe_versions')
+                        .insert({
+                            recipe_id: recipeId,
+                            version_number: nextVersion,
+                            title,
+                            description,
+                            ingredients,
+                            instructions,
+                            chefs_note: chefsNote,
+                            changed_ingredients: changedIngredients,
+                            step0_summary: step0Summary,
+                            step0_audio_url: step0AudioUrl,
+                            difficulty,
+                            cooking_time: cookingTime
+                        })
+                        .select()
+                        .single();
+
+                    if (insertError) {
+                        // Check if it's a unique constraint violation (concurrent insert)
+                        if (insertError.message.includes('duplicate') || insertError.code === '23505') {
+                            logger.warn(`Concurrent version creation detected for recipe ${recipeId}, retrying...`);
+                            retryCount++;
+                            await new Promise(resolve => setTimeout(resolve, 100 * retryCount)); // Exponential backoff
+                            continue;
+                        }
+                        throw insertError;
+                    }
+
+                    vData = insertedVersion;
+                    logger.info(`Successfully created version ${nextVersion} for recipe ${recipeId}`);
+
+                } catch (error: any) {
+                    if (retryCount >= MAX_RETRIES - 1) {
+                        throw error;
+                    }
+                    retryCount++;
+                    logger.warn(`Retry ${retryCount}/${MAX_RETRIES} for version creation: ${error.message}`);
+                    await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+                }
             }
 
-            // 2. Insert the NEW Version (The Remix)
-            const { data: vData, error: insertError } = await req.supabase
-                .from('recipe_versions')
-                .insert({
-                    recipe_id: recipeId,
-                    version_number: nextVersion,
-                    title,
-                    description,
-                    ingredients,
-                    instructions,
-                    chefs_note: chefsNote,
-                    changed_ingredients: changedIngredients,
-                    step0_summary: step0Summary,
-                    step0_audio_url: step0AudioUrl,
-                    difficulty,
-                    cooking_time: cookingTime
-                })
-                .select()
-                .single();
-
-            if (insertError) throw insertError;
-
-            if (insertError) throw insertError;
+            if (!vData) {
+                throw new Error('Failed to create version after maximum retries');
+            }
 
             // 3. DO NOT Update the Parent Recipe
             // User Feedback: "I don't want to change the feed card, keep that as the original."

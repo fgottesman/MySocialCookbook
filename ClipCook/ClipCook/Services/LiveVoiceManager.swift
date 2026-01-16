@@ -254,7 +254,11 @@ class LiveVoiceManager: NSObject, ObservableObject {
         // CRITICAL: Must configure audio session BEFORE accessing audioEngine.inputNode
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
+            // Use the same Bluetooth workaround as in setupAudioSession() to maintain consistency
+            var options: AVAudioSession.CategoryOptions = [.defaultToSpeaker]
+            // Use raw value 0x4 for allowBluetooth to avoid deprecated API issues
+            options.insert(AVAudioSession.CategoryOptions(rawValue: 0x4))
+            try session.setCategory(.playAndRecord, mode: .voiceChat, options: options)
             try session.setActive(true)
             print("🎙️ [LiveVoice] ✅ Audio session activated")
             print("🎙️ [LiveVoice] Input available: \(session.isInputAvailable)")

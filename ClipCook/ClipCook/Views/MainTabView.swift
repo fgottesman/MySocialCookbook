@@ -1,27 +1,41 @@
 import SwiftUI
 
 struct MainTabView: View {
-    // Tab bar appearance is now configured in ClipCookApp.init()
-    // to prevent color flashing on tab switches
-    
+    @State private var selectedTab = 0
+    @State private var hasConfiguredAppearance = false
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             FeedView()
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
-            
+                .tag(0)
+
             FavoritesView()
                 .tabItem {
                     Label("Favorites", systemImage: "star.fill")
                 }
-            
+                .tag(1)
+
             ProfileView()
                 .tabItem {
                     Label("Profile", systemImage: "person.fill")
                 }
+                .tag(2)
         }
-        .tint(Color(hex: "E8C4B8")) // Rose gold accent for selected state
+        // Use DesignTokens instead of hardcoded hex values
+        .tint(DesignTokens.Colors.primary)
+        // Ensure consistent background color
+        .background(DesignTokens.Colors.background)
+        // Force UIKit appearance configuration on appear
+        // This prevents any potential color flashing
+        .onAppear {
+            if !hasConfiguredAppearance {
+                UIKitAppearance.configure()
+                hasConfiguredAppearance = true
+            }
+        }
     }
 }
 

@@ -81,13 +81,6 @@
 			);
 			target = AC8768912F0B2A37009D1E74 /* ClipCook */;
 		};
-		ACF8B07B2F0DA0470044E7D0 /* Exceptions for "ClipCook" folder in "ShareRecipe" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Services/DesignSystem.swift,
-			);
-			target = AC8768CC2F0B2F2D009D1E74 /* ShareRecipe */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -95,7 +88,6 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				AC87694D2F0C1A13009D1E74 /* Exceptions for "ClipCook" folder in "ClipCook" target */,
-				ACF8B07B2F0DA0470044E7D0 /* Exceptions for "ClipCook" folder in "ShareRecipe" target */,
 			);
 			path = ClipCook;
 			sourceTree = "<group>";

@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import {
     loadEntitlements,
     claimMonthlyCredits,
@@ -11,6 +12,7 @@ import {
     markFirstRecipeOfferClaimed,
     updateSubscriptionStatus
 } from '../middleware/subscriptionMiddleware';
+import { authenticate } from '../middleware/auth';
 import { createClient } from '@supabase/supabase-js';
 import logger from '../utils/logger';
 
@@ -57,7 +59,7 @@ router.get('/config', async (req: Request, res: Response) => {
  * GET /subscription/status
  * Returns the current user's subscription status and entitlements
  */
-router.get('/status', loadEntitlements, async (req: Request, res: Response) => {
+router.get('/status', authenticate, loadEntitlements, async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
 
@@ -91,7 +93,7 @@ router.get('/status', loadEntitlements, async (req: Request, res: Response) => {
  * POST /subscription/first-recipe-offer/shown
  * Mark that the first recipe offer has been shown to the user
  */
-router.post('/first-recipe-offer/shown', async (req: Request, res: Response) => {
+router.post('/first-recipe-offer/shown', authenticate, async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
 
@@ -113,7 +115,7 @@ router.post('/first-recipe-offer/shown', async (req: Request, res: Response) => 
  * POST /subscription/first-recipe-offer/claimed
  * Mark that the user claimed the first recipe offer
  */
-router.post('/first-recipe-offer/claimed', async (req: Request, res: Response) => {
+router.post('/first-recipe-offer/claimed', authenticate, async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
 
@@ -135,16 +137,65 @@ router.post('/first-recipe-offer/claimed', async (req: Request, res: Response) =
 // ============================================
 
 /**
+ * Verify RevenueCat webhook signature for security
+ * @param req Express request object
+ * @returns true if signature is valid, false otherwise
+ */
+function verifyRevenueCatWebhook(req: Request): boolean {
+    const signature = req.headers['x-revenuecat-signature'] as string;
+    const secret = process.env.REVENUECAT_WEBHOOK_SECRET;
+
+    // If no secret is configured, log warning and reject
+    if (!secret) {
+        logger.error('REVENUECAT_WEBHOOK_SECRET not configured - webhook verification will fail');
+        return false;
+    }
+
+    // If no signature provided, reject
+    if (!signature) {
+        logger.warn('No signature provided in RevenueCat webhook request');
+        return false;
+    }
+
+    try {
+        // Compute HMAC-SHA256 signature
+        const payload = JSON.stringify(req.body);
+        const computedSignature = crypto
+            .createHmac('sha256', secret)
+            .update(payload)
+            .digest('hex');
+
+        // Use timing-safe comparison to prevent timing attacks
+        return crypto.timingSafeEqual(
+            Buffer.from(signature),
+            Buffer.from(computedSignature)
+        );
+    } catch (error) {
+        logger.error('Error verifying RevenueCat webhook signature', { error });
+        return false;
+    }
+}
+
+/**
  * POST /subscription/webhook/revenuecat
  * Handles RevenueCat subscription events
- * 
+ *
  * Events: INITIAL_PURCHASE, RENEWAL, CANCELLATION, EXPIRATION, etc.
  */
 router.post('/webhook/revenuecat', async (req: Request, res: Response) => {
     try {
+        // Verify webhook signature for security
+        if (!verifyRevenueCatWebhook(req)) {
+            logger.warn('Invalid RevenueCat webhook signature', {
+                headers: req.headers,
+                ip: req.ip
+            });
+            return res.status(401).json({ error: 'Invalid signature' });
+        }
+
         const event = req.body;
 
-        // Validate webhook (in production, verify signature)
+        // Validate webhook payload structure
         if (!event || !event.event) {
             return res.status(400).json({ error: 'Invalid webhook payload' });
         }

@@ -5,6 +5,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Validate environment variables immediately after loading .env
+// This prevents crashes from missing or misconfigured variables
+import { validateAndExit } from './utils/envValidator';
+validateAndExit();
+
 import http from 'http';
 import { WebSocketServer } from 'ws';
 import { GeminiLiveService } from './services/gemini_live';

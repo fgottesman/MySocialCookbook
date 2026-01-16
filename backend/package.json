@@ -12,7 +12,10 @@
     "test:unit": "jest --testPathPattern=tests/",
     "test:share-extension": "ts-node tests/verify_share_extension.ts",
     "test:e2e": "ts-node tests/e2e_share_extension.ts",
-    "test:all": "npm run test:unit && npm run test:share-extension && npm run test:e2e"
+    "test:all": "npm run test:unit && npm run test:share-extension && npm run test:e2e",
+    "lint": "echo 'Linting not configured yet'",
+    "lint:check": "echo 'Lint check not configured yet'",
+    "postinstall": "bash .git-hooks/install.sh || echo 'Git hooks installation skipped'"
   },
   "keywords": [],
   "author": "",
