@@ -160,20 +160,21 @@ export const SynthesizeSchema = z.object({
 });
 
 // Recipe Version Schema (for saveVersion endpoint)
+// Uses flexible validation to handle iOS client formats
 export const SaveVersionSchema = z.object({
     params: z.object({
         recipeId: z.string().uuid('Invalid recipe ID')
     }),
     body: z.object({
         title: z.string().min(1).max(200, 'Title too long'),
-        description: z.string().min(1).max(1000, 'Description too long'),
-        ingredients: z.array(IngredientSchema).min(1, 'At least one ingredient required'),
-        instructions: z.array(InstructionSchema).min(1, 'At least one instruction required'),
+        description: z.string().max(1000, 'Description too long').optional(),
+        ingredients: z.array(z.union([IngredientSchema, z.string()])).min(1, 'At least one ingredient required'),
+        instructions: z.array(FlexibleInstructionSchema).min(1, 'At least one instruction required'),
         chefsNote: z.string().max(500, 'Chef note too long').optional(),
         changedIngredients: z.array(z.string()).optional().default([]),
         step0Summary: z.string().max(500).optional(),
         step0AudioUrl: z.string().url().optional(),
-        difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
-        cookingTime: z.number().int().positive().optional()
+        difficulty: FlexibleDifficultySchema,
+        cookingTime: z.union([z.number().int().positive(), z.string()]).optional()
     })
 });
