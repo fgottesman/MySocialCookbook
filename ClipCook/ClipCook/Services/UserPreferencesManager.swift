@@ -9,36 +9,33 @@ class UserPreferencesManager: ObservableObject {
     // MARK: - Published Properties
     @Published var unitSystem: String = "imperial"
     @Published var prepStyle: String = "just_in_time"
+    @Published var defaultServings: Int = 4
+    @Published var dietaryRestrictions: [String] = []
+    @Published var otherPreferences: String = ""
     @Published var isLoading = false
+
+    // MARK: - Available Dietary Restrictions
+    static let availableDietaryRestrictions = [
+        "Vegetarian",
+        "Vegan",
+        "Gluten-Free",
+        "Dairy-Free",
+        "Nut-Free",
+        "Low-Carb"
+    ]
 
     // MARK: - UserDefaults Keys
     private enum Keys {
         static let unitSystem = "user_pref_unit_system"
         static let prepStyle = "user_pref_prep_style"
-        static let voiceIntroductionDelay = "user_pref_voice_intro_delay"
+        static let defaultServings = "user_pref_default_servings"
+        static let dietaryRestrictions = "user_pref_dietary_restrictions"
+        static let otherPreferences = "user_pref_other_preferences"
         static let lastSyncedUserId = "user_pref_last_synced_user_id"
     }
 
-    // MARK: - Voice Settings (stored locally only)
-    var voiceIntroductionDelay: TimeInterval {
-        get {
-            let value = UserDefaults.standard.double(forKey: Keys.voiceIntroductionDelay)
-            // Also sync with SpeechManager
-            SpeechManager.stepIntroductionDelay = value
-            return value
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: Keys.voiceIntroductionDelay)
-            SpeechManager.stepIntroductionDelay = newValue
-        }
-    }
-
     private init() {
-        // Load cached values from UserDefaults
         loadCachedPreferences()
-
-        // Initialize SpeechManager with stored delay
-        SpeechManager.stepIntroductionDelay = UserDefaults.standard.double(forKey: Keys.voiceIntroductionDelay)
     }
 
     // MARK: - Load Cached Preferences
@@ -49,12 +46,25 @@ class UserPreferencesManager: ObservableObject {
         if let cachedPrep = UserDefaults.standard.string(forKey: Keys.prepStyle) {
             prepStyle = cachedPrep
         }
+        let cachedServings = UserDefaults.standard.integer(forKey: Keys.defaultServings)
+        if cachedServings > 0 {
+            defaultServings = cachedServings
+        }
+        if let cachedRestrictions = UserDefaults.standard.stringArray(forKey: Keys.dietaryRestrictions) {
+            dietaryRestrictions = cachedRestrictions
+        }
+        if let cachedOther = UserDefaults.standard.string(forKey: Keys.otherPreferences) {
+            otherPreferences = cachedOther
+        }
     }
 
     // MARK: - Cache Preferences Locally
     private func cachePreferences() {
         UserDefaults.standard.set(unitSystem, forKey: Keys.unitSystem)
         UserDefaults.standard.set(prepStyle, forKey: Keys.prepStyle)
+        UserDefaults.standard.set(defaultServings, forKey: Keys.defaultServings)
+        UserDefaults.standard.set(dietaryRestrictions, forKey: Keys.dietaryRestrictions)
+        UserDefaults.standard.set(otherPreferences, forKey: Keys.otherPreferences)
     }
 
     // MARK: - Sync with Backend
@@ -63,9 +73,6 @@ class UserPreferencesManager: ObservableObject {
             let session = try await SupabaseManager.shared.client.auth.session
             let userId = session.user.id.uuidString
 
-            // Check if we've already synced for this user
-            let lastSyncedUserId = UserDefaults.standard.string(forKey: Keys.lastSyncedUserId)
-
             await MainActor.run { isLoading = true }
 
             let prefs = try await VoiceCompanionService.shared.getPreferences(userId: userId)
@@ -73,6 +80,9 @@ class UserPreferencesManager: ObservableObject {
             await MainActor.run {
                 self.unitSystem = prefs.unitSystem
                 self.prepStyle = prefs.prepStyle
+                self.defaultServings = prefs.defaultServings
+                self.dietaryRestrictions = prefs.dietaryRestrictions
+                self.otherPreferences = prefs.otherPreferences
                 self.cachePreferences()
                 UserDefaults.standard.set(userId, forKey: Keys.lastSyncedUserId)
                 self.isLoading = false
@@ -89,7 +99,6 @@ class UserPreferencesManager: ObservableObject {
             self.unitSystem = value
             self.cachePreferences()
         }
-
         await saveToBackend()
     }
 
@@ -99,7 +108,46 @@ class UserPreferencesManager: ObservableObject {
             self.prepStyle = value
             self.cachePreferences()
         }
+        await saveToBackend()
+    }
 
+    // MARK: - Update Default Servings
+    func updateDefaultServings(_ value: Int) async {
+        await MainActor.run {
+            self.defaultServings = value
+            self.cachePreferences()
+        }
+        await saveToBackend()
+    }
+
+    // MARK: - Update Dietary Restrictions
+    func updateDietaryRestrictions(_ value: [String]) async {
+        await MainActor.run {
+            self.dietaryRestrictions = value
+            self.cachePreferences()
+        }
+        await saveToBackend()
+    }
+
+    // MARK: - Toggle Dietary Restriction
+    func toggleDietaryRestriction(_ restriction: String) async {
+        await MainActor.run {
+            if dietaryRestrictions.contains(restriction) {
+                dietaryRestrictions.removeAll { $0 == restriction }
+            } else {
+                dietaryRestrictions.append(restriction)
+            }
+            self.cachePreferences()
+        }
+        await saveToBackend()
+    }
+
+    // MARK: - Update Other Preferences
+    func updateOtherPreferences(_ value: String) async {
+        await MainActor.run {
+            self.otherPreferences = value
+            self.cachePreferences()
+        }
         await saveToBackend()
     }
 
@@ -112,7 +160,10 @@ class UserPreferencesManager: ObservableObject {
             let prefs = UserPreferences(
                 userId: userId,
                 unitSystem: unitSystem,
-                prepStyle: prepStyle
+                prepStyle: prepStyle,
+                defaultServings: defaultServings,
+                dietaryRestrictions: dietaryRestrictions,
+                otherPreferences: otherPreferences
             )
 
             _ = try await VoiceCompanionService.shared.updatePreferences(
@@ -129,7 +180,10 @@ class UserPreferencesManager: ObservableObject {
         UserPreferences(
             userId: nil,
             unitSystem: unitSystem,
-            prepStyle: prepStyle
+            prepStyle: prepStyle,
+            defaultServings: defaultServings,
+            dietaryRestrictions: dietaryRestrictions,
+            otherPreferences: otherPreferences
         )
     }
 }

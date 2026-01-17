@@ -58,14 +58,47 @@ struct UserPreferences: Codable {
     let userId: String?
     var unitSystem: String // "metric" or "imperial"
     var prepStyle: String // "just_in_time" or "prep_first"
-    
+    var defaultServings: Int
+    var dietaryRestrictions: [String]
+    var otherPreferences: String
+
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case unitSystem = "unit_system"
         case prepStyle = "prep_style"
+        case defaultServings = "default_servings"
+        case dietaryRestrictions = "dietary_restrictions"
+        case otherPreferences = "other_preferences"
     }
-    
-    static let `default` = UserPreferences(userId: nil, unitSystem: "imperial", prepStyle: "just_in_time")
+
+    static let `default` = UserPreferences(
+        userId: nil,
+        unitSystem: "imperial",
+        prepStyle: "just_in_time",
+        defaultServings: 4,
+        dietaryRestrictions: [],
+        otherPreferences: ""
+    )
+
+    // Custom decoder to handle missing fields from older backend responses
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        userId = try container.decodeIfPresent(String.self, forKey: .userId)
+        unitSystem = try container.decodeIfPresent(String.self, forKey: .unitSystem) ?? "imperial"
+        prepStyle = try container.decodeIfPresent(String.self, forKey: .prepStyle) ?? "just_in_time"
+        defaultServings = try container.decodeIfPresent(Int.self, forKey: .defaultServings) ?? 4
+        dietaryRestrictions = try container.decodeIfPresent([String].self, forKey: .dietaryRestrictions) ?? []
+        otherPreferences = try container.decodeIfPresent(String.self, forKey: .otherPreferences) ?? ""
+    }
+
+    init(userId: String?, unitSystem: String, prepStyle: String, defaultServings: Int = 4, dietaryRestrictions: [String] = [], otherPreferences: String = "") {
+        self.userId = userId
+        self.unitSystem = unitSystem
+        self.prepStyle = prepStyle
+        self.defaultServings = defaultServings
+        self.dietaryRestrictions = dietaryRestrictions
+        self.otherPreferences = otherPreferences
+    }
 }
 
 struct UserPreferencesResponse: Codable {

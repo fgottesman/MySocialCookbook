@@ -3,8 +3,9 @@ import Supabase
 
 struct UserPreferencesView: View {
     @StateObject private var preferencesManager = UserPreferencesManager.shared
-    @State private var voiceDelay: Double = UserPreferencesManager.shared.voiceIntroductionDelay
+    @State private var otherPreferencesText: String = ""
     @State private var isLoading = true
+    @FocusState private var isOtherPreferencesFocused: Bool
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -49,68 +50,89 @@ struct UserPreferencesView: View {
                                 ("prep_first", "Prep Everything First")
                             ]
                         )
-                    }
-                } footer: {
-                    Text("These preferences customize how your sous chef guides you through recipes.")
-                }
-
-                // Voice Settings Section
-                SettingsSection(
-                    title: "Voice Settings",
-                    icon: "speaker.wave.2"
-                ) {
-                    VStack(spacing: 12) {
-                        HStack {
-                            Text("Voice Introduction Delay")
-                                .foregroundColor(.clipCookTextPrimary)
-                            Spacer()
-                            Text("\(Int(voiceDelay * 1000))ms")
-                                .foregroundColor(.clipCookPrimary)
-                                .fontWeight(.medium)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-
-                        Slider(
-                            value: $voiceDelay,
-                            in: 0...1,
-                            step: 0.1
-                        )
-                        .tint(.clipCookPrimary)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
-                        .onChange(of: voiceDelay) { _, newValue in
-                            preferencesManager.voiceIntroductionDelay = newValue
-                        }
-                    }
-                } footer: {
-                    Text("Adjust how quickly the sous chef starts speaking when you move to a new step.")
-                }
-
-                // More Options Section
-                SettingsSection(
-                    title: "More Options",
-                    icon: "sparkles"
-                ) {
-                    VStack(spacing: 0) {
-                        // Dietary Restrictions
-                        SettingsComingSoonRow(
-                            icon: "heart",
-                            iconColor: .clipCookSecondary,
-                            title: "Dietary Restrictions"
-                        )
 
                         Divider()
                             .background(Color.clipCookBackground)
-                            .padding(.leading, 56)
+                            .padding(.leading, 16)
 
                         // Default Servings
-                        SettingsComingSoonRow(
-                            icon: "person.2",
-                            iconColor: .clipCookPrimary,
-                            title: "Default Servings"
+                        SettingsPickerRow(
+                            title: "Default Servings",
+                            selection: Binding(
+                                get: { String(preferencesManager.defaultServings) },
+                                set: { newValue in
+                                    if let intValue = Int(newValue) {
+                                        Task { await preferencesManager.updateDefaultServings(intValue) }
+                                    }
+                                }
+                            ),
+                            options: (1...12).map { ("\($0)", "\($0) \($0 == 1 ? "serving" : "servings")") }
                         )
                     }
+                } footer: {
+                    Text("These preferences customize how recipes are generated for you.")
+                }
+
+                // Dietary Restrictions Section
+                SettingsSection(
+                    title: "Dietary Restrictions",
+                    icon: "heart"
+                ) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(UserPreferencesManager.availableDietaryRestrictions.enumerated()), id: \.element) { index, restriction in
+                            DietaryRestrictionRow(
+                                title: restriction,
+                                isSelected: preferencesManager.dietaryRestrictions.contains(restriction),
+                                onToggle: {
+                                    Task { await preferencesManager.toggleDietaryRestriction(restriction) }
+                                }
+                            )
+
+                            if index < UserPreferencesManager.availableDietaryRestrictions.count - 1 {
+                                Divider()
+                                    .background(Color.clipCookBackground)
+                                    .padding(.leading, 52)
+                            }
+                        }
+                    }
+                } footer: {
+                    Text("Recipes will be adapted to meet these dietary requirements.")
+                }
+
+                // Other Preferences Section
+                SettingsSection(
+                    title: "Other Preferences",
+                    icon: "sparkles"
+                ) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Tell us about any other dietary needs or cooking preferences")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 12)
+
+                        TextEditor(text: $otherPreferencesText)
+                            .frame(minHeight: 80, maxHeight: 120)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .scrollContentBackground(.hidden)
+                            .background(Color.clipCookBackground.opacity(0.5))
+                            .cornerRadius(8)
+                            .padding(.horizontal, 12)
+                            .padding(.bottom, 12)
+                            .focused($isOtherPreferencesFocused)
+                            .onChange(of: otherPreferencesText) { _, newValue in
+                                // Debounce the save
+                                Task {
+                                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s debounce
+                                    if otherPreferencesText == newValue {
+                                        await preferencesManager.updateOtherPreferences(newValue)
+                                    }
+                                }
+                            }
+                    }
+                } footer: {
+                    Text("e.g., \"No cilantro, prefer less spicy food, allergic to shellfish\"")
                 }
 
                 Spacer(minLength: 100)
@@ -126,6 +148,11 @@ struct UserPreferencesView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 LiquidGlassBackButton()
+            }
+            ToolbarItem(placement: .keyboard) {
+                Button("Done") {
+                    isOtherPreferencesFocused = false
+                }
             }
         }
         .overlay {
@@ -143,7 +170,7 @@ struct UserPreferencesView: View {
         await preferencesManager.syncPreferences()
 
         await MainActor.run {
-            voiceDelay = preferencesManager.voiceIntroductionDelay
+            otherPreferencesText = preferencesManager.otherPreferences
             isLoading = false
         }
     }
@@ -245,35 +272,29 @@ struct SettingsPickerRow: View {
     }
 }
 
-// MARK: - Settings Coming Soon Row
-struct SettingsComingSoonRow: View {
-    let icon: String
-    let iconColor: Color
+// MARK: - Dietary Restriction Row
+struct DietaryRestrictionRow: View {
     let title: String
+    let isSelected: Bool
+    let onToggle: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundColor(iconColor)
-                .frame(width: 24)
+        Button(action: onToggle) {
+            HStack(spacing: 12) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundColor(isSelected ? .clipCookPrimary : .gray.opacity(0.4))
 
-            Text(title)
-                .foregroundColor(.black)
+                Text(title)
+                    .foregroundColor(.black)
 
-            Spacer()
-
-            Text("Coming Soon")
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(.clipCookTextSecondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Color.clipCookSurface)
-                .cornerRadius(8)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .buttonStyle(.plain)
     }
 }
 

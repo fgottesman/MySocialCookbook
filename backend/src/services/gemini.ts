@@ -13,16 +13,50 @@ const fileManager = new GoogleAIFileManager(apiKey || "");
 export interface RecipePreferences {
     unitSystem?: 'imperial' | 'metric';
     prepStyle?: 'just_in_time' | 'prep_first';
+    defaultServings?: number;
+    dietaryRestrictions?: string[];
+    otherPreferences?: string;
 }
 
+// Helper to build preference instructions for prompts
+const buildPreferenceInstructions = (preferences?: RecipePreferences): string => {
+    const instructions: string[] = [];
+
+    // Unit system
+    if (preferences?.unitSystem === 'metric') {
+        instructions.push('IMPORTANT: Use METRIC measurements throughout (grams, milliliters, Celsius). Convert any imperial measurements to metric.');
+    } else {
+        instructions.push('Use imperial measurements (cups, tablespoons, teaspoons, ounces, Fahrenheit).');
+    }
+
+    // Default servings
+    if (preferences?.defaultServings && preferences.defaultServings > 0) {
+        instructions.push(`Scale the recipe to serve ${preferences.defaultServings} people.`);
+    }
+
+    // Dietary restrictions
+    if (preferences?.dietaryRestrictions && preferences.dietaryRestrictions.length > 0) {
+        const restrictions = preferences.dietaryRestrictions.join(', ');
+        instructions.push(`IMPORTANT DIETARY RESTRICTIONS: The user follows these dietary requirements: ${restrictions}. You MUST adapt the recipe to comply with these restrictions. Substitute any non-compliant ingredients with appropriate alternatives.`);
+    }
+
+    // Other preferences
+    if (preferences?.otherPreferences && preferences.otherPreferences.trim()) {
+        instructions.push(`ADDITIONAL USER PREFERENCES: ${preferences.otherPreferences.trim()}`);
+    }
+
+    return instructions.join('\n');
+};
+
 const getRecipePrompt = (preferences?: RecipePreferences) => {
-    const unitSystemInstructions = preferences?.unitSystem === 'metric'
-        ? `IMPORTANT: Use METRIC measurements throughout (grams, milliliters, Celsius). Convert any imperial measurements to metric.`
-        : `Use imperial measurements (cups, tablespoons, teaspoons, ounces, Fahrenheit).`;
+    const preferenceInstructions = buildPreferenceInstructions(preferences);
 
     return `
 You are an expert chef. Extract the recipe from this cooking video.
-${unitSystemInstructions}
+
+USER PREFERENCES:
+${preferenceInstructions}
+
 Return ONLY a raw JSON object (no markdown formatting) with this schema:
 {
   "title": "Recipe Title",
@@ -39,9 +73,7 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
 };
 
 const getWebRecipePrompt = (preferences?: RecipePreferences) => {
-    const unitSystemInstructions = preferences?.unitSystem === 'metric'
-        ? `IMPORTANT: Convert ALL measurements to METRIC (grams, milliliters, Celsius). Do not use cups, ounces, or Fahrenheit.`
-        : `Use imperial measurements (cups, tablespoons, teaspoons, ounces, Fahrenheit).`;
+    const preferenceInstructions = buildPreferenceInstructions(preferences);
 
     return `
 You are an expert chef. Extract and structure the recipe from this web page content.
@@ -54,7 +86,8 @@ Your task:
 4. Determine difficulty level based on techniques and time required
 5. Estimate total cooking time if not explicitly stated
 
-${unitSystemInstructions}
+USER PREFERENCES:
+${preferenceInstructions}
 
 Return ONLY a raw JSON object (no markdown formatting) with this schema:
 {
@@ -79,16 +112,15 @@ Important:
 };
 
 const getPromptToRecipePrompt = (preferences?: RecipePreferences) => {
-    const unitSystemInstructions = preferences?.unitSystem === 'metric'
-        ? `IMPORTANT: Use METRIC measurements throughout (grams, milliliters, Celsius).`
-        : `Use imperial measurements (cups, tablespoons, teaspoons, ounces, Fahrenheit).`;
+    const preferenceInstructions = buildPreferenceInstructions(preferences);
 
     return `
 You are an expert chef. A user will describe a dish they want to make.
 Your goal is to turn their description into a fully fleshed out, professional recipe.
 If the description is vague, use your culinary expertise to fill in the gaps (e.g., if they say "grilled cheese", decide on the best bread, cheese, and technique).
 
-${unitSystemInstructions}
+USER PREFERENCES:
+${preferenceInstructions}
 
 Return ONLY a raw JSON object (no markdown formatting) with this schema:
 {

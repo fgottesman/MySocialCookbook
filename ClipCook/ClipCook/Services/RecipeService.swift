@@ -100,17 +100,20 @@ class RecipeService {
             "userId": userId,
             "preferences": [
                 "unitSystem": prefs.unitSystem,
-                "prepStyle": prefs.prepStyle
+                "prepStyle": prefs.prepStyle,
+                "defaultServings": prefs.defaultServings,
+                "dietaryRestrictions": prefs.dietaryRestrictions,
+                "otherPreferences": prefs.otherPreferences
             ]
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
             let responseBody = String(data: data, encoding: .utf8) ?? "No response body"
-            print("❌ RecipeService: processRecipe failed with status \(statusCode): \(responseBody)")
+            print("RecipeService: processRecipe failed with status \(statusCode): \(responseBody)")
             throw URLError(.badServerResponse)
         }
     }
@@ -141,13 +144,16 @@ class RecipeService {
             "userId": userId,
             "preferences": [
                 "unitSystem": prefs.unitSystem,
-                "prepStyle": prefs.prepStyle
+                "prepStyle": prefs.prepStyle,
+                "defaultServings": prefs.defaultServings,
+                "dietaryRestrictions": prefs.dietaryRestrictions,
+                "otherPreferences": prefs.otherPreferences
             ]
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
         }
