@@ -9,8 +9,20 @@ const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
 const fileManager = new GoogleAIFileManager(apiKey || "");
 
-const RECIPE_PROMPT = `
+// User preferences interface for recipe generation
+export interface RecipePreferences {
+    unitSystem?: 'imperial' | 'metric';
+    prepStyle?: 'just_in_time' | 'prep_first';
+}
+
+const getRecipePrompt = (preferences?: RecipePreferences) => {
+    const unitSystemInstructions = preferences?.unitSystem === 'metric'
+        ? `IMPORTANT: Use METRIC measurements throughout (grams, milliliters, Celsius). Convert any imperial measurements to metric.`
+        : `Use imperial measurements (cups, tablespoons, teaspoons, ounces, Fahrenheit).`;
+
+    return `
 You are an expert chef. Extract the recipe from this cooking video.
+${unitSystemInstructions}
 Return ONLY a raw JSON object (no markdown formatting) with this schema:
 {
   "title": "Recipe Title",
@@ -18,14 +30,20 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
   "difficulty": "Easy",
   "cookingTime": "30-45 minutes",
   "ingredients": [
-    { "name": "item", "amount": "1", "unit": "cup" }
+    { "name": "item", "amount": "1", "unit": "${preferences?.unitSystem === 'metric' ? 'g' : 'cup'}" }
   ],
   "instructions": ["Step 1", "Step 2"],
   "step0Summary": "A brief, enthusiastic 1-2 sentence summary of what we are cooking for voice over."
 }
 `;
+};
 
-const WEB_RECIPE_PROMPT = `
+const getWebRecipePrompt = (preferences?: RecipePreferences) => {
+    const unitSystemInstructions = preferences?.unitSystem === 'metric'
+        ? `IMPORTANT: Convert ALL measurements to METRIC (grams, milliliters, Celsius). Do not use cups, ounces, or Fahrenheit.`
+        : `Use imperial measurements (cups, tablespoons, teaspoons, ounces, Fahrenheit).`;
+
+    return `
 You are an expert chef. Extract and structure the recipe from this web page content.
 The content may include structured data from the page and/or raw text extracted from the page.
 
@@ -36,6 +54,8 @@ Your task:
 4. Determine difficulty level based on techniques and time required
 5. Estimate total cooking time if not explicitly stated
 
+${unitSystemInstructions}
+
 Return ONLY a raw JSON object (no markdown formatting) with this schema:
 {
   "title": "Recipe Title",
@@ -43,7 +63,7 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
   "difficulty": "Easy" | "Medium" | "Hard",
   "cookingTime": "30-45 minutes",
   "ingredients": [
-    { "name": "item", "amount": "1", "unit": "cup" }
+    { "name": "item", "amount": "1", "unit": "${preferences?.unitSystem === 'metric' ? 'g' : 'cup'}" }
   ],
   "instructions": ["Step 1", "Step 2"],
   "chefsNote": "A helpful tip about this dish or a key technique to master",
@@ -56,11 +76,19 @@ Important:
 - If the recipe has many instructions, consolidate related steps where sensible
 - Difficulty: Easy (< 30 min, basic techniques), Medium (30-60 min or intermediate techniques), Hard (> 60 min or advanced techniques)
 `;
+};
 
-const PROMPT_TO_RECIPE_SYSTEM_PROMPT = `
+const getPromptToRecipePrompt = (preferences?: RecipePreferences) => {
+    const unitSystemInstructions = preferences?.unitSystem === 'metric'
+        ? `IMPORTANT: Use METRIC measurements throughout (grams, milliliters, Celsius).`
+        : `Use imperial measurements (cups, tablespoons, teaspoons, ounces, Fahrenheit).`;
+
+    return `
 You are an expert chef. A user will describe a dish they want to make.
 Your goal is to turn their description into a fully fleshed out, professional recipe.
 If the description is vague, use your culinary expertise to fill in the gaps (e.g., if they say "grilled cheese", decide on the best bread, cheese, and technique).
+
+${unitSystemInstructions}
 
 Return ONLY a raw JSON object (no markdown formatting) with this schema:
 {
@@ -69,13 +97,14 @@ Return ONLY a raw JSON object (no markdown formatting) with this schema:
   "difficulty": "Easy",
   "cookingTime": "30-45 minutes",
   "ingredients": [
-    { "name": "item", "amount": "1", "unit": "cup" }
+    { "name": "item", "amount": "1", "unit": "${preferences?.unitSystem === 'metric' ? 'g' : 'cup'}" }
   ],
   "instructions": ["Step 1", "Step 2"],
   "chefsNote": "A quick tip from the chef about this specific dish",
   "step0Summary": "A brief, enthusiastic 1-2 sentence summary of what we are cooking for voice over."
 }
 `;
+};
 
 const REMIX_SYSTEM_PROMPT = `
 **Role:** You are a World-Class Michelin Star Sous-Chef and Food Scientist. Your goal is to modify recipes based on user requests while maintaining culinary integrity, flavor balance, and food safety.
@@ -361,7 +390,7 @@ export class GeminiService {
         return file;
     }
 
-    async generateRecipe(localPath: string, mimeType: string = "video/mp4", description?: string) {
+    async generateRecipe(localPath: string, mimeType: string = "video/mp4", description?: string, preferences?: RecipePreferences) {
         const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
         logger.info(`Uploading file to Gemini: ${localPath} (${mimeType})`);
@@ -371,9 +400,9 @@ export class GeminiService {
         // 2. Wait for processing to complete
         await this.waitForProcessing(uploadedFile.name);
 
-        logger.info(`File processed. Generating recipe from: ${uploadedFile.uri}`);
+        logger.info(`File processed. Generating recipe from: ${uploadedFile.uri} (unitSystem: ${preferences?.unitSystem || 'imperial'})`);
 
-        let prompt = RECIPE_PROMPT;
+        let prompt = getRecipePrompt(preferences);
         if (description) {
             prompt += `\n\nCONTEXT FROM POST CAPTION/DESCRIPTION:\n${description}\n\nUse this context to ensure ingredient amounts and names are accurate.`;
         }
@@ -416,7 +445,7 @@ export class GeminiService {
         author?: string;
         cookTime?: string;
         hasStructuredData: boolean;
-    }) {
+    }, preferences?: RecipePreferences) {
         const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
         // Build context from extracted data
@@ -439,9 +468,9 @@ export class GeminiService {
 
         context += 'RAW PAGE TEXT:\n' + webData.rawText;
 
-        const FULL_PROMPT = `${WEB_RECIPE_PROMPT}\n\nWEB PAGE CONTENT:\n${context}`;
+        const FULL_PROMPT = `${getWebRecipePrompt(preferences)}\n\nWEB PAGE CONTENT:\n${context}`;
 
-        logger.info('Generating recipe from web page content');
+        logger.info(`Generating recipe from web page content (unitSystem: ${preferences?.unitSystem || 'imperial'})`);
         const result = await withRetry(() => model.generateContent(FULL_PROMPT), {}, 'Gemini: generateRecipeFromWebpage');
         return this.parseRecipeResponse(result.response.text());
     }
@@ -491,13 +520,13 @@ export class GeminiService {
         return data;
     }
 
-    async generateRecipeFromPrompt(userPrompt: string) {
+    async generateRecipeFromPrompt(userPrompt: string, preferences?: RecipePreferences) {
         try {
-            logger.debug(`Generating recipe with ${AI_MODELS.RECIPE_ENGINE}...`);
+            logger.debug(`Generating recipe with ${AI_MODELS.RECIPE_ENGINE} (unitSystem: ${preferences?.unitSystem || 'imperial'})...`);
             const model = genAI.getGenerativeModel({ model: AI_MODELS.RECIPE_ENGINE });
 
             const FULL_PROMPT = `
-            ${PROMPT_TO_RECIPE_SYSTEM_PROMPT}
+            ${getPromptToRecipePrompt(preferences)}
 
             USER DESCRIPTION:
             "${userPrompt}"

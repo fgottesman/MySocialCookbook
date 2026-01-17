@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { GeminiService } from '../services/gemini';
+import { GeminiService, RecipePreferences } from '../services/gemini';
 import { VideoDownloader } from '../services/video_downloader';
 import { WebRecipeScraper } from '../services/web_recipe_scraper';
 import { ttsService } from '../services/tts';
@@ -16,7 +16,7 @@ const gemini = new GeminiService();
 
 export class RecipeController {
     static async processRecipe(req: AuthRequest, res: Response) {
-        const { url } = req.body as { url: string };
+        const { url, preferences } = req.body as { url: string; preferences?: RecipePreferences };
         const userId = req.user.id;
 
         res.json({ success: true, message: 'Processing started' });
@@ -24,7 +24,7 @@ export class RecipeController {
         try {
             if (!url || !userId) return;
 
-            logger.info(`Processing recipe for user ${userId} from ${url}`);
+            logger.info(`Processing recipe for user ${userId} from ${url} (unitSystem: ${preferences?.unitSystem || 'imperial'})`);
 
             let recipeData;
             let finalDescription: string | undefined;
@@ -34,7 +34,7 @@ export class RecipeController {
             if (WebRecipeScraper.isWebRecipeUrl(url)) {
                 logger.info('Detected web recipe URL, using web scraper');
                 const webData = await webScraper.scrapeRecipe(url);
-                recipeData = await gemini.generateRecipeFromWebpage(webData);
+                recipeData = await gemini.generateRecipeFromWebpage(webData, preferences);
                 recipeData.thumbnailUrl = webData.imageUrl;
                 creatorUsername = webData.author;
             } else if (RecipeController.isDirectProcessableUrl(url)) {
@@ -43,7 +43,7 @@ export class RecipeController {
                 } catch (err) {
                     logger.info("Direct processing failed, falling back to download");
                     const media = await downloader.downloadMedia(url);
-                    recipeData = await gemini.generateRecipe(media.filePath, media.mimeType, media.description);
+                    recipeData = await gemini.generateRecipe(media.filePath, media.mimeType, media.description, preferences);
                     recipeData.thumbnailUrl = media.thumbnailUrl; // Capture thumbnail from media
                     finalDescription = media.description;
                     creatorUsername = media.creatorUsername;
@@ -51,7 +51,7 @@ export class RecipeController {
                 }
             } else {
                 const media = await downloader.downloadMedia(url);
-                recipeData = await gemini.generateRecipe(media.filePath, media.mimeType, media.description);
+                recipeData = await gemini.generateRecipe(media.filePath, media.mimeType, media.description, preferences);
                 recipeData.thumbnailUrl = media.thumbnailUrl; // Capture thumbnail from media
                 creatorUsername = media.creatorUsername;
                 if (fs.existsSync(media.filePath)) fs.unlinkSync(media.filePath);

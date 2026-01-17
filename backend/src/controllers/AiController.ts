@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { GeminiService } from '../services/gemini';
+import { GeminiService, RecipePreferences } from '../services/gemini';
 import { ttsService } from '../services/tts';
 import crypto from 'crypto';
 import logger from '../utils/logger';
@@ -10,10 +10,10 @@ const gemini = new GeminiService();
 export class AiController {
     static async generateFromPrompt(req: AuthRequest, res: Response) {
         try {
-            const { prompt } = req.body;
+            const { prompt, preferences } = req.body as { prompt: string; preferences?: RecipePreferences };
             const userId = req.user.id;
-            logger.info(`AI: Generating recipe from prompt for user ${userId}`);
-            const recipeData = await gemini.generateRecipeFromPrompt(prompt);
+            logger.info(`AI: Generating recipe from prompt for user ${userId} (unitSystem: ${preferences?.unitSystem || 'imperial'})`);
+            const recipeData = await gemini.generateRecipeFromPrompt(prompt, preferences);
 
             const embeddingText = `${recipeData.title} ${recipeData.description} ${recipeData.ingredients.map((i: any) => i.name).join(' ')}`;
             const embedding = await gemini.generateEmbedding(embeddingText);

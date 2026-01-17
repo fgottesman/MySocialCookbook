@@ -79,11 +79,11 @@ class RecipeService {
         guard let endpoint = URL(string: "\(backendBaseUrl)/recipes/process") else {
             throw URLError(.badURL)
         }
-        
+
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         // Add Auth header
         do {
             let session = try await SupabaseManager.shared.client.auth.session
@@ -92,8 +92,17 @@ class RecipeService {
             print("⚠️ RecipeService: Failed to get auth session: \(error)")
             // Allow request to proceed for legacy compatibility
         }
-        
-        let body: [String: String] = ["url": url, "userId": userId]
+
+        // Include user preferences in the request
+        let prefs = UserPreferencesManager.shared.currentPreferences
+        let body: [String: Any] = [
+            "url": url,
+            "userId": userId,
+            "preferences": [
+                "unitSystem": prefs.unitSystem,
+                "prepStyle": prefs.prepStyle
+            ]
+        ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -111,11 +120,11 @@ class RecipeService {
         guard let endpoint = URL(string: "\(backendBaseUrl)/generate-recipe-from-prompt") else {
             throw URLError(.badURL)
         }
-        
+
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         // Add Auth header
         do {
             let session = try await SupabaseManager.shared.client.auth.session
@@ -124,8 +133,17 @@ class RecipeService {
             print("⚠️ RecipeService: Failed to get auth session: \(error)")
             // Allow request to proceed for legacy compatibility
         }
-        
-        let body: [String: String] = ["prompt": prompt, "userId": userId]
+
+        // Include user preferences in the request
+        let prefs = UserPreferencesManager.shared.currentPreferences
+        let body: [String: Any] = [
+            "prompt": prompt,
+            "userId": userId,
+            "preferences": [
+                "unitSystem": prefs.unitSystem,
+                "prepStyle": prefs.prepStyle
+            ]
+        ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
         let (data, response) = try await URLSession.shared.data(for: request)
